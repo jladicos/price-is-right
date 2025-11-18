@@ -1,0 +1,59 @@
+{
+  "products": {
+    "car-001": {
+      "name": "2024 Honda Civic",
+      "price": 25000,
+      "images": ["car-civic.jpg"]
+    },
+    "tv-001": {
+      "name": "65\" OLED TV",
+      "price": 1200,
+      "images": ["tv-oled.jpg"]
+    },
+    "laptop-001": {
+      "name": "MacBook Pro 14\"",
+      "price": 2000,
+      "images": ["macbook-pro.jpg"]
+    },
+    "vacation-001": {
+      "name": "Hawaii Vacation Package",
+      "price": 5000,
+      "images": ["hawaii-beach.jpg", "hawaii-hotel.jpg"]
+    },
+    "bike-001": {
+      "name": "Mountain Bike",
+      "price": 800,
+      "images": ["mountain-bike.jpg"]
+    },
+    "camera-001": {
+      "name": "Sony A7 III Camera",
+      "price": 1800,
+      "images": ["sony-camera.jpg"]
+    },
+    "furniture-001": {
+      "name": "Living Room Set",
+      "price": 3500,
+      "images": ["living-room-set.jpg"]
+    },
+    "boat-001": {
+      "name": "Jet Ski",
+      "price": 12000,
+      "images": ["jet-ski.jpg"]
+    },
+    "car-002": {
+      "name": "2024 Tesla Model 3",
+      "price": 40000,
+      "images": ["tesla-model3.jpg"]
+    },
+    "vacation-002": {
+      "name": "European Cruise",
+      "price": 8000,
+      "images": ["cruise-ship.jpg", "europe-coast.jpg"]
+    }
+  },
+  "assignments": {
+    "bidding_set_1": ["car-001", "tv-001", "laptop-001", "vacation-001", "bike-001"],
+    "bidding_set_2": ["camera-001", "furniture-001", "boat-001"],
+    "showcase_showdown": ["car-002", "vacation-002"]
+  }
+}

@@ -204,12 +204,13 @@ During the showcase showdown
 #### Player Import
 - **CLI script** for bulk import from XLSX file
 - Reads XLSX → creates players in database → matches photos by filename
-- XLSX columns: Name, Role (host/player/audience), etc.
+- XLSX columns: First Name, Last Name, Role (host/player/audience), Photo (optional), Email (optional)
 - Can designate hosts during import or via admin UI later
 
 #### Product Configuration
 - Products defined with name, price, images array, and game segment assignment
-- Details of segment assignment structure to be defined during implementation
+- JSON structure: product library with IDs mapped to product objects, plus assignment arrays for bidding_set_1, bidding_set_2, and showcase_showdown
+- Products loaded from JSON file at runtime (not stored in database)
 
 ### Authentication & Session Management
 
@@ -256,21 +257,22 @@ During the showcase showdown
 
 ### Implementation Order
 
-#### Phase 1: Foundation
-- [ ] Project scaffolding (Docker Compose, monorepo structure)
-- [ ] Backend setup (Fastify, TypeScript, basic routing)
-- [ ] Frontend setup (Vite, React, TypeScript, Chakra UI)
-- [ ] ESLint + Prettier configuration
-- [ ] Vitest setup for both frontend and backend
-- [ ] Helper scripts in `scripts/` directory
+#### Phase 1: Foundation ✅
+- [x] Project scaffolding (Docker Compose, monorepo structure)
+- [x] Backend setup (Fastify, TypeScript, basic routing)
+- [x] Frontend setup (Vite, React, TypeScript, Chakra UI)
+- [x] ESLint + Prettier configuration
+- [x] Vitest setup for both frontend and backend
+- [x] Helper scripts in `scripts/` directory
 
-#### Phase 2: Database & Data Import
-- [ ] SQLite database setup and schema design
-- [ ] Database connection and ORM/query layer
-- [ ] Player import CLI script (XLSX → database)
-- [ ] Photo matching logic (filename to player name)
-- [ ] Product configuration system
-- [ ] Unit tests for import logic
+#### Phase 2: Database & Data Import ✅
+- [x] SQLite database setup and schema design
+- [x] Database connection and query layer (better-sqlite3, no ORM)
+- [x] Simple migration system (numbered SQL files with tracking)
+- [x] Player import CLI script (XLSX → database)
+- [x] Photo matching logic (filename to player name)
+- [x] Product configuration system
+- [x] Unit tests for import logic
 
 #### Phase 3: Authentication & Sessions
 - [ ] Access code generation and validation

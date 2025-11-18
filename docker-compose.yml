@@ -1,0 +1,40 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: price-is-right-backend
+    ports:
+      - '${BACKEND_PORT:-3001}:3001'
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./public:/app/public
+      - backend-data:/app/data
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_PATH=${DATABASE_PATH:-/app/data/database.db}
+      - PORT=3001
+    command: npm run dev
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: price-is-right-frontend
+    ports:
+      - '${FRONTEND_PORT:-3000}:3000'
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - VITE_API_URL=http://localhost:3001
+    command: npm run dev
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend-data:
