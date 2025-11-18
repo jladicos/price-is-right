@@ -43,6 +43,7 @@ const outputPath = path.join(
   "..",
   "..",
   "..",
+  "data",
   "players.example.xlsx",
 );
 XLSX.writeFile(workbook, outputPath);

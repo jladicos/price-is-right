@@ -275,12 +275,15 @@ During the showcase showdown
 - [x] Unit tests for import logic
 
 #### Phase 3: Authentication & Sessions
-- [ ] Access code generation and validation
-- [ ] Session management (create, validate, destroy)
+- [ ] Session token generation and validation
+- [ ] Auth service and REST API endpoints (login, logout, session validation)
 - [ ] One-session-per-code enforcement
-- [ ] localStorage persistence for session tokens
-- [ ] REST API endpoints for auth
-- [ ] Unit tests for auth logic
+- [ ] Zustand auth store with localStorage persistence
+- [ ] Authentication middleware for protected routes
+- [ ] Root page (/) for login with URL parameter support (`?code=ABC123`)
+- [ ] Welcome page showing player info with role-specific navigation (placeholders)
+- [ ] Protected route infrastructure
+- [ ] Unit and integration tests for auth logic
 
 #### Phase 4: Host Admin UI
 - [ ] Player management table (sortable, searchable)

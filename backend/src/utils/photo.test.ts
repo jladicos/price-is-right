@@ -7,8 +7,8 @@ import {
 
 describe("Photo Utilities", () => {
   describe("photoExists", () => {
-    it("should find default.png", () => {
-      expect(photoExists("default.png")).toBe(true);
+    it("should find default.jpg", () => {
+      expect(photoExists("default.jpg")).toBe(true);
     });
 
     it("should return false for non-existent file", () => {
@@ -17,19 +17,19 @@ describe("Photo Utilities", () => {
   });
 
   describe("resolvePhotoFilename", () => {
-    it("should return default.png for null/undefined", () => {
-      expect(resolvePhotoFilename(null)).toBe("default.png");
-      expect(resolvePhotoFilename(undefined)).toBe("default.png");
-      expect(resolvePhotoFilename("")).toBe("default.png");
-      expect(resolvePhotoFilename("   ")).toBe("default.png");
+    it("should return default.jpg for null/undefined", () => {
+      expect(resolvePhotoFilename(null)).toBe("default.jpg");
+      expect(resolvePhotoFilename(undefined)).toBe("default.jpg");
+      expect(resolvePhotoFilename("")).toBe("default.jpg");
+      expect(resolvePhotoFilename("   ")).toBe("default.jpg");
     });
 
     it("should return existing filename", () => {
-      expect(resolvePhotoFilename("default.png")).toBe("default.png");
+      expect(resolvePhotoFilename("default.jpg")).toBe("default.jpg");
     });
 
-    it("should return default.png for non-existent file", () => {
-      expect(resolvePhotoFilename("nonexistent.jpg")).toBe("default.png");
+    it("should return default.jpg for non-existent file", () => {
+      expect(resolvePhotoFilename("nonexistent.jpg")).toBe("default.jpg");
     });
   });
 

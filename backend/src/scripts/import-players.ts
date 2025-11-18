@@ -90,7 +90,7 @@ function importPlayersFromXLSX(filePath: string): void {
       const role = validateRole(row.Role.toString());
 
       // Validate and resolve photo
-      let photoFilename = "default.png";
+      let photoFilename = "default.jpg";
       if (row.Photo) {
         const photoValue = row.Photo.toString().trim();
         if (photoValue) {

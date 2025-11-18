@@ -173,7 +173,7 @@ describe("Migration System", () => {
       .get("ABC123") as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // Check defaults
-    expect(player.photo_filename).toBe("default.png");
+    expect(player.photo_filename).toBe("default.jpg");
     expect(player.active).toBe(1); // SQLite uses 1 for true
     expect(player.created_at).toBeDefined();
     expect(player.updated_at).toBeDefined();

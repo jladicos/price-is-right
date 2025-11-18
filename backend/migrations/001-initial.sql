@@ -7,7 +7,7 @@ CREATE TABLE players (
   last_name TEXT NOT NULL,
   email TEXT,
   access_code TEXT NOT NULL UNIQUE,
-  photo_filename TEXT NOT NULL DEFAULT 'default.png',
+  photo_filename TEXT NOT NULL DEFAULT 'default.jpg',
   role TEXT NOT NULL CHECK(role IN ('host', 'player', 'audience')),
   active INTEGER NOT NULL DEFAULT 1,
   session_token TEXT,

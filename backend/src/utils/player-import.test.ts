@@ -87,7 +87,7 @@ describe("Player Import Logic", () => {
 
       db.prepare(
         "INSERT INTO players (first_name, last_name, email, access_code, photo_filename, role) VALUES (?, ?, ?, ?, ?, ?)",
-      ).run("John", "Doe", null, accessCode, "default.png", "player");
+      ).run("John", "Doe", null, accessCode, "default.jpg", "player");
 
       const player = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
@@ -199,20 +199,20 @@ describe("Player Import Logic", () => {
   });
 
   describe("Photo filename resolution", () => {
-    it("should use default.png for missing photo", () => {
-      expect(resolvePhotoFilename(null)).toBe("default.png");
-      expect(resolvePhotoFilename(undefined)).toBe("default.png");
-      expect(resolvePhotoFilename("")).toBe("default.png");
+    it("should use default.jpg for missing photo", () => {
+      expect(resolvePhotoFilename(null)).toBe("default.jpg");
+      expect(resolvePhotoFilename(undefined)).toBe("default.jpg");
+      expect(resolvePhotoFilename("")).toBe("default.jpg");
     });
 
-    it("should use default.png for non-existent photo", () => {
+    it("should use default.jpg for non-existent photo", () => {
       const filename = resolvePhotoFilename("nonexistent.jpg");
-      expect(filename).toBe("default.png");
+      expect(filename).toBe("default.jpg");
     });
 
     it("should use provided filename if it exists", () => {
-      const filename = resolvePhotoFilename("default.png");
-      expect(filename).toBe("default.png");
+      const filename = resolvePhotoFilename("default.jpg");
+      expect(filename).toBe("default.jpg");
     });
   });
 });

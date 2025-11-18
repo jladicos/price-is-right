@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const SUPPORTED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif"];
-const DEFAULT_PHOTO = "default.png";
+const DEFAULT_PHOTO = "default.jpg";
 
 /**
  * Get the path to the players photos directory
