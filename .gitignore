@@ -40,3 +40,13 @@ logs/
 # Test coverage
 coverage/
 .nyc_output/
+
+# Player photos (keep only default image)
+public/images/players/*
+!public/images/players/default.png
+!public/images/players/default.jpg
+
+# Data files (keep only example files)
+data/*.xlsx
+data/~$*
+!data/*.example.xlsx
