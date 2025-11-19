@@ -1,18 +1,18 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SUPPORTED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif"];
-const DEFAULT_PHOTO = "default.jpg";
+const SUPPORTED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif'];
+const DEFAULT_PHOTO = 'default.jpg';
 
 /**
  * Get the path to the players photos directory
  */
 export function getPlayersPhotoDir(): string {
-  return path.join(__dirname, "..", "..", "public", "images", "players");
+  return path.join(__dirname, '..', '..', 'public', 'images', 'players');
 }
 
 /**
@@ -27,11 +27,9 @@ export function photoExists(filename: string): boolean {
  * Get the appropriate photo filename for a player
  * Returns the filename if it exists, otherwise returns default.png
  */
-export function resolvePhotoFilename(
-  filename: string | null | undefined,
-): string {
+export function resolvePhotoFilename(filename: string | null | undefined): string {
   // If no filename provided, use default
-  if (!filename || filename.trim() === "") {
+  if (!filename || filename.trim() === '') {
     return DEFAULT_PHOTO;
   }
 
@@ -61,16 +59,12 @@ export function resolvePhotoFilename(
  * Validate that a photo filename is safe (no path traversal)
  */
 export function isValidPhotoFilename(filename: unknown): boolean {
-  if (!filename || typeof filename !== "string") {
+  if (!filename || typeof filename !== 'string') {
     return false;
   }
 
   // Check for path traversal attempts
-  if (
-    filename.includes("..") ||
-    filename.includes("/") ||
-    filename.includes("\\")
-  ) {
+  if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
     return false;
   }
 

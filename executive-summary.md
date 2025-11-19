@@ -100,13 +100,19 @@ During the showcase showdown section
 	- note that the person bidding second won't be able to pass
 
 Interface for the host
-At all times
-- the host can navigate to a sortable, and searchable table with all players, and find the code for a given player
-  - from this UI the host can manually add an audience member
-  - manually reset the code for a given player or audience member
-- the host has a second admin page where they can
-  - enable or disable the game for all players and audience members
-  - reset codes for all players and audience members
+At all times - Admin Panel Features (Phase 4 ✅ COMPLETE)
+- the host can navigate to a sortable, and searchable table with all players, and find the code for a given player ✅
+  - from this UI the host can manually add a player, audience member, or additional host ✅
+  - manually reset the code for a given player or audience member ✅
+  - edit player details (name, email, role) and upload/change photos ✅
+  - activate or deactivate players to control login access ✅
+  - promote players to host or demote hosts to player/audience roles ✅
+- the host has admin controls to:
+  - enable or disable the game for all players and audience members (maintenance mode) ✅
+  - reset codes for all players and audience members (bulk operation) ✅
+  - delete all players (bulk operation with confirmation) ✅
+  - export database to JSON for disaster recovery backups ✅
+  - import database from JSON to restore from backups ✅
 
 During the initial setup
 - the host chooses when to choose the first person for contestant's row, and when to choose the next person for contestant's row
@@ -189,17 +195,28 @@ During the showcase showdown
 ### Data Management
 
 #### Database Schema (SQLite)
-- **Players table**: name, access code, photo path, role (host/player/audience), active status, session info
-- **Products table**: name, price, image paths (array), game segment assignment
-- **Game state tables**: current phase, contestant's row lineup, active bids, wheel spins, winners
+- **Players table**: name, access code, photo path, role (host/player/audience), active status, session info ✅
+- **Game state table**: key-value configuration (game_enabled for maintenance mode) ✅
+- **Products table**: name, price, image paths (array), game segment assignment (planned)
+- **Gameplay state tables**: current phase, contestant's row lineup, active bids, wheel spins, winners (planned)
 - **Full persistence** - All game state written to database in real-time for crash recovery
+- **Disaster recovery** - Export/import entire database to/from versioned JSON format ✅
+  - Exports exclude session tokens for security ✅
+  - Imports are transactional (all-or-nothing) ✅
+  - Autoincrement sequences reset after import to prevent ID conflicts ✅
 
 #### Photo Management
-- Player photos: `/public/images/players/` (e.g., `john-smith.jpg`)
+- Player photos: `/public/images/players/` (e.g., `john-smith.jpg`) ✅
 - Product photos: `/public/images/products/` (e.g., `car-001.jpg`)
-- Both directories mounted from host into Docker
-- Served as static files by Fastify backend
-- Import script matches player names to photo filenames automatically
+- Both directories mounted from host into Docker ✅
+- Served as static files by Fastify backend ✅
+- Import script matches player names to photo filenames automatically ✅
+- **Photo upload via admin UI** (Phase 4) ✅
+  - Multipart/form-data upload with 5MB file size limit ✅
+  - Supports JPG, PNG, GIF formats ✅
+  - Photos saved with player ID naming (e.g., `player-123.jpg`) ✅
+  - Upload when adding new players or editing existing players ✅
+  - Default photo (`default.jpg`) used when no photo provided ✅
 
 #### Player Import
 - **CLI script** for bulk import from XLSX file
@@ -221,11 +238,16 @@ During the showcase showdown
 - **One active session per code** - logging in on second device kicks first session
 - Session persists on page refresh via localStorage
 
-#### Host Authentication
-- Hosts use same access code system as players
-- Database `role` field designates host privileges
-- Multiple hosts can be logged in simultaneously
-- Hosts can be designated in XLSX import or promoted via admin UI
+#### Host Authentication & Role-Based Access Control (Phase 4 ✅)
+- Hosts use same access code system as players ✅
+- Database `role` field designates host privileges (host/player/audience) ✅
+- Multiple hosts can be logged in simultaneously ✅
+- Hosts can be designated in XLSX import or promoted via admin UI ✅
+- **Middleware-based authorization** ✅
+  - `authenticateRequest` middleware validates session tokens ✅
+  - `requireHost` middleware enforces host-only endpoints (returns 403 if not host) ✅
+  - Frontend `ProtectedRoute` component enforces role-based routing ✅
+  - Admin routes automatically redirect non-hosts to welcome page with error ✅
 
 #### Session Security
 - Session tokens stored in localStorage (survives refresh)
@@ -235,12 +257,16 @@ During the showcase showdown
 
 ### API Architecture
 
-#### REST APIs (Admin & Setup Operations)
-- Player management (list, create, update, deactivate)
-- Access code reset (individual or bulk)
-- Product management
-- Game configuration
-- Used by host admin UI
+#### REST APIs (Admin & Setup Operations) - Phase 4 ✅ COMPLETE
+- Player management (list with search/filter/sort, create, update, deactivate/activate) ✅
+- Access code management (view, reset individual, reset all bulk operation) ✅
+- Photo upload and management (multipart/form-data with 5MB limit) ✅
+- Role management (promote to host, demote to player/audience) ✅
+- Bulk operations (reset all codes, delete all players with confirmations) ✅
+- Game state control (enable/disable game for maintenance mode) ✅
+- Disaster recovery (export database to JSON, import from JSON) ✅
+- Product management (planned for future phases)
+- Used by host admin UI (/admin route, protected by host role)
 
 #### Socket.io Events (Real-Time Gameplay)
 - Player bids
@@ -256,6 +282,8 @@ During the showcase showdown
 - Clear separation of concerns: transport layer vs. business logic
 
 ### Implementation Order
+
+**Architectural Decision**: Core game features (Phases 5-7) are built using REST APIs with client-side polling for state updates. Phase 8 adds WebSocket-based push notifications as a performance enhancement. This ensures the offline fallback mode (Phase 10) works by default, rather than being a bolt-on feature. WebSockets become an optional enhancement layer rather than a core dependency.
 
 #### Phase 1: Foundation ✅
 - [x] Project scaffolding (Docker Compose, monorepo structure)
@@ -274,105 +302,104 @@ During the showcase showdown
 - [x] Product configuration system
 - [x] Unit tests for import logic
 
-#### Phase 3: Authentication & Sessions
-- [ ] Session token generation and validation
-- [ ] Auth service and REST API endpoints (login, logout, session validation)
-- [ ] One-session-per-code enforcement
-- [ ] Zustand auth store with localStorage persistence
-- [ ] Authentication middleware for protected routes
-- [ ] Root page (/) for login with URL parameter support (`?code=ABC123`)
-- [ ] Welcome page showing player info with role-specific navigation (placeholders)
-- [ ] Protected route infrastructure
-- [ ] Unit and integration tests for auth logic
+#### Phase 3: Authentication & Sessions ✅
+- [x] Session token generation and validation
+- [x] Auth service and REST API endpoints (login, logout, session validation)
+- [x] One-session-per-code enforcement
+- [x] Zustand auth store with localStorage persistence
+- [x] Authentication middleware for protected routes
+- [x] Root page (/) for login with URL parameter support (`?code=ABC123`)
+- [x] Welcome page showing player info with role-specific navigation (placeholders)
+- [x] Protected route infrastructure
+- [x] Unit and integration tests for auth logic
 
-#### Phase 4: Host Admin UI
-- [ ] Player management table (sortable, searchable)
-- [ ] Individual player actions (view code, reset code, deactivate)
-- [ ] Bulk operations (reset all codes, delete all players)
-- [ ] Manual player add/edit forms
-- [ ] Role management (promote to host, demote)
-- [ ] Admin UI integration tests
+#### Phase 4: Host Admin UI ✅
+- [x] Player management table (sortable, searchable)
+- [x] Individual player actions (view code, reset code, deactivate, edit)
+- [x] Bulk operations (reset all codes, delete all players)
+- [x] Manual player add/edit forms with photo upload
+- [x] Role management (promote to host, demote to player/audience)
+- [x] Game enable/disable toggle with maintenance mode
+- [x] Game state export/import for disaster recovery
+- [x] Admin UI integration tests (453 total tests passing)
 
-#### Phase 5: Real-Time Foundation
-- [ ] Socket.io server setup
-- [ ] Client connection handling
-- [ ] Room management (separate channels for host/players/audience)
-- [ ] Session validation on Socket.io connection
-- [ ] Real-time state broadcast system
-- [ ] Connection/disconnection handling
-- [ ] Integration tests for Socket.io events
-
-#### Phase 6: Game State Management
-- [ ] Backend state machine for game phases
+#### Phase 5: Game State Management & Contestant's Row
+- [ ] Backend state machine for game phases (REST API endpoints)
 - [ ] State transition logic and validation
 - [ ] Database persistence for all state changes
-- [ ] Auto-resume on server restart (detect in-progress game)
-- [ ] Host UI to choose resume vs. new game (lower priority)
-- [ ] Unit tests for state machine
-
-#### Phase 7: Contestant's Row Selection
-- [ ] Backend: Random selection from logged-in players
-- [ ] Backend: Track contestant's row lineup (5 players)
-- [ ] Host controls to trigger selection and advance
+- [ ] Random selection from logged-in players
+- [ ] Track contestant's row lineup (5 players)
+- [ ] REST API: GET /api/game/state (polled by clients every 2 seconds)
+- [ ] REST API: POST /api/game/select-contestant (host only)
+- [ ] Host controls UI to trigger selection and advance
 - [ ] Player/audience view: Display 5 podiums with names/photos
-- [ ] Real-time updates as contestants are selected
-- [ ] Host override: Remove player and select replacement
-- [ ] Unit and integration tests
+- [ ] Auto-resume on server restart (detect in-progress game)
+- [ ] Unit tests for state machine and selection logic
+- [ ] Integration tests for contestant selection flow
 
-#### Phase 8: Bidding Rounds (Core Gameplay)
+#### Phase 6: Bidding Rounds (Core Gameplay)
 - [ ] Backend: Bidding logic (sequential, duplicate detection, winner calculation)
 - [ ] Backend: "All over" detection and retry logic
+- [ ] REST API: POST /api/game/submit-bid (player action)
+- [ ] REST API: POST /api/game/show-product (host control)
+- [ ] REST API: POST /api/game/reveal-winner (host control)
+- [ ] REST API: POST /api/game/unlock-bid (host override)
 - [ ] Product display system (show/hide on host command)
 - [ ] Player input form (bid entry, validation)
 - [ ] Host controls (advance between players, unlock bids, reveal winner)
-- [ ] Player/audience view: Podiums with real-time bid display
+- [ ] Player/audience view: Podiums with bid display (updates via polling)
 - [ ] Winner announcement and visual indication
 - [ ] Bid clearing between rounds
 - [ ] Unit tests for bidding logic
 - [ ] Integration tests for bid submission flow
 
-#### Phase 9: Spin the Wheel
+#### Phase 7: Spin the Wheel & Showcase Showdown
 - [ ] Backend: Wheel spin logic (values $.05 to $1.00 in $.05 increments)
 - [ ] Backend: Two-spin limit, $1.00 detection, elimination logic
 - [ ] Backend: Spin-off for ties at $1.00
-- [ ] Player controls (spin button, choose to stay or spin again)
-- [ ] Host controls (advance to next player, move to next phase)
-- [ ] Player/audience view: Wheel visualization, current/total values
-- [ ] Winner calculation (closest to $1.00 without going over)
-- [ ] Eliminated player removal from display
-- [ ] Unit tests for wheel logic and winner calculation
-- [ ] Integration tests for spin flow
+- [ ] Backend: Showcase logic (order based on wheel results, pass/bid handling)
+- [ ] REST API: POST /api/game/spin-wheel (player action)
+- [ ] REST API: POST /api/game/submit-showcase-bid (player action)
+- [ ] REST API: POST /api/game/showcase-pass (player decision)
+- [ ] Player controls (spin button, choose to stay or spin again, bid or pass)
+- [ ] Host controls (advance players, show/hide products, reveal winners)
+- [ ] Player/audience view: Wheel visualization, showcase podiums (updates via polling)
+- [ ] Winner calculations and announcements
+- [ ] Unit tests for wheel and showcase logic
+- [ ] Integration tests for complete game flow
 
-#### Phase 10: Showcase Showdown
-- [ ] Backend: Showcase logic (order based on wheel results)
-- [ ] Backend: Pass/bid decision handling
-- [ ] Product display for showcases (2 products)
-- [ ] Player controls (bid or pass on first product)
-- [ ] Host controls (show/hide products, unlock bids, reveal winner)
-- [ ] Player/audience view: Two podiums with names/photos/bids
-- [ ] Winner announcement
-- [ ] Unit tests for showcase logic
-- [ ] Integration tests for showcase flow
+#### Phase 8: Real-Time Enhancement (WebSocket Layer)
+- [ ] Socket.io server setup
+- [ ] Client connection handling with session validation
+- [ ] Room management (separate channels for host/players/audience)
+- [ ] Wrap existing REST endpoints to emit Socket.io events
+- [ ] Client subscribes to `gameStateUpdate` events
+- [ ] Replace polling with event-driven updates
+- [ ] Connection/disconnection handling
+- [ ] Fallback to polling if WebSocket connection fails
+- [ ] Integration tests for Socket.io events
 
-#### Phase 11: Host Override & Edge Case Tools
+#### Phase 9: Host Override & Edge Case Tools
 - [ ] Manual contestant's row replacement during setup
-- [ ] Swap player in/out during gameplay (scenarios C & D)
+- [ ] Swap player in/out during gameplay
 - [ ] Random selection from available logged-in players
 - [ ] Host UI for all override actions
+- [ ] REST APIs for override operations
 - [ ] Database tracking of manual interventions
 - [ ] Integration tests for override scenarios
 
-#### Phase 12: Offline/Fallback Mode
-- [ ] Offline mode toggle in host UI
+#### Phase 10: Offline/Fallback Mode
+- [ ] Offline mode toggle in host UI (disables remote connections)
 - [ ] Manual data entry for bids/spins when offline
 - [ ] Game state preserved during mode switch
 - [ ] Host UI serves as both control panel and visual display
 - [ ] Screen-share friendly layout for Zoom
 - [ ] Testing of offline mode functionality
+- [ ] Note: REST-based implementation from Phases 5-7 already supports offline mode
 
-#### Phase 13: Polish & Performance
+#### Phase 11: Polish & Performance
 - [ ] Performance testing with mock users (up to 150 concurrent connections)
-- [ ] Load testing Socket.io broadcast performance
+- [ ] Load testing Socket.io broadcast performance (if applicable)
 - [ ] UI polish and responsive design
 - [ ] Error handling and user-friendly messages
 - [ ] Connection loss recovery for players
@@ -409,6 +436,14 @@ During the showcase showdown
 - Cross-browser compatibility
 
 ### Fallback & Recovery Features
+
+#### Disaster Recovery (Phase 4 ✅ COMPLETE)
+- **Database export to JSON** - Create timestamped backup files ✅
+- **Database import from JSON** - Restore entire database from backup ✅
+- **Transaction-based import** - All-or-nothing restore (no partial imports) ✅
+- **Security safeguards** - Session tokens never exported ✅
+- **Autoincrement safety** - Sequences reset after import to prevent ID conflicts ✅
+- **Use cases**: Recovering from corruption, accidental deletion, environment migration ✅
 
 #### Auto-Resume After Crash
 - On server startup, check database for in-progress game
@@ -453,8 +488,9 @@ During the showcase showdown
 - Deployment specifics to be defined closer to event date
 
 #### Potential Enhancements (Post-MVP)
-- Game history/statistics export after event
+- Game history/statistics export after event (database export already implemented ✅)
 - Leaderboard or summary report
 - Replay or review mode for completed games
 - Email/SMS distribution of access code links
+- Photo library management (upload multiple photos at once)
 - Custom branding and theming

@@ -1,6 +1,6 @@
-import fs from "fs";
-import path from "path";
-import type { ProductConfig, Product } from "../types/product.js";
+import fs from 'fs';
+import path from 'path';
+import type { ProductConfig, Product } from '../types/product.js';
 
 let cachedConfig: ProductConfig | null = null;
 
@@ -12,19 +12,19 @@ function getProductsJsonPath(): string {
   const cwd = process.cwd();
 
   // Try to load from root directory first
-  const rootPath = path.join(cwd, "products.json");
+  const rootPath = path.join(cwd, 'products.json');
   if (fs.existsSync(rootPath)) {
     return rootPath;
   }
 
   // Fall back to example file
-  const examplePath = path.join(cwd, "products.example.json");
+  const examplePath = path.join(cwd, 'products.example.json');
   if (fs.existsSync(examplePath)) {
-    console.warn("products.json not found, using products.example.json");
+    console.warn('products.json not found, using products.example.json');
     return examplePath;
   }
 
-  throw new Error("No products.json or products.example.json file found");
+  throw new Error('No products.json or products.example.json file found');
 }
 
 /**
@@ -36,17 +36,17 @@ export function loadProductConfig(): ProductConfig {
   }
 
   const jsonPath = getProductsJsonPath();
-  const jsonContent = fs.readFileSync(jsonPath, "utf-8");
+  const jsonContent = fs.readFileSync(jsonPath, 'utf-8');
 
   try {
     const config = JSON.parse(jsonContent) as ProductConfig;
 
     // Validate structure
-    if (!config.products || typeof config.products !== "object") {
+    if (!config.products || typeof config.products !== 'object') {
       throw new Error("products.json must contain a 'products' object");
     }
 
-    if (!config.assignments || typeof config.assignments !== "object") {
+    if (!config.assignments || typeof config.assignments !== 'object') {
       throw new Error("products.json must contain an 'assignments' object");
     }
 
@@ -66,10 +66,10 @@ export function loadProductConfig(): ProductConfig {
 
     // Validate product structure
     for (const [id, product] of Object.entries(config.products)) {
-      if (!product.name || typeof product.name !== "string") {
+      if (!product.name || typeof product.name !== 'string') {
         throw new Error(`Product ${id} missing valid 'name'`);
       }
-      if (typeof product.price !== "number" || product.price <= 0) {
+      if (typeof product.price !== 'number' || product.price <= 0) {
         throw new Error(`Product ${id} missing valid 'price'`);
       }
       if (!Array.isArray(product.images) || product.images.length === 0) {
@@ -99,7 +99,7 @@ export function getProduct(id: string): Product | undefined {
  * Get products for a specific game segment
  */
 export function getProductsForSegment(
-  segment: "bidding_set_1" | "bidding_set_2" | "showcase_showdown",
+  segment: 'bidding_set_1' | 'bidding_set_2' | 'showcase_showdown',
 ): Array<{ id: string; product: Product }> {
   const config = loadProductConfig();
   const ids = config.assignments[segment];

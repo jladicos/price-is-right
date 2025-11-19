@@ -17,6 +17,42 @@ The game features:
 - Host admin controls for player management and game oversight
 - Offline fallback mode for emergencies
 
+## What's New in Phase 4 (Admin UI)
+
+**Phase 4 is now complete!** The application now includes a comprehensive admin panel for hosts with the following capabilities:
+
+### Player Management
+- ✅ **Sortable & Searchable Table** - View all players with real-time search and filtering by role/status
+- ✅ **Access Code Management** - View and reset individual player access codes
+- ✅ **Player Actions** - Activate, deactivate, edit details, and change roles for individual players
+- ✅ **Photo Upload** - Upload and manage player photos (JPG, PNG, GIF up to 5MB)
+- ✅ **Manual Player Addition** - Add new players directly through the UI with photo upload
+- ✅ **Role Management** - Promote players to host or demote to player/audience roles
+
+### Bulk Operations
+- ✅ **Reset All Access Codes** - Regenerate codes for all players simultaneously
+- ✅ **Delete All Players** - Remove all non-host players (with strong confirmations)
+
+### Game Control
+- ✅ **Game Toggle** - Enable/disable game availability for maintenance
+- ✅ **Maintenance Mode** - Show maintenance message to users while keeping them logged in
+
+### Disaster Recovery
+- ✅ **Database Export** - Download complete database backup as timestamped JSON file
+- ✅ **Database Import** - Restore from backup with transaction-based all-or-nothing import
+- ✅ **Security** - Session tokens never exported; users must re-login after import
+
+### Security & Access Control
+- ✅ **Host-Only Access** - All admin endpoints require host role (403 for non-hosts)
+- ✅ **Role-Based UI** - Admin elements only visible to hosts
+- ✅ **Confirmation Dialogs** - All destructive actions require explicit confirmation
+
+**Test Coverage**: 453/453 tests passing (100%)
+- Backend: 324 tests
+- Frontend: 129 tests (including 4 export validation tests)
+
+See the [Admin Panel](#admin-panel-host-only) section below for detailed usage instructions.
+
 ## Technology Stack
 
 - **Backend**: Node.js, Fastify, Socket.io, SQLite
@@ -187,10 +223,151 @@ All users (hosts, players, audience) access the game via unique codes:
 ### Host Privileges
 
 Hosts have special permissions to:
-- Manage players (activate/deactivate, reset codes)
+- Access the admin panel for player management
+- Manage players (activate/deactivate, reset codes, edit details)
 - Control game flow (advance phases, select contestants)
 - Override game state (replace players, unlock bids)
-- Toggle offline mode for emergency fallback
+- Toggle game availability (enable/disable for maintenance)
+- Export/import game state for disaster recovery
+
+## Admin Panel (Host Only)
+
+The Admin Panel provides comprehensive tools for hosts to manage the game before and during the event. Only users with the **host** role can access these features.
+
+### Accessing the Admin Panel
+
+1. Log in with a host access code
+2. Click **"Admin Tools"** on the welcome page
+3. The admin panel is available at `/admin` (automatically protected)
+
+If you're not a host, you'll be redirected with an error message.
+
+### Player Management
+
+#### Viewing Players
+
+- **Search**: Filter players by name in real-time
+- **Columns**: View ID, name, email, access code, photo, role, and active status
+- **Visual Indicators**:
+  - Active players shown in green
+  - Inactive players shown in red
+
+#### Individual Player Actions
+
+Each player row has an action menu with the following options:
+
+**View Access Code**
+- Displays the player's current access code
+- Useful for helping players log in during the event
+
+**Reset Access Code**
+- Generates a new random 6-character alphanumeric code
+- Use when a code is compromised or forgotten
+- Old code immediately stops working
+
+**Edit Player**
+- Update name, email, and role
+- Upload or change player photo (JPG, PNG, GIF - max 5MB)
+- Photo appears in player selection screens during the game
+
+**Deactivate/Activate Player**
+- Deactivate: Prevents player from logging in (sessions terminated)
+- Activate: Re-enables access for previously deactivated players
+- Useful for managing no-shows or late arrivals
+
+**Promote/Demote Role**
+- Change between **host**, **player**, and **audience** roles
+- Promote to host: Grants full admin access
+- Demote to player: Returns to standard player permissions
+- Demote to audience: View-only access
+
+#### Bulk Operations
+
+**Reset All Access Codes**
+- Regenerates codes for ALL active players simultaneously
+- Requires confirmation (destructive action)
+- Use case: Security measure if codes were publicly exposed
+
+**Delete All Players**
+- Removes ALL players from the database
+- Requires confirmation (highly destructive)
+- Use case: Starting fresh for a new event
+
+#### Manual Player Addition
+
+Click **"Add Player"** to manually create a new player:
+- Enter first name, last name, and email
+- Select role (host/player/audience)
+- Upload a photo (optional, defaults to `default.jpg`)
+- Access code is automatically generated
+- Immediately appears in the player table
+
+### Role Management
+
+The system supports three roles with different permissions:
+
+| Role | Access Level | Capabilities |
+|------|-------------|--------------|
+| **Host** | Full admin access | All features including admin panel, game control, player management |
+| **Player** | Standard gameplay | Participate in bidding, wheel spins, showcases |
+| **Audience** | View-only | Watch the game in real-time without participating |
+
+**Changing Roles:**
+- Use the action menu on any player row
+- Select "Promote to Host" or "Demote to Player/Audience"
+- Changes take effect immediately (active sessions updated)
+
+### Game Control
+
+**Enable/Disable Game**
+- Toggle switch in the admin panel header
+- When **disabled**:
+  - All users see "Game Currently Disabled" maintenance message
+  - Entry buttons are disabled for players
+  - Hosts can still access admin tools
+- When **enabled**: Normal game operation
+- Use case: Pre-event setup, intermissions, or emergency maintenance
+
+### Export/Import (Disaster Recovery)
+
+Protect against data loss with database backup and restore capabilities.
+
+#### Exporting Database
+
+1. Click **"Export Database"** (blue button)
+2. Confirm the export action
+3. Downloads a JSON file named `price-is-right-backup-YYYY-MM-DD.json`
+4. File contains:
+   - All players (excluding session tokens for security)
+   - Game state settings
+   - Export timestamp and version metadata
+
+**When to export:**
+- Before major game events
+- After significant player data changes
+- Regularly as part of backup procedures
+
+#### Importing Database
+
+1. Click **"Import Database"** (purple button)
+2. **⚠️ WARNING**: This **deletes ALL existing data** and replaces it
+3. Select a previously exported JSON file
+4. Review the warning message
+5. Click **"Import & Replace"** (red button)
+6. Success message shows counts of imported players and game state
+7. Player table and game status automatically refresh
+
+**When to import:**
+- Recovering from database corruption
+- Restoring after accidental data deletion
+- Moving game state between environments
+- Rolling back to a previous state
+
+**Important notes:**
+- Session tokens are never exported (users must re-login after import)
+- Import is transactional (all-or-nothing, no partial imports)
+- Always test imports on a development environment first
+- Keep recent backups stored securely offsite
 
 ## Testing Strategy
 

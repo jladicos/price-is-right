@@ -1,4 +1,4 @@
-export type PlayerRole = "host" | "player" | "audience";
+export type PlayerRole = 'host' | 'player' | 'audience';
 
 export interface Player {
   id: number;
