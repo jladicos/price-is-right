@@ -10,12 +10,12 @@ services:
       - ./backend:/app
       - /app/node_modules
       - ./public:/app/public
-      - backend-data:/app/data
+      - ./data:/app/data
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - DATABASE_PATH=${DATABASE_PATH:-/app/data/database.db}
       - PORT=3001
-    command: npm run dev
+    command: sh -c "npm install && npm run dev"
     restart: unless-stopped
 
   frontend:
@@ -30,11 +30,10 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=${NODE_ENV:-development}
-      - VITE_API_URL=http://localhost:3001
-    command: npm run dev
+      - VITE_API_URL=http://localhost:3001/api
+    command: sh -c "npm install && npm run dev"
     depends_on:
       - backend
     restart: unless-stopped
 
-volumes:
-  backend-data:
+# No named volumes needed - all data is on host filesystem

@@ -323,19 +323,71 @@ During the showcase showdown
 - [x] Game state export/import for disaster recovery
 - [x] Admin UI integration tests (453 total tests passing)
 
-#### Phase 5: Game State Management & Contestant's Row
-- [ ] Backend state machine for game phases (REST API endpoints)
-- [ ] State transition logic and validation
-- [ ] Database persistence for all state changes
-- [ ] Random selection from logged-in players
-- [ ] Track contestant's row lineup (5 players)
-- [ ] REST API: GET /api/game/state (polled by clients every 2 seconds)
-- [ ] REST API: POST /api/game/select-contestant (host only)
-- [ ] Host controls UI to trigger selection and advance
-- [ ] Player/audience view: Display 5 podiums with names/photos
-- [ ] Auto-resume on server restart (detect in-progress game)
-- [ ] Unit tests for state machine and selection logic
-- [ ] Integration tests for contestant selection flow
+#### Phase 5: Game State Management & Contestant's Row ✅ (95% complete - audience view deferred to Phase 6)
+- [x] Database schema: Create 5 tables (game_workflow, contestants_row, bids*, wheel_spins*, showcase_bids*) *structure only
+  - [x] Migration 003 created with all tables and indexes
+  - [x] Database layer for game_workflow (53 tests passing)
+  - [x] Database layer for contestants (58 tests passing)
+- [x] Products.json game_structure support (foundation for future mini-games)
+  - [x] Product types updated with GameStructurePhase and GameStructure
+  - [x] Products utilities updated (19 tests passing)
+  - [x] Example config includes full game_structure
+- [x] Code quality improvements (16 linting warnings → 0, test quality 60% → 95%)
+- [x] Backend state machine for game phases
+  - [x] game-state.ts service with 11 core functions (56 tests passing)
+  - [x] State transition logic and validation
+  - [x] Random contestant selection from audience pool (role='audience', active=1)
+  - [x] Manual contestant selection with flexible replacement (handles empty OR occupied positions)
+  - [x] Contestant reveal mechanics (transaction-based, triggers role change audience→player)
+  - [x] Always-reveal design: All manually selected contestants require reveal (even existing players)
+  - [x] Track contestant's row lineup (5 positions)
+- [x] Auto-resume on server restart
+  - [x] game-resume.ts service (13 tests passing)
+  - [x] Server startup integration (detects and restores in-progress games)
+- [x] REST API: 11 game control endpoints (74 integration tests passing)
+  - [x] POST /api/game/start (auto-selects 5 contestants)
+  - [x] GET /api/game/state (polled by clients every 2 seconds)
+  - [x] POST /api/game/reveal-contestant (host reveals one contestant)
+  - [x] POST /api/game/replace-contestant-random (random from eligible pool)
+  - [x] POST /api/game/replace-contestant-manual (host chooses specific player)
+  - [x] POST /api/game/manual-select-contestant (flexible add/replace at position)
+  - [x] POST /api/game/refresh-contestants-row (replace all 5)
+  - [x] POST /api/game/advance (config-driven phase advancement)
+  - [x] POST /api/game/override-phase (emergency host control)
+  - [x] GET /api/game/status (game enabled/disabled check)
+  - [x] POST /api/game/enable, POST /api/game/disable (maintenance mode)
+- [x] Frontend: Zustand game store (30 tests passing)
+  - [x] fetchGameState, startNewGame, advancePhase
+  - [x] revealContestant, manualSelectContestant
+  - [x] replaceContestantRandom, replaceContestantManual
+  - [x] refreshContestantsRow, overridePhase
+- [x] Frontend: useGameState polling hook (13 tests passing)
+  - [x] 2-second polling interval with enable/disable toggle
+  - [x] Auto-refresh on state changes
+- [x] Frontend: Host Game Control Page (31 tests passing)
+  - [x] HostControlPage.tsx with full game controls
+  - [x] Start new game with confirmation modal
+  - [x] Contestant reveal buttons (per contestant)
+  - [x] Manual contestant selection modal
+  - [x] Replace contestant modal (random or manual)
+  - [x] Refresh entire row with confirmation
+  - [x] Advance phase button
+  - [x] Real-time state display with polling
+- [x] Frontend: All modals with comprehensive tests
+  - [x] ManualSelectContestantModal (34 tests) - player search, position selector
+  - [x] ReplaceContestantModal (35 tests) - random or manual replacement options
+  - [x] StartGameConfirmModal - warns about resetting current game
+- [x] Frontend: Protected routes and navigation
+  - [x] /host/game-control route with host-only protection
+  - [x] WelcomePage links to game control for hosts
+- [ ] Frontend: Player/Audience Game View (deferred to Phase 6)
+  - [ ] 5 podiums display component (no interaction needed until bidding)
+  - [ ] GameViewPage with role-specific visibility
+  - [ ] Reason: No player actions until Phase 6 bidding, so view makes more sense to build then
+
+**Test Status**: 864/864 passing (100%) ✅
+- Backend: 569 tests (21 test files) - Added 76 tests in Phase 5
+- Frontend: 295 tests (14 test files) - Added 138 tests in Phase 5
 
 #### Phase 6: Bidding Rounds (Core Gameplay)
 - [ ] Backend: Bidding logic (sequential, duplicate detection, winner calculation)

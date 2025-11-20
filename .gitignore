@@ -48,5 +48,7 @@ public/images/players/*
 
 # Data files (keep only example files)
 data/*.xlsx
+data/*.json
 data/~$*
 !data/*.example.xlsx
+!data/*.example.json

@@ -1,5 +1,5 @@
-import type { Database } from 'better-sqlite3';
-import type { Player, PlayerRole } from '../types/player.js';
+import type { Database } from "better-sqlite3";
+import type { Player, PlayerRole } from "../types/player.js";
 
 /**
  * Database representation of a player (snake_case)
@@ -40,9 +40,14 @@ function rowToPlayer(row: PlayerRow): Player {
 /**
  * Find a player by their access code
  */
-export function findPlayerByAccessCode(db: Database, accessCode: string): Player | null {
+export function findPlayerByAccessCode(
+  db: Database,
+  accessCode: string,
+): Player | null {
   const row = db
-    .prepare(`SELECT * FROM players WHERE UPPER(access_code) = UPPER(?) LIMIT 1`)
+    .prepare(
+      `SELECT * FROM players WHERE UPPER(access_code) = UPPER(?) LIMIT 1`,
+    )
     .get(accessCode) as PlayerRow | undefined;
 
   return row ? rowToPlayer(row) : null;
@@ -51,7 +56,10 @@ export function findPlayerByAccessCode(db: Database, accessCode: string): Player
 /**
  * Find a player by their session token
  */
-export function findPlayerBySessionToken(db: Database, sessionToken: string): Player | null {
+export function findPlayerBySessionToken(
+  db: Database,
+  sessionToken: string,
+): Player | null {
   const row = db
     .prepare(`SELECT * FROM players WHERE session_token = ? LIMIT 1`)
     .get(sessionToken) as PlayerRow | undefined;
@@ -77,7 +85,9 @@ export function updateSessionToken(
   stmt.run(sessionToken, playerId);
 
   // Fetch and return the updated player
-  const row = db.prepare(`SELECT * FROM players WHERE id = ?`).get(playerId) as PlayerRow;
+  const row = db
+    .prepare(`SELECT * FROM players WHERE id = ?`)
+    .get(playerId) as PlayerRow;
 
   return rowToPlayer(row);
 }
@@ -93,7 +103,9 @@ export function clearSessionToken(db: Database, playerId: number): void {
  * Get all players
  */
 export function getAllPlayers(db: Database): Player[] {
-  const rows = db.prepare(`SELECT * FROM players ORDER BY id`).all() as PlayerRow[];
+  const rows = db
+    .prepare(`SELECT * FROM players ORDER BY id`)
+    .all() as PlayerRow[];
   return rows.map(rowToPlayer);
 }
 
@@ -101,7 +113,9 @@ export function getAllPlayers(db: Database): Player[] {
  * Get a player by ID
  */
 export function getPlayerById(db: Database, id: number): Player | null {
-  const row = db.prepare(`SELECT * FROM players WHERE id = ?`).get(id) as PlayerRow | undefined;
+  const row = db.prepare(`SELECT * FROM players WHERE id = ?`).get(id) as
+    | PlayerRow
+    | undefined;
 
   return row ? rowToPlayer(row) : null;
 }
@@ -113,8 +127,8 @@ export interface SearchPlayersOptions {
   search?: string; // Search by name (first or last)
   role?: PlayerRole; // Filter by role
   active?: boolean; // Filter by active status
-  sortBy?: 'name' | 'role' | 'created_at'; // Sort field
-  sortOrder?: 'asc' | 'desc'; // Sort direction
+  sortBy?: "name" | "role" | "created_at"; // Sort field
+  sortOrder?: "asc" | "desc"; // Sort direction
   limit?: number; // Pagination: items per page
   offset?: number; // Pagination: starting position
 }
@@ -132,15 +146,15 @@ export function searchPlayers(
     search,
     role,
     active,
-    sortBy = 'created_at',
-    sortOrder = 'desc',
+    sortBy = "created_at",
+    sortOrder = "desc",
     limit,
     offset = 0,
   } = options;
 
   // Build WHERE clause
   const conditions: string[] = [];
-  const params: any[] = [];
+  const params: (string | number)[] = [];
 
   if (search) {
     conditions.push(
@@ -160,13 +174,14 @@ export function searchPlayers(
     params.push(active ? 1 : 0);
   }
 
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   // Build ORDER BY clause
-  let orderByClause = '';
-  if (sortBy === 'name') {
+  let orderByClause = "";
+  if (sortBy === "name") {
     orderByClause = `ORDER BY first_name ${sortOrder}, last_name ${sortOrder}`;
-  } else if (sortBy === 'role') {
+  } else if (sortBy === "role") {
     orderByClause = `ORDER BY role ${sortOrder}, first_name ${sortOrder}`;
   } else {
     // created_at
@@ -174,7 +189,8 @@ export function searchPlayers(
   }
 
   // Build LIMIT/OFFSET clause
-  const paginationClause = limit !== undefined ? `LIMIT ${limit} OFFSET ${offset}` : '';
+  const paginationClause =
+    limit !== undefined ? `LIMIT ${limit} OFFSET ${offset}` : "";
 
   // Get total count
   const countQuery = `SELECT COUNT(*) as count FROM players ${whereClause}`;
@@ -201,33 +217,39 @@ export interface UpdatePlayerData {
   photoFilename?: string;
 }
 
-export function updatePlayer(db: Database, playerId: number, data: UpdatePlayerData): Player {
+export function updatePlayer(
+  db: Database,
+  playerId: number,
+  data: UpdatePlayerData,
+): Player {
   const updates: string[] = [];
-  const params: any[] = [];
+  const params: (string | number)[] = [];
 
   if (data.firstName !== undefined) {
-    updates.push('first_name = ?');
+    updates.push("first_name = ?");
     params.push(data.firstName);
   }
 
   if (data.lastName !== undefined) {
-    updates.push('last_name = ?');
+    updates.push("last_name = ?");
     params.push(data.lastName);
   }
 
   if (data.role !== undefined) {
-    updates.push('role = ?');
+    updates.push("role = ?");
     params.push(data.role);
   }
 
   if (data.photoFilename !== undefined) {
-    updates.push('photo_filename = ?');
+    updates.push("photo_filename = ?");
     params.push(data.photoFilename);
   }
 
   if (updates.length === 0) {
     // No updates to make, just return current player
-    const row = db.prepare('SELECT * FROM players WHERE id = ?').get(playerId) as PlayerRow;
+    const row = db
+      .prepare("SELECT * FROM players WHERE id = ?")
+      .get(playerId) as PlayerRow;
     return rowToPlayer(row);
   }
 
@@ -236,14 +258,16 @@ export function updatePlayer(db: Database, playerId: number, data: UpdatePlayerD
 
   const stmt = db.prepare(`
     UPDATE players
-    SET ${updates.join(', ')}
+    SET ${updates.join(", ")}
     WHERE id = ?
   `);
 
   stmt.run(...params);
 
   // Fetch and return the updated player
-  const row = db.prepare('SELECT * FROM players WHERE id = ?').get(playerId) as PlayerRow;
+  const row = db
+    .prepare("SELECT * FROM players WHERE id = ?")
+    .get(playerId) as PlayerRow;
   return rowToPlayer(row);
 }
 
@@ -260,7 +284,9 @@ export function deactivatePlayer(db: Database, playerId: number): Player {
   stmt.run(playerId);
 
   // Fetch and return the updated player
-  const row = db.prepare('SELECT * FROM players WHERE id = ?').get(playerId) as PlayerRow;
+  const row = db
+    .prepare("SELECT * FROM players WHERE id = ?")
+    .get(playerId) as PlayerRow;
   return rowToPlayer(row);
 }
 
@@ -277,7 +303,9 @@ export function activatePlayer(db: Database, playerId: number): Player {
   stmt.run(playerId);
 
   // Fetch and return the updated player
-  const row = db.prepare('SELECT * FROM players WHERE id = ?').get(playerId) as PlayerRow;
+  const row = db
+    .prepare("SELECT * FROM players WHERE id = ?")
+    .get(playerId) as PlayerRow;
   return rowToPlayer(row);
 }
 
@@ -299,7 +327,9 @@ export function resetPlayerAccessCode(
   stmt.run(newAccessCode, playerId);
 
   // Fetch and return the updated player
-  const row = db.prepare('SELECT * FROM players WHERE id = ?').get(playerId) as PlayerRow;
+  const row = db
+    .prepare("SELECT * FROM players WHERE id = ?")
+    .get(playerId) as PlayerRow;
   return rowToPlayer(row);
 }
 
@@ -307,7 +337,9 @@ export function resetPlayerAccessCode(
  * Count how many hosts are currently in the system
  */
 export function countHosts(db: Database): number {
-  const result = db.prepare("SELECT COUNT(*) as count FROM players WHERE role = 'host'").get() as {
+  const result = db
+    .prepare("SELECT COUNT(*) as count FROM players WHERE role = 'host'")
+    .get() as {
     count: number;
   };
   return result.count;
@@ -336,14 +368,16 @@ export function createPlayer(db: Database, data: CreatePlayerData): Player {
     data.lastName,
     data.accessCode,
     data.role,
-    data.photoFilename || 'default.jpg',
+    data.photoFilename || "default.jpg",
     data.email || null,
   );
 
   const playerId = result.lastInsertRowid as number;
 
   // Fetch and return the created player
-  const row = db.prepare('SELECT * FROM players WHERE id = ?').get(playerId) as PlayerRow;
+  const row = db
+    .prepare("SELECT * FROM players WHERE id = ?")
+    .get(playerId) as PlayerRow;
   return rowToPlayer(row);
 }
 
@@ -351,7 +385,10 @@ export function createPlayer(db: Database, data: CreatePlayerData): Player {
  * Reset all player access codes
  * Returns the number of players affected
  */
-export function resetAllAccessCodes(db: Database, accessCodeGenerator: () => string): number {
+export function resetAllAccessCodes(
+  db: Database,
+  accessCodeGenerator: () => string,
+): number {
   // Get all players
   const players = getAllPlayers(db);
 

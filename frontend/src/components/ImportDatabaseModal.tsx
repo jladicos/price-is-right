@@ -46,25 +46,19 @@
  */
 
 import { useState, useRef } from 'react';
+import { showToast } from '../utils/toast';
+import { useAuthStore } from '../store/authStore';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  Text,
-  VStack,
-  useToast,
-  Alert,
-  AlertIcon,
-  Input,
-  FormControl,
-  FormLabel,
-  Box,
-} from '@chakra-ui/react';
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
+} from './ui/dialog';
+import { Button, Text, VStack, Input } from '@chakra-ui/react';
+import { Alert } from './ui/alert';
+import { Field } from './ui/field';
 
 interface ImportDatabaseModalProps {
   isOpen: boolean;
@@ -76,18 +70,16 @@ export function ImportDatabaseModal({ isOpen, onClose, onSuccess }: ImportDataba
   const [isImporting, setIsImporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const toast = useToast();
+  const sessionToken = useAuthStore((state) => state.sessionToken);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.type !== 'application/json') {
-        toast({
+        showToast({
           title: 'Invalid file type',
           description: 'Please select a JSON file',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
+          type: 'error',
         });
         return;
       }
@@ -97,12 +89,10 @@ export function ImportDatabaseModal({ isOpen, onClose, onSuccess }: ImportDataba
 
   const handleImport = async () => {
     if (!selectedFile) {
-      toast({
+      showToast({
         title: 'No file selected',
         description: 'Please select a backup file to import',
-        status: 'warning',
-        duration: 3000,
-        isClosable: true,
+        type: 'warning',
       });
       return;
     }
@@ -113,7 +103,6 @@ export function ImportDatabaseModal({ isOpen, onClose, onSuccess }: ImportDataba
       const fileContents = await selectedFile.text();
       const data = JSON.parse(fileContents);
 
-      const sessionToken = localStorage.getItem('sessionToken');
       if (!sessionToken) {
         throw new Error('Not authenticated');
       }
@@ -134,23 +123,19 @@ export function ImportDatabaseModal({ isOpen, onClose, onSuccess }: ImportDataba
 
       const result = await response.json();
 
-      toast({
+      showToast({
         title: 'Database imported',
         description: `Successfully imported ${result.playersImported} players and ${result.gameStateImported} game state entries`,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
+        type: 'success',
       });
 
       onSuccess();
       onClose();
     } catch (err) {
-      toast({
+      showToast({
         title: 'Import failed',
         description: err instanceof Error ? err.message : 'An error occurred',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     } finally {
       setIsImporting(false);
@@ -166,25 +151,17 @@ export function ImportDatabaseModal({ isOpen, onClose, onSuccess }: ImportDataba
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleModalClose} size="md">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Import Database</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <VStack spacing={4} align="stretch">
-            <Alert status="warning">
-              <AlertIcon />
-              <Box>
-                <Text fontWeight="bold">WARNING: This will delete all existing data!</Text>
-                <Text fontSize="sm">
-                  The current database will be completely replaced with the imported data.
-                </Text>
-              </Box>
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && handleModalClose()} size="md">
+      <DialogContent>
+        <DialogHeader>Import Database</DialogHeader>
+        <DialogCloseTrigger />
+        <DialogBody>
+          <VStack gap="4" align="stretch">
+            <Alert status="warning" title="WARNING: This will delete all existing data!">
+              The current database will be completely replaced with the imported data.
             </Alert>
 
-            <FormControl>
-              <FormLabel>Select backup file</FormLabel>
+            <Field label="Select backup file">
               <Input
                 ref={fileInputRef}
                 type="file"
@@ -197,23 +174,23 @@ export function ImportDatabaseModal({ isOpen, onClose, onSuccess }: ImportDataba
                   Selected: {selectedFile.name}
                 </Text>
               )}
-            </FormControl>
+            </Field>
 
             <Text fontSize="sm" color="gray.600">
               Select a JSON backup file exported from this application.
             </Text>
           </VStack>
-        </ModalBody>
+        </DialogBody>
 
-        <ModalFooter>
-          <Button variant="ghost" mr={3} onClick={handleModalClose} isDisabled={isImporting}>
+        <DialogFooter>
+          <Button variant="ghost" mr={3} onClick={handleModalClose} disabled={isImporting}>
             Cancel
           </Button>
-          <Button colorScheme="red" onClick={handleImport} isLoading={isImporting}>
+          <Button colorPalette="red" onClick={handleImport} loading={isImporting}>
             Import & Replace
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
   );
 }

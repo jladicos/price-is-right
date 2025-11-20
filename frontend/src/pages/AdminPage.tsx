@@ -26,24 +26,18 @@ import {
   VStack,
   HStack,
   Input,
-  Select,
   Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  useToast,
   Spinner,
   Center,
   Text,
-  Switch,
-  FormControl,
-  FormLabel,
 } from '@chakra-ui/react';
+import { NativeSelectRoot, NativeSelectField } from '../components/ui/native-select';
+import { Tag } from '../components/ui/tag';
+import { Switch } from '../components/ui/switch';
+import { Field } from '../components/ui/field';
 import { apiRequest } from '../utils/api';
-import type { Player } from '../types/player';
+import { showToast } from '../utils/toast';
+import type { Player } from '../../../backend/src/types/player';
 import { ViewCodeModal } from '../components/ViewCodeModal';
 import { ResetCodeModal } from '../components/ResetCodeModal';
 import { DeactivateModal } from '../components/DeactivateModal';
@@ -61,7 +55,6 @@ interface PlayersResponse {
 
 export default function AdminPage() {
   const navigate = useNavigate();
-  const toast = useToast();
 
   // State
   const [players, setPlayers] = useState<Player[]>([]);
@@ -100,22 +93,20 @@ export default function AdminPage() {
       params.append('sortBy', sortBy);
       params.append('sortOrder', sortOrder);
 
-      const response = await apiRequest<PlayersResponse>(`/api/players?${params.toString()}`);
+      const response = await apiRequest<PlayersResponse>(`/players?${params.toString()}`);
 
       setPlayers(response.players);
       setTotal(response.total);
     } catch (err) {
-      toast({
+      showToast({
         title: 'Failed to load players',
         description: err instanceof Error ? err.message : 'An error occurred',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     } finally {
       setLoading(false);
     }
-  }, [search, roleFilter, activeFilter, sortBy, sortOrder, toast]);
+  }, [search, roleFilter, activeFilter, sortBy, sortOrder]);
 
   // Load players on mount and when filters change
   useEffect(() => {
@@ -125,7 +116,7 @@ export default function AdminPage() {
   // Fetch game status
   const fetchGameStatus = useCallback(async () => {
     try {
-      const response = await apiRequest<{ enabled: boolean }>('/api/game/status');
+      const response = await apiRequest<{ enabled: boolean }>('/game/status');
       setGameEnabled(response.enabled);
     } catch (err) {
       console.error('Failed to fetch game status:', err);
@@ -141,25 +132,21 @@ export default function AdminPage() {
   const toggleGameEnabled = async () => {
     setIsTogglingGame(true);
     try {
-      const response = await apiRequest<{ enabled: boolean; message: string }>('/api/game/status', {
+      const response = await apiRequest<{ enabled: boolean; message: string }>('/game/status', {
         method: 'PUT',
         body: JSON.stringify({ enabled: !gameEnabled }),
       });
 
       setGameEnabled(response.enabled);
-      toast({
+      showToast({
         title: response.message,
-        status: response.enabled ? 'success' : 'warning',
-        duration: 3000,
-        isClosable: true,
+        type: response.enabled ? 'success' : 'warning',
       });
     } catch (err) {
-      toast({
+      showToast({
         title: 'Failed to update game status',
         description: err instanceof Error ? err.message : 'An error occurred',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     } finally {
       setIsTogglingGame(false);
@@ -236,23 +223,24 @@ export default function AdminPage() {
 
   return (
     <Container maxW="7xl" py={8}>
-      <VStack spacing={6} align="stretch">
+      <VStack gap="6" align="stretch">
         {/* Header */}
         <HStack justify="space-between">
           <Heading size="lg">Admin Tools</Heading>
-          <HStack spacing={4}>
-            <FormControl display="flex" alignItems="center">
-              <FormLabel htmlFor="game-toggle" mb="0">
-                Game {gameEnabled ? 'Enabled' : 'Disabled'}
-              </FormLabel>
+          <HStack gap="4">
+            <Field
+              label={`Game ${gameEnabled ? 'Enabled' : 'Disabled'}`}
+              display="flex"
+              alignItems="center"
+            >
               <Switch
                 id="game-toggle"
-                colorScheme={gameEnabled ? 'green' : 'red'}
-                isChecked={gameEnabled}
-                onChange={toggleGameEnabled}
-                isDisabled={isTogglingGame}
+                colorPalette={gameEnabled ? 'green' : 'red'}
+                checked={gameEnabled}
+                onCheckedChange={() => toggleGameEnabled()}
+                disabled={isTogglingGame}
               />
-            </FormControl>
+            </Field>
             <Button variant="outline" onClick={() => navigate('/welcome')}>
               Back to Welcome
             </Button>
@@ -261,58 +249,64 @@ export default function AdminPage() {
 
         {/* Filters */}
         <Box bg="white" p={4} borderRadius="lg" shadow="md">
-          <VStack spacing={4} align="stretch">
-            <HStack spacing={4}>
+          <VStack gap="4" align="stretch">
+            <HStack gap="4">
               <Input
                 placeholder="Search by name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 flex={2}
               />
-              <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)} flex={1}>
-                <option value="all">All Roles</option>
-                <option value="host">Host</option>
-                <option value="player">Player</option>
-                <option value="audience">Audience</option>
-              </Select>
-              <Select
-                value={activeFilter}
-                onChange={(e) => setActiveFilter(e.target.value)}
-                flex={1}
-              >
-                <option value="all">All Status</option>
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </Select>
+              <NativeSelectRoot flex={1}>
+                <NativeSelectField
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                >
+                  <option value="all">All Roles</option>
+                  <option value="host">Host</option>
+                  <option value="player">Player</option>
+                  <option value="audience">Audience</option>
+                </NativeSelectField>
+              </NativeSelectRoot>
+              <NativeSelectRoot flex={1}>
+                <NativeSelectField
+                  value={activeFilter}
+                  onChange={(e) => setActiveFilter(e.target.value)}
+                >
+                  <option value="all">All Status</option>
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </NativeSelectField>
+              </NativeSelectRoot>
             </HStack>
 
-            <HStack spacing={4} wrap="wrap">
-              <Button colorScheme="green" onClick={() => setAddPlayerModalOpen(true)}>
+            <HStack gap="4" wrap="wrap">
+              <Button colorPalette="green" onClick={() => setAddPlayerModalOpen(true)}>
                 Add Player
               </Button>
               <Button
-                colorScheme="orange"
+                colorPalette="orange"
                 variant="outline"
                 onClick={() => setResetAllCodesModalOpen(true)}
               >
                 Reset All Codes
               </Button>
               <Button
-                colorScheme="red"
+                colorPalette="red"
                 variant="outline"
                 onClick={() => setDeleteAllPlayersModalOpen(true)}
               >
                 Delete All Players
               </Button>
               <Button
-                colorScheme="blue"
+                colorPalette="blue"
                 variant="outline"
                 onClick={() => setExportDatabaseModalOpen(true)}
               >
                 Export Database
               </Button>
               <Button
-                colorScheme="purple"
+                colorPalette="purple"
                 variant="outline"
                 onClick={() => setImportDatabaseModalOpen(true)}
               >
@@ -329,49 +323,49 @@ export default function AdminPage() {
 
         {/* Players table */}
         <Box bg="white" borderRadius="lg" shadow="md" overflow="hidden">
-          <Table variant="simple">
-            <Thead bg="gray.50">
-              <Tr>
-                <Th cursor="pointer" onClick={() => toggleSort('name')}>
+          <Table.Root>
+            <Table.Header bg="gray.50">
+              <Table.Row>
+                <Table.ColumnHeader cursor="pointer" onClick={() => toggleSort('name')}>
                   Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </Th>
-                <Th cursor="pointer" onClick={() => toggleSort('role')}>
+                </Table.ColumnHeader>
+                <Table.ColumnHeader cursor="pointer" onClick={() => toggleSort('role')}>
                   Role {sortBy === 'role' && (sortOrder === 'asc' ? '↑' : '↓')}
-                </Th>
-                <Th>Status</Th>
-                <Th>Access Code</Th>
-                <Th>Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
+                </Table.ColumnHeader>
+                <Table.ColumnHeader>Status</Table.ColumnHeader>
+                <Table.ColumnHeader>Access Code</Table.ColumnHeader>
+                <Table.ColumnHeader>Actions</Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {players.length === 0 ? (
-                <Tr>
-                  <Td colSpan={5} textAlign="center" py={8}>
+                <Table.Row>
+                  <Table.Cell colSpan={5} textAlign="center" py={8}>
                     <Text color="gray.500">No players found</Text>
-                  </Td>
-                </Tr>
+                  </Table.Cell>
+                </Table.Row>
               ) : (
                 players.map((player) => (
-                  <Tr key={player.id}>
-                    <Td>
+                  <Table.Row key={player.id}>
+                    <Table.Cell>
                       {player.firstName} {player.lastName}
-                    </Td>
-                    <Td>
-                      <Badge colorScheme={getRoleBadgeColor(player.role)}>{player.role}</Badge>
-                    </Td>
-                    <Td>
-                      <Badge colorScheme={player.active ? 'green' : 'red'}>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Tag colorPalette={getRoleBadgeColor(player.role)}>{player.role}</Tag>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <Tag colorPalette={player.active ? 'green' : 'red'}>
                         {player.active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </Td>
-                    <Td fontFamily="mono" fontSize="sm">
+                      </Tag>
+                    </Table.Cell>
+                    <Table.Cell fontFamily="mono" fontSize="sm">
                       {player.accessCode}
-                    </Td>
-                    <Td>
-                      <HStack spacing={2}>
+                    </Table.Cell>
+                    <Table.Cell>
+                      <HStack gap="2">
                         <Button
                           size="sm"
-                          colorScheme="blue"
+                          colorPalette="blue"
                           variant="outline"
                           onClick={() => openViewCodeModal(player)}
                         >
@@ -379,7 +373,7 @@ export default function AdminPage() {
                         </Button>
                         <Button
                           size="sm"
-                          colorScheme="purple"
+                          colorPalette="purple"
                           variant="outline"
                           onClick={() => openEditModal(player)}
                         >
@@ -387,7 +381,7 @@ export default function AdminPage() {
                         </Button>
                         <Button
                           size="sm"
-                          colorScheme="orange"
+                          colorPalette="orange"
                           variant="outline"
                           onClick={() => openResetCodeModal(player)}
                         >
@@ -395,19 +389,19 @@ export default function AdminPage() {
                         </Button>
                         <Button
                           size="sm"
-                          colorScheme={player.active ? 'red' : 'green'}
+                          colorPalette={player.active ? 'red' : 'green'}
                           variant="outline"
                           onClick={() => openDeactivateModal(player)}
                         >
                           {player.active ? 'Deactivate' : 'Activate'}
                         </Button>
                       </HStack>
-                    </Td>
-                  </Tr>
+                    </Table.Cell>
+                  </Table.Row>
                 ))
               )}
-            </Tbody>
-          </Table>
+            </Table.Body>
+          </Table.Root>
         </Box>
       </VStack>
 

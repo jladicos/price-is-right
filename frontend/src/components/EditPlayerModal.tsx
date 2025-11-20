@@ -1,27 +1,20 @@
 import { useState } from 'react';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  VStack,
-  useToast,
-  Alert,
-  AlertIcon,
-  Divider,
-  Text,
-} from '@chakra-ui/react';
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
+} from './ui/dialog';
+import { Button, Input, VStack, Separator, Text } from '@chakra-ui/react';
+import { Field } from './ui/field';
+import { NativeSelectRoot, NativeSelectField } from './ui/native-select';
+import { Alert } from './ui/alert';
 import type { Player, PlayerRole } from '../../../backend/src/types/player';
 import { useAuthStore } from '../store/authStore';
 import { PhotoUpload } from './PhotoUpload';
+import { showToast } from '../utils/toast';
 
 interface EditPlayerModalProps {
   isOpen: boolean;
@@ -31,7 +24,6 @@ interface EditPlayerModalProps {
 }
 
 export function EditPlayerModal({ isOpen, onClose, player, onSuccess }: EditPlayerModalProps) {
-  const toast = useToast();
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isUpdating, setIsUpdating] = useState(false);
   const [firstName, setFirstName] = useState(player.firstName);
@@ -75,11 +67,9 @@ export function EditPlayerModal({ isOpen, onClose, player, onSuccess }: EditPlay
         throw new Error(error.error || 'Failed to update player');
       }
 
-      toast({
+      showToast({
         title: 'Player updated',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
+        type: 'success',
       });
 
       if (onSuccess) {
@@ -90,12 +80,10 @@ export function EditPlayerModal({ isOpen, onClose, player, onSuccess }: EditPlay
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to update player';
       setValidationError(errorMessage);
-      toast({
+      showToast({
         title: 'Error',
         description: errorMessage,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     } finally {
       setIsUpdating(false);
@@ -103,16 +91,15 @@ export function EditPlayerModal({ isOpen, onClose, player, onSuccess }: EditPlay
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
           Edit Player: {player.firstName} {player.lastName}
-        </ModalHeader>
-        <ModalCloseButton />
+        </DialogHeader>
+        <DialogCloseTrigger />
         <form onSubmit={handleSubmit}>
-          <ModalBody>
-            <VStack spacing={4} align="stretch">
+          <DialogBody>
+            <VStack gap="4" align="stretch">
               {/* Photo Upload Section (immediate) */}
               <PhotoUpload
                 playerId={player.id}
@@ -120,64 +107,60 @@ export function EditPlayerModal({ isOpen, onClose, player, onSuccess }: EditPlay
                 onUploadSuccess={onSuccess}
               />
 
-              <Divider />
+              <Separator />
 
               {/* Player Details Section (saved on submit) */}
               <Text fontSize="sm" fontWeight="medium" color="gray.600">
                 Player Details
               </Text>
 
-              {validationError && (
-                <Alert status="error">
-                  <AlertIcon />
-                  {validationError}
-                </Alert>
-              )}
+              {validationError && <Alert status="error">{validationError}</Alert>}
 
-              <FormControl isRequired>
-                <FormLabel>First Name</FormLabel>
+              <Field label="First Name" required>
                 <Input
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="First name"
                 />
-              </FormControl>
+              </Field>
 
-              <FormControl isRequired>
-                <FormLabel>Last Name</FormLabel>
+              <Field label="Last Name" required>
                 <Input
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Last name"
                 />
-              </FormControl>
+              </Field>
 
-              <FormControl isRequired>
-                <FormLabel>Role</FormLabel>
-                <Select value={role} onChange={(e) => setRole(e.target.value as PlayerRole)}>
-                  <option value="host">Host</option>
-                  <option value="player">Player</option>
-                  <option value="audience">Audience</option>
-                </Select>
-              </FormControl>
+              <Field label="Role" required>
+                <NativeSelectRoot>
+                  <NativeSelectField
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as PlayerRole)}
+                  >
+                    <option value="host">Host</option>
+                    <option value="player">Player</option>
+                    <option value="audience">Audience</option>
+                  </NativeSelectField>
+                </NativeSelectRoot>
+              </Field>
 
               {player.role === 'player' && role === 'host' && (
                 <Alert status="warning">
-                  <AlertIcon />
                   Players cannot be promoted to host (unfair advantage)
                 </Alert>
               )}
             </VStack>
-          </ModalBody>
-          <ModalFooter>
+          </DialogBody>
+          <DialogFooter>
             <Button variant="ghost" mr={3} onClick={onClose}>
               Cancel
             </Button>
             <Button
               type="submit"
-              colorScheme="blue"
-              isLoading={isUpdating}
-              isDisabled={
+              colorPalette="blue"
+              loading={isUpdating}
+              disabled={
                 !firstName.trim() ||
                 !lastName.trim() ||
                 (player.role === 'player' && role === 'host')
@@ -185,9 +168,9 @@ export function EditPlayerModal({ isOpen, onClose, player, onSuccess }: EditPlay
             >
               Save Changes
             </Button>
-          </ModalFooter>
+          </DialogFooter>
         </form>
-      </ModalContent>
-    </Modal>
+      </DialogContent>
+    </DialogRoot>
   );
 }

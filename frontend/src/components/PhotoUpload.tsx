@@ -1,17 +1,8 @@
 import { useState, useRef } from 'react';
-import {
-  Box,
-  Button,
-  Image,
-  VStack,
-  HStack,
-  Text,
-  useToast,
-  Input,
-  FormControl,
-  FormLabel,
-} from '@chakra-ui/react';
+import { Box, Button, Image, VStack, HStack, Text, Input } from '@chakra-ui/react';
+import { Field } from './ui/field';
 import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
 
 interface PhotoUploadProps {
   playerId: number;
@@ -20,7 +11,6 @@ interface PhotoUploadProps {
 }
 
 export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUploadProps) {
-  const toast = useToast();
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -37,24 +27,20 @@ export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUp
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast({
+      showToast({
         title: 'Invalid file type',
         description: 'Please select an image file (JPG, PNG, or GIF)',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
+        type: 'error',
       });
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast({
+      showToast({
         title: 'File too large',
         description: 'Please select an image under 5MB',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
+        type: 'error',
       });
       return;
     }
@@ -92,12 +78,10 @@ export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUp
 
       const data = await response.json();
 
-      toast({
+      showToast({
         title: 'Photo uploaded',
         description: 'Player photo has been updated',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
+        type: 'success',
       });
 
       // Clear selection
@@ -111,12 +95,10 @@ export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUp
         onUploadSuccess(data.filename);
       }
     } catch (error) {
-      toast({
+      showToast({
         title: 'Upload failed',
         description: error instanceof Error ? error.message : 'Failed to upload photo',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     } finally {
       setIsUploading(false);
@@ -132,9 +114,8 @@ export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUp
   };
 
   return (
-    <VStack spacing={4} align="stretch">
-      <FormControl>
-        <FormLabel>Player Photo</FormLabel>
+    <VStack gap="4" align="stretch">
+      <Field label="Player Photo">
         <Box
           borderWidth={2}
           borderStyle="dashed"
@@ -144,7 +125,7 @@ export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUp
           textAlign="center"
         >
           {previewUrl ? (
-            <VStack spacing={3}>
+            <VStack gap="3">
               <Image
                 src={previewUrl}
                 alt="Preview"
@@ -153,7 +134,7 @@ export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUp
                 borderRadius="md"
               />
               <HStack>
-                <Button onClick={handleUpload} colorScheme="blue" isLoading={isUploading} size="sm">
+                <Button onClick={handleUpload} colorPalette="blue" loading={isUploading} size="sm">
                   Upload Photo
                 </Button>
                 <Button onClick={handleCancel} size="sm" variant="ghost">
@@ -162,7 +143,7 @@ export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUp
               </HStack>
             </VStack>
           ) : (
-            <VStack spacing={3}>
+            <VStack gap="3">
               {currentPhoto && (
                 <Box>
                   <Text fontSize="sm" color="gray.600" mb={2}>
@@ -186,7 +167,7 @@ export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUp
               />
               <Button
                 onClick={() => fileInputRef.current?.click()}
-                colorScheme="blue"
+                colorPalette="blue"
                 variant="outline"
                 size="sm"
               >
@@ -198,7 +179,7 @@ export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUp
             </VStack>
           )}
         </Box>
-      </FormControl>
+      </Field>
     </VStack>
   );
 }

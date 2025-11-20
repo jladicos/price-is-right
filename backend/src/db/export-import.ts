@@ -32,7 +32,7 @@
  * - Tested extensively (see export-import.test.ts)
  */
 
-import type Database from 'better-sqlite3';
+import type Database from "better-sqlite3";
 
 export interface DatabaseExport {
   version: string;
@@ -69,7 +69,7 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
        FROM players
        ORDER BY id`,
     )
-    .all() as DatabaseExport['players'];
+    .all() as DatabaseExport["players"];
 
   // Export game state
   const gameState = db
@@ -78,10 +78,10 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
        FROM game_state
        ORDER BY key`,
     )
-    .all() as DatabaseExport['gameState'];
+    .all() as DatabaseExport["gameState"];
 
   return {
-    version: '1.0',
+    version: "1.0",
     exportedAt: new Date().toISOString(),
     players,
     gameState,
@@ -92,21 +92,24 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
  * Import database from JSON format
  * WARNING: This will DELETE all existing data!
  */
-export function importDatabase(db: Database.Database, data: DatabaseExport): void {
+export function importDatabase(
+  db: Database.Database,
+  data: DatabaseExport,
+): void {
   // Validate data structure
   if (!data.version || !data.players || !data.gameState) {
-    throw new Error('Invalid export file format');
+    throw new Error("Invalid export file format");
   }
 
-  if (data.version !== '1.0') {
+  if (data.version !== "1.0") {
     throw new Error(`Unsupported export version: ${data.version}`);
   }
 
   // Use transaction for atomicity
   const transaction = db.transaction(() => {
     // Clear existing data
-    db.prepare('DELETE FROM players').run();
-    db.prepare('DELETE FROM game_state').run();
+    db.prepare("DELETE FROM players").run();
+    db.prepare("DELETE FROM game_state").run();
 
     // Import players
     const insertPlayer = db.prepare(`
@@ -145,13 +148,15 @@ export function importDatabase(db: Database.Database, data: DatabaseExport): voi
     }
 
     // Reset SQLite autoincrement sequence for players
-    const maxPlayerId = db.prepare('SELECT MAX(id) as maxId FROM players').get() as {
+    const maxPlayerId = db
+      .prepare("SELECT MAX(id) as maxId FROM players")
+      .get() as {
       maxId: number | null;
     };
     if (maxPlayerId.maxId !== null) {
-      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'players'`).run(
-        maxPlayerId.maxId,
-      );
+      db.prepare(
+        `UPDATE sqlite_sequence SET seq = ? WHERE name = 'players'`,
+      ).run(maxPlayerId.maxId);
     }
   });
 

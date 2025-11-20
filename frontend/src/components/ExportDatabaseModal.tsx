@@ -34,21 +34,18 @@
  */
 
 import { useState } from 'react';
+import { showToast } from '../utils/toast';
+import { useAuthStore } from '../store/authStore';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  Text,
-  VStack,
-  useToast,
-  Alert,
-  AlertIcon,
-} from '@chakra-ui/react';
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
+} from './ui/dialog';
+import { Button, Text, VStack } from '@chakra-ui/react';
+import { Alert } from './ui/alert';
 
 interface ExportDatabaseModalProps {
   isOpen: boolean;
@@ -57,12 +54,11 @@ interface ExportDatabaseModalProps {
 
 export function ExportDatabaseModal({ isOpen, onClose }: ExportDatabaseModalProps) {
   const [isExporting, setIsExporting] = useState(false);
-  const toast = useToast();
+  const sessionToken = useAuthStore((state) => state.sessionToken);
 
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const sessionToken = localStorage.getItem('sessionToken');
       if (!sessionToken) {
         throw new Error('Not authenticated');
       }
@@ -96,22 +92,18 @@ export function ExportDatabaseModal({ isOpen, onClose }: ExportDatabaseModalProp
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast({
+      showToast({
         title: 'Database exported',
         description: `Backup saved as ${filename}`,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
+        type: 'success',
       });
 
       onClose();
     } catch (err) {
-      toast({
+      showToast({
         title: 'Export failed',
         description: err instanceof Error ? err.message : 'An error occurred',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     } finally {
       setIsExporting(false);
@@ -119,32 +111,30 @@ export function ExportDatabaseModal({ isOpen, onClose }: ExportDatabaseModalProp
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Export Database</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <VStack spacing={4} align="stretch">
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()} size="md">
+      <DialogContent>
+        <DialogHeader>Export Database</DialogHeader>
+        <DialogCloseTrigger />
+        <DialogBody>
+          <VStack gap="4" align="stretch">
             <Text>This will export the entire database to a JSON file that you can download.</Text>
 
             <Alert status="info">
-              <AlertIcon />
               The export includes all players and game state. Session tokens are not included for
               security.
             </Alert>
           </VStack>
-        </ModalBody>
+        </DialogBody>
 
-        <ModalFooter>
-          <Button variant="ghost" mr={3} onClick={onClose} isDisabled={isExporting}>
+        <DialogFooter>
+          <Button variant="ghost" mr={3} onClick={onClose} disabled={isExporting}>
             Cancel
           </Button>
-          <Button colorScheme="blue" onClick={handleExport} isLoading={isExporting}>
+          <Button colorPalette="blue" onClick={handleExport} loading={isExporting}>
             Export & Download
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
   );
 }

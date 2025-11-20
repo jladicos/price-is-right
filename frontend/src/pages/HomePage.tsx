@@ -3,7 +3,7 @@ import { Box, Heading, Text, Container, VStack } from '@chakra-ui/react';
 function HomePage() {
   return (
     <Container maxW="container.xl" py={10}>
-      <VStack spacing={8} align="center">
+      <VStack gap="8" align="center">
         <Box textAlign="center">
           <Heading as="h1" size="2xl" mb={4}>
             Welcome to The Price is Right!

@@ -4,11 +4,67 @@ export interface Product {
   images: string[];
 }
 
+/**
+ * Game phase types
+ */
+export type PhaseType = "bidding" | "mini_game" | "wheel" | "showcase";
+
+/**
+ * Bidding phase configuration
+ */
+export interface BiddingPhase {
+  type: "bidding";
+  product_id: string;
+}
+
+/**
+ * Mini-game phase configuration (future extension)
+ */
+export interface MiniGamePhase {
+  type: "mini_game";
+  game_type: string; // e.g., "plinko", "price_tags", etc.
+  product_id: string;
+}
+
+/**
+ * Wheel spin phase configuration
+ */
+export interface WheelPhase {
+  type: "wheel";
+}
+
+/**
+ * Showcase phase configuration
+ */
+export interface ShowcasePhase {
+  type: "showcase";
+  products: string[]; // Array of product IDs
+}
+
+/**
+ * Union type for all game phases
+ */
+export type GamePhase =
+  | BiddingPhase
+  | MiniGamePhase
+  | WheelPhase
+  | ShowcasePhase;
+
+/**
+ * Game structure defining the complete game flow
+ */
+export interface GameStructure {
+  section_1: GamePhase[];
+  section_1_finale: WheelPhase;
+  section_2: GamePhase[];
+  section_2_finale: WheelPhase;
+  finale: ShowcasePhase;
+}
+
+/**
+ * Product configuration file format
+ */
 export interface ProductConfig {
   products: Record<string, Product>;
-  assignments: {
-    bidding_set_1: string[];
-    bidding_set_2: string[];
-    showcase_showdown: string[];
-  };
+  game_structure: GameStructure;
 }

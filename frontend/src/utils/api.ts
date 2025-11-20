@@ -1,7 +1,7 @@
 // API client for communicating with the backend
 
-// Base API URL - defaults to localhost:3001 in development
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Base API URL - defaults to localhost:3001/api in development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Type definitions for API requests/responses
 export interface Player {
@@ -96,20 +96,20 @@ export const apiRequest = apiFetch;
 // Auth API endpoints
 
 export async function login(accessCode: string): Promise<LoginResponse> {
-  return apiFetch<LoginResponse>('/api/auth/login', {
+  return apiFetch<LoginResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ accessCode }),
   });
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch<void>('/api/auth/logout', {
+  await apiFetch<void>('/auth/logout', {
     method: 'POST',
   });
 }
 
 export async function validateSession(): Promise<SessionResponse> {
-  return apiFetch<SessionResponse>('/api/auth/session', {
+  return apiFetch<SessionResponse>('/auth/session', {
     method: 'GET',
   });
 }
@@ -121,7 +121,7 @@ export interface GetPlayersResponse {
 }
 
 export async function getPlayers(): Promise<GetPlayersResponse> {
-  return apiFetch<GetPlayersResponse>('/api/players', {
+  return apiFetch<GetPlayersResponse>('/players', {
     method: 'GET',
   });
 }
@@ -131,7 +131,7 @@ export interface GetPlayerResponse {
 }
 
 export async function getPlayer(id: number): Promise<GetPlayerResponse> {
-  return apiFetch<GetPlayerResponse>(`/api/players/${id}`, {
+  return apiFetch<GetPlayerResponse>(`/players/${id}`, {
     method: 'GET',
   });
 }

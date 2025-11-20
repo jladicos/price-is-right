@@ -1,7 +1,7 @@
-import Database from 'better-sqlite3';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import Database from "better-sqlite3";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +30,9 @@ function createMigrationsTable(db: Database.Database): void {
  */
 function getAppliedMigrations(db: Database.Database): Migration[] {
   const rows = db
-    .prepare('SELECT id, name, applied_at as appliedAt FROM migrations ORDER BY id')
+    .prepare(
+      "SELECT id, name, applied_at as appliedAt FROM migrations ORDER BY id",
+    )
     .all() as Migration[];
   return rows;
 }
@@ -39,7 +41,7 @@ function getAppliedMigrations(db: Database.Database): Migration[] {
  * Gets list of migration files from the migrations directory
  */
 function getMigrationFiles(): { id: number; name: string; path: string }[] {
-  const migrationsDir = path.join(__dirname, '..', '..', 'migrations');
+  const migrationsDir = path.join(__dirname, "..", "..", "migrations");
 
   if (!fs.existsSync(migrationsDir)) {
     return [];
@@ -47,7 +49,7 @@ function getMigrationFiles(): { id: number; name: string; path: string }[] {
 
   const files = fs.readdirSync(migrationsDir);
   const migrations = files
-    .filter((file) => file.endsWith('.sql'))
+    .filter((file) => file.endsWith(".sql"))
     .map((file) => {
       const match = file.match(/^(\d+)-(.+)\.sql$/);
       if (!match) {
@@ -78,7 +80,7 @@ export function runMigrations(db: Database.Database): void {
   const pendingMigrations = migrationFiles.filter((m) => !appliedIds.has(m.id));
 
   if (pendingMigrations.length === 0) {
-    console.log('No pending migrations');
+    console.log("No pending migrations");
     return;
   }
 
@@ -87,11 +89,11 @@ export function runMigrations(db: Database.Database): void {
   for (const migration of pendingMigrations) {
     console.log(`Applying migration ${migration.id}: ${migration.name}`);
 
-    const sql = fs.readFileSync(migration.path, 'utf-8');
+    const sql = fs.readFileSync(migration.path, "utf-8");
 
     try {
       db.exec(sql);
-      db.prepare('INSERT INTO migrations (id, name) VALUES (?, ?)').run(
+      db.prepare("INSERT INTO migrations (id, name) VALUES (?, ?)").run(
         migration.id,
         migration.name,
       );
@@ -102,5 +104,5 @@ export function runMigrations(db: Database.Database): void {
     }
   }
 
-  console.log('All migrations completed successfully');
+  console.log("All migrations completed successfully");
 }

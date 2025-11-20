@@ -1,29 +1,19 @@
 import { useState, useRef } from 'react';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  VStack,
-  HStack,
-  useToast,
-  Alert,
-  AlertIcon,
-  Text,
-  Code,
-  Image,
-  Box,
-} from '@chakra-ui/react';
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
+} from './ui/dialog';
+import { Button, Input, VStack, HStack, Text, Code, Image, Box } from '@chakra-ui/react';
+import { Field } from './ui/field';
+import { NativeSelectRoot, NativeSelectField } from './ui/native-select';
+import { Alert } from './ui/alert';
 import type { PlayerRole } from '../../../backend/src/types/player';
 import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
 
 interface AddPlayerModalProps {
   isOpen: boolean;
@@ -32,7 +22,6 @@ interface AddPlayerModalProps {
 }
 
 export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalProps) {
-  const toast = useToast();
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isCreating, setIsCreating] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -50,24 +39,20 @@ export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalPro
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast({
+      showToast({
         title: 'Invalid file type',
         description: 'Please select an image file (JPG, PNG, or GIF)',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
+        type: 'error',
       });
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast({
+      showToast({
         title: 'File too large',
         description: 'Please select an image under 5MB',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
+        type: 'error',
       });
       return;
     }
@@ -128,11 +113,9 @@ export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalPro
       // Show the generated access code
       setCreatedAccessCode(data.player.accessCode);
 
-      toast({
+      showToast({
         title: 'Player created',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
+        type: 'success',
       });
 
       if (onSuccess) {
@@ -141,12 +124,10 @@ export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalPro
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create player';
       setValidationError(errorMessage);
-      toast({
+      showToast({
         title: 'Error',
         description: errorMessage,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     } finally {
       setIsCreating(false);
@@ -171,61 +152,54 @@ export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalPro
   const handleCopyCode = () => {
     if (createdAccessCode) {
       navigator.clipboard.writeText(createdAccessCode);
-      toast({
+      showToast({
         title: 'Access code copied',
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
+        type: 'success',
       });
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered size="lg">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Add New Player</ModalHeader>
-        <ModalCloseButton />
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && handleClose()} size="lg">
+      <DialogContent>
+        <DialogHeader>Add New Player</DialogHeader>
+        <DialogCloseTrigger />
         {!createdAccessCode ? (
           <form onSubmit={handleSubmit}>
-            <ModalBody>
-              <VStack spacing={4} align="stretch">
-                {validationError && (
-                  <Alert status="error">
-                    <AlertIcon />
-                    {validationError}
-                  </Alert>
-                )}
+            <DialogBody>
+              <VStack gap="4" align="stretch">
+                {validationError && <Alert status="error">{validationError}</Alert>}
 
-                <FormControl isRequired>
-                  <FormLabel>First Name</FormLabel>
+                <Field label="First Name" required>
                   <Input
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="First name"
                   />
-                </FormControl>
+                </Field>
 
-                <FormControl isRequired>
-                  <FormLabel>Last Name</FormLabel>
+                <Field label="Last Name" required>
                   <Input
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Last name"
                   />
-                </FormControl>
+                </Field>
 
-                <FormControl isRequired>
-                  <FormLabel>Role</FormLabel>
-                  <Select value={role} onChange={(e) => setRole(e.target.value as PlayerRole)}>
-                    <option value="player">Player</option>
-                    <option value="audience">Audience</option>
-                    <option value="host">Host</option>
-                  </Select>
-                </FormControl>
+                <Field label="Role" required>
+                  <NativeSelectRoot>
+                    <NativeSelectField
+                      value={role}
+                      onChange={(e) => setRole(e.target.value as PlayerRole)}
+                    >
+                      <option value="player">Player</option>
+                      <option value="audience">Audience</option>
+                      <option value="host">Host</option>
+                    </NativeSelectField>
+                  </NativeSelectRoot>
+                </Field>
 
-                <FormControl>
-                  <FormLabel>Photo (Optional)</FormLabel>
+                <Field label="Photo (Optional)">
                   <Box
                     borderWidth={2}
                     borderStyle="dashed"
@@ -235,7 +209,7 @@ export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalPro
                     textAlign="center"
                   >
                     {previewUrl ? (
-                      <VStack spacing={3}>
+                      <VStack gap="3">
                         <Image
                           src={previewUrl}
                           alt="Preview"
@@ -248,7 +222,7 @@ export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalPro
                         </Button>
                       </VStack>
                     ) : (
-                      <VStack spacing={2}>
+                      <VStack gap="2">
                         <Input
                           ref={fileInputRef}
                           type="file"
@@ -258,7 +232,7 @@ export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalPro
                         />
                         <Button
                           onClick={() => fileInputRef.current?.click()}
-                          colorScheme="blue"
+                          colorPalette="blue"
                           variant="outline"
                           size="sm"
                         >
@@ -270,31 +244,28 @@ export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalPro
                       </VStack>
                     )}
                   </Box>
-                </FormControl>
+                </Field>
               </VStack>
-            </ModalBody>
-            <ModalFooter>
+            </DialogBody>
+            <DialogFooter>
               <Button variant="ghost" mr={3} onClick={handleClose}>
                 Cancel
               </Button>
               <Button
                 type="submit"
-                colorScheme="green"
-                isLoading={isCreating}
-                isDisabled={!firstName.trim() || !lastName.trim()}
+                colorPalette="green"
+                loading={isCreating}
+                disabled={!firstName.trim() || !lastName.trim()}
               >
                 Create Player
               </Button>
-            </ModalFooter>
+            </DialogFooter>
           </form>
         ) : (
           <>
-            <ModalBody>
-              <VStack spacing={4} align="stretch">
-                <Alert status="success">
-                  <AlertIcon />
-                  Player created successfully!
-                </Alert>
+            <DialogBody>
+              <VStack gap="4" align="stretch">
+                <Alert status="success">Player created successfully!</Alert>
 
                 <Text>
                   <strong>
@@ -311,7 +282,7 @@ export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalPro
                     <Code fontSize="2xl" px={4} py={2} flex={1} textAlign="center">
                       {createdAccessCode}
                     </Code>
-                    <Button onClick={handleCopyCode} colorScheme="blue" size="sm">
+                    <Button onClick={handleCopyCode} colorPalette="blue" size="sm">
                       Copy
                     </Button>
                   </HStack>
@@ -321,15 +292,15 @@ export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalPro
                   Share this code with the player so they can log in.
                 </Text>
               </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <Button onClick={handleClose} colorScheme="blue">
+            </DialogBody>
+            <DialogFooter>
+              <Button onClick={handleClose} colorPalette="blue">
                 Close
               </Button>
-            </ModalFooter>
+            </DialogFooter>
           </>
         )}
-      </ModalContent>
-    </Modal>
+      </DialogContent>
+    </DialogRoot>
   );
 }

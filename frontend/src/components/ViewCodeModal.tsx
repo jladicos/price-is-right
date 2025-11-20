@@ -1,22 +1,14 @@
+import { Button, Text, VStack, HStack, Input, Code } from '@chakra-ui/react';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  Text,
-  VStack,
-  HStack,
-  Input,
-  InputGroup,
-  InputRightElement,
-  useToast,
-  Code,
-} from '@chakra-ui/react';
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
+} from './ui/dialog';
 import type { Player } from '../../../backend/src/types/player';
+import { showToast } from '../utils/toast';
 
 interface ViewCodeModalProps {
   isOpen: boolean;
@@ -25,40 +17,33 @@ interface ViewCodeModalProps {
 }
 
 export function ViewCodeModal({ isOpen, onClose, player }: ViewCodeModalProps) {
-  const toast = useToast();
-
   const gameUrl = `${window.location.origin}/?code=${player.accessCode}`;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(player.accessCode);
-    toast({
+    showToast({
       title: 'Access code copied',
-      status: 'success',
-      duration: 2000,
-      isClosable: true,
+      type: 'success',
     });
   };
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(gameUrl);
-    toast({
+    showToast({
       title: 'URL copied',
-      status: 'success',
-      duration: 2000,
-      isClosable: true,
+      type: 'success',
     });
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
           Access Code for {player.firstName} {player.lastName}
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <VStack spacing={4} align="stretch">
+        </DialogHeader>
+        <DialogCloseTrigger />
+        <DialogBody>
+          <VStack gap="4" align="stretch">
             <div>
               <Text fontSize="sm" fontWeight="medium" mb={2}>
                 Access Code
@@ -67,7 +52,7 @@ export function ViewCodeModal({ isOpen, onClose, player }: ViewCodeModalProps) {
                 <Code fontSize="2xl" px={4} py={2} flex={1} textAlign="center">
                   {player.accessCode}
                 </Code>
-                <Button onClick={handleCopyCode} colorScheme="blue" size="sm">
+                <Button onClick={handleCopyCode} colorPalette="blue" size="sm">
                   Copy
                 </Button>
               </HStack>
@@ -77,21 +62,19 @@ export function ViewCodeModal({ isOpen, onClose, player }: ViewCodeModalProps) {
               <Text fontSize="sm" fontWeight="medium" mb={2}>
                 Direct Link
               </Text>
-              <InputGroup>
-                <Input value={gameUrl} readOnly size="sm" />
-                <InputRightElement width="4.5rem">
-                  <Button onClick={handleCopyUrl} size="xs" h="1.75rem">
-                    Copy
-                  </Button>
-                </InputRightElement>
-              </InputGroup>
+              <HStack>
+                <Input value={gameUrl} readOnly size="sm" flex={1} />
+                <Button onClick={handleCopyUrl} size="sm">
+                  Copy
+                </Button>
+              </HStack>
             </div>
           </VStack>
-        </ModalBody>
-        <ModalFooter>
+        </DialogBody>
+        <DialogFooter>
           <Button onClick={onClose}>Close</Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
   );
 }

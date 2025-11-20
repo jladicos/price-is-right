@@ -8,6 +8,8 @@ import {
   setSessionTokenGetter,
   type Player,
 } from '../utils/api';
+import { AUTH_STORAGE_KEY } from '../constants/auth';
+import { setGameStoreSessionTokenGetter } from './gameStore';
 
 // Auth store state
 interface AuthState {
@@ -98,7 +100,7 @@ export const useAuthStore = create<AuthStore>()(
             loading: false,
             error: null,
           });
-        } catch (error) {
+        } catch (_error) {
           // Session is invalid, clear it
           set({
             sessionToken: null,
@@ -124,7 +126,7 @@ export const useAuthStore = create<AuthStore>()(
       },
     }),
     {
-      name: 'pir_auth_storage',
+      name: AUTH_STORAGE_KEY,
       partialize: (state) => ({
         sessionToken: state.sessionToken,
         currentPlayer: state.currentPlayer,
@@ -133,9 +135,13 @@ export const useAuthStore = create<AuthStore>()(
   ),
 );
 
-// Set up API client integration
-setSessionTokenGetter(() => useAuthStore.getState().sessionToken);
-setSessionExpiredHandler(() => useAuthStore.getState().handleSessionExpired());
+// Set up API client integration with both api.ts and gameStore.ts
+const getToken = () => useAuthStore.getState().sessionToken;
+const handleExpired = () => useAuthStore.getState().handleSessionExpired();
+
+setSessionTokenGetter(getToken);
+setSessionExpiredHandler(handleExpired);
+setGameStoreSessionTokenGetter(getToken);
 
 // Auto-validate session on app load if token exists
 const initialState = useAuthStore.getState();

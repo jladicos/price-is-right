@@ -1,21 +1,17 @@
 import { useState } from 'react';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  Text,
-  VStack,
-  useToast,
-  Alert,
-  AlertIcon,
-} from '@chakra-ui/react';
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
+} from './ui/dialog';
+import { Button, Text, VStack } from '@chakra-ui/react';
+import { Alert } from './ui/alert';
 import type { Player } from '../../../backend/src/types/player';
 import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
 
 interface DeactivateModalProps {
   isOpen: boolean;
@@ -25,7 +21,6 @@ interface DeactivateModalProps {
 }
 
 export function DeactivateModal({ isOpen, onClose, player, onSuccess }: DeactivateModalProps) {
-  const toast = useToast();
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -48,14 +43,12 @@ export function DeactivateModal({ isOpen, onClose, player, onSuccess }: Deactiva
         throw new Error(error.error || `Failed to ${action} player`);
       }
 
-      toast({
+      showToast({
         title: `Player ${isDeactivating ? 'deactivated' : 'activated'}`,
         description: isDeactivating
           ? 'Player has been deactivated and logged out'
           : 'Player has been activated',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
+        type: 'success',
       });
 
       if (onSuccess) {
@@ -64,12 +57,10 @@ export function DeactivateModal({ isOpen, onClose, player, onSuccess }: Deactiva
 
       onClose();
     } catch (error) {
-      toast({
+      showToast({
         title: 'Error',
         description: error instanceof Error ? error.message : `Failed to ${action} player`,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     } finally {
       setIsUpdating(false);
@@ -77,16 +68,14 @@ export function DeactivateModal({ isOpen, onClose, player, onSuccess }: Deactiva
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>{isDeactivating ? 'Deactivate' : 'Activate'} Player</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <VStack spacing={4} align="stretch">
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
+      <DialogContent>
+        <DialogHeader>{isDeactivating ? 'Deactivate' : 'Activate'} Player</DialogHeader>
+        <DialogCloseTrigger />
+        <DialogBody>
+          <VStack gap="4" align="stretch">
             {isDeactivating && (
               <Alert status="warning">
-                <AlertIcon />
                 This will log out the player and prevent them from accessing the game
               </Alert>
             )}
@@ -103,20 +92,20 @@ export function DeactivateModal({ isOpen, onClose, player, onSuccess }: Deactiva
               </Text>
             )}
           </VStack>
-        </ModalBody>
-        <ModalFooter>
+        </DialogBody>
+        <DialogFooter>
           <Button variant="ghost" mr={3} onClick={onClose}>
             Cancel
           </Button>
           <Button
-            colorScheme={isDeactivating ? 'red' : 'green'}
+            colorPalette={isDeactivating ? 'red' : 'green'}
             onClick={handleConfirm}
-            isLoading={isUpdating}
+            loading={isUpdating}
           >
             {isDeactivating ? 'Deactivate' : 'Activate'}
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
   );
 }

@@ -1,18 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  Container,
-  FormControl,
-  FormLabel,
-  Input,
-  VStack,
-  Heading,
-  Alert,
-  AlertIcon,
-  AlertDescription,
-} from '@chakra-ui/react';
+import { Box, Button, Container, Input, VStack, Heading } from '@chakra-ui/react';
+import { Field } from '../components/ui/field';
+import { Alert } from '../components/ui/alert';
 import { useAuthStore } from '../store/authStore';
 
 export default function RootPage() {
@@ -51,7 +41,7 @@ export default function RootPage() {
       await login(normalizedCode);
       // On success, navigate to welcome page
       navigate('/welcome');
-    } catch (err) {
+    } catch (_err) {
       // Error is already set in the store
       setIsSubmitting(false);
     }
@@ -72,21 +62,15 @@ export default function RootPage() {
 
   return (
     <Container maxW="md" centerContent py={10}>
-      <VStack spacing={8} w="100%">
+      <VStack gap="8" w="100%">
         <Heading size="xl">Price Is Right Game</Heading>
 
-        {error && (
-          <Alert status="error" borderRadius="md">
-            <AlertIcon />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        {error && <Alert status="error">{error}</Alert>}
 
         <Box w="100%" bg="white" p={8} borderRadius="lg" shadow="md">
           <form onSubmit={handleSubmit}>
-            <VStack spacing={4}>
-              <FormControl isRequired>
-                <FormLabel>Access Code</FormLabel>
+            <VStack gap="4">
+              <Field label="Access Code" required>
                 <Input
                   type="text"
                   value={accessCode}
@@ -94,18 +78,19 @@ export default function RootPage() {
                   placeholder="Enter your 6-character code"
                   maxLength={6}
                   autoFocus
-                  isDisabled={isSubmitting || loading}
+                  disabled={isSubmitting || loading}
                   textTransform="uppercase"
+                  required
                 />
-              </FormControl>
+              </Field>
 
               <Button
                 type="submit"
-                colorScheme="blue"
+                colorPalette="blue"
                 width="100%"
-                isLoading={isSubmitting || loading}
+                loading={isSubmitting || loading}
                 loadingText="Logging in..."
-                isDisabled={!accessCode.trim() || isSubmitting || loading}
+                disabled={!accessCode.trim() || isSubmitting || loading}
               >
                 Log In
               </Button>

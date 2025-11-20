@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '../test/test-utils';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import WelcomePage from './WelcomePage';
@@ -153,15 +153,21 @@ describe('WelcomePage', () => {
         clearError: vi.fn(),
       });
 
-      render(
+      const { container } = render(
         <BrowserRouter>
           <WelcomePage />
         </BrowserRouter>,
       );
 
-      // Chakra Avatar may render img differently
-      const avatars = screen.queryAllByRole('img');
-      expect(avatars.length).toBeGreaterThan(0);
+      // Chakra v3 Avatar.Image renders an img element
+      // The Avatar snippet renders both fallback and image elements
+      const avatarImg = container.querySelector('img[src="/images/players/john-doe.jpg"]');
+      expect(avatarImg).toBeTruthy();
+
+      // Check that fallback exists with correct initials
+      const fallback = container.querySelector('[data-part="fallback"]');
+      expect(fallback).toBeTruthy();
+      expect(fallback?.textContent).toBe('JD');
     });
   });
 
@@ -415,7 +421,7 @@ describe('WelcomePage', () => {
       );
 
       await waitFor(() => {
-        expect(apiRequest).toHaveBeenCalledWith('/api/game/status');
+        expect(apiRequest).toHaveBeenCalledWith('/game/status');
       });
     });
 

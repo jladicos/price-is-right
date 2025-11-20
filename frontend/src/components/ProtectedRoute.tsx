@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
   if (loading) {
     return (
       <Center h="100vh">
-        <Spinner size="xl" />
+        <Spinner size="xl">Loading</Spinner>
       </Center>
     );
   }

@@ -1,27 +1,18 @@
 import { useState } from 'react';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  Text,
-  VStack,
-  useToast,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  Checkbox,
-  Box,
-  Input,
-  FormControl,
-  FormLabel,
-} from '@chakra-ui/react';
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
+} from './ui/dialog';
+import { Button, Text, VStack, Input } from '@chakra-ui/react';
+import { Alert } from './ui/alert';
+import { Checkbox } from './ui/checkbox';
+import { Field } from './ui/field';
 import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
 
 interface DeleteAllPlayersModalProps {
   isOpen: boolean;
@@ -30,7 +21,6 @@ interface DeleteAllPlayersModalProps {
 }
 
 export function DeleteAllPlayersModal({ isOpen, onClose, onSuccess }: DeleteAllPlayersModalProps) {
-  const toast = useToast();
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -57,12 +47,10 @@ export function DeleteAllPlayersModal({ isOpen, onClose, onSuccess }: DeleteAllP
 
       const data = await response.json();
 
-      toast({
+      showToast({
         title: 'Players deleted',
         description: data.message,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
+        type: 'success',
       });
 
       if (onSuccess) {
@@ -71,12 +59,10 @@ export function DeleteAllPlayersModal({ isOpen, onClose, onSuccess }: DeleteAllP
 
       handleClose();
     } catch (error) {
-      toast({
+      showToast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to delete players',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     } finally {
       setIsDeleting(false);
@@ -90,27 +76,20 @@ export function DeleteAllPlayersModal({ isOpen, onClose, onSuccess }: DeleteAllP
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered size="lg">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Delete All Non-Host Players</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <VStack spacing={4} align="stretch">
-            <Alert status="error">
-              <AlertIcon />
-              <Box>
-                <AlertTitle>EXTREME DANGER: Permanent Data Loss</AlertTitle>
-                <AlertDescription>
-                  This will PERMANENTLY DELETE all non-host players from the database.
-                </AlertDescription>
-              </Box>
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && handleClose()} size="lg">
+      <DialogContent>
+        <DialogHeader>Delete All Non-Host Players</DialogHeader>
+        <DialogCloseTrigger />
+        <DialogBody>
+          <VStack gap="4" align="stretch">
+            <Alert status="error" title="EXTREME DANGER: Permanent Data Loss">
+              This will PERMANENTLY DELETE all non-host players from the database.
             </Alert>
 
             <Text fontWeight="bold" color="red.600">
               What will happen:
             </Text>
-            <VStack spacing={2} align="stretch" pl={4}>
+            <VStack gap="2" align="stretch" pl={4}>
               <Text>• ALL players (except hosts) will be PERMANENTLY DELETED</Text>
               <Text>• ALL audience members will be PERMANENTLY DELETED</Text>
               <Text>• This affects EVERY non-host player, ignoring current filters</Text>
@@ -126,17 +105,16 @@ export function DeleteAllPlayersModal({ isOpen, onClose, onSuccess }: DeleteAllP
             </Text>
 
             <Checkbox
-              isChecked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
-              colorScheme="red"
+              checked={confirmed}
+              onCheckedChange={(e) => setConfirmed(e.checked === true)}
+              colorPalette="red"
             >
               <Text fontWeight="bold">
                 I understand this will permanently delete all non-host players
               </Text>
             </Checkbox>
 
-            <FormControl isRequired>
-              <FormLabel fontWeight="bold">Type &quot;{CONFIRM_PHRASE}&quot; to confirm:</FormLabel>
+            <Field label={`Type "${CONFIRM_PHRASE}" to confirm:`} required>
               <Input
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
@@ -144,23 +122,23 @@ export function DeleteAllPlayersModal({ isOpen, onClose, onSuccess }: DeleteAllP
                 autoComplete="off"
                 bg={confirmText === CONFIRM_PHRASE ? 'green.50' : 'white'}
               />
-            </FormControl>
+            </Field>
           </VStack>
-        </ModalBody>
-        <ModalFooter>
+        </DialogBody>
+        <DialogFooter>
           <Button variant="ghost" mr={3} onClick={handleClose}>
             Cancel
           </Button>
           <Button
-            colorScheme="red"
+            colorPalette="red"
             onClick={handleDelete}
-            isLoading={isDeleting}
-            isDisabled={!confirmed || confirmText !== CONFIRM_PHRASE}
+            loading={isDeleting}
+            disabled={!confirmed || confirmText !== CONFIRM_PHRASE}
           >
             Delete All Players
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
   );
 }

@@ -6,47 +6,42 @@ import {
   VStack,
   Heading,
   Text,
-  Avatar,
   HStack,
-  useToast,
   Spinner,
   Center,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
 } from '@chakra-ui/react';
+import { Avatar } from '../components/ui/avatar';
+import { Alert } from '../components/ui/alert';
 import { useAuthStore } from '../store/authStore';
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../utils/api';
+import { showToast } from '../utils/toast';
 
 export default function WelcomePage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const toast = useToast();
   const { currentPlayer, loading, logout } = useAuthStore();
   const [gameEnabled, setGameEnabled] = useState(true);
 
   // Show error message if passed via navigation state
   useEffect(() => {
-    if (location.state && (location.state as any).error) {
-      toast({
+    const locationState = location.state as { error?: string } | null;
+    if (locationState?.error) {
+      showToast({
         title: 'Access Denied',
-        description: (location.state as any).error,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        description: locationState.error,
+        type: 'error',
       });
       // Clear the state so it doesn't show again on refresh
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location, toast, navigate]);
+  }, [location, navigate]);
 
   // Fetch game status
   useEffect(() => {
     const fetchGameStatus = async () => {
       try {
-        const response = await apiRequest<{ enabled: boolean }>('/api/game/status');
+        const response = await apiRequest<{ enabled: boolean }>('/game/status');
         setGameEnabled(response.enabled);
       } catch (err) {
         console.error('Failed to fetch game status:', err);
@@ -61,30 +56,26 @@ export default function WelcomePage() {
       await logout();
       navigate('/');
     } catch (err) {
-      toast({
+      showToast({
         title: 'Logout failed',
         description: err instanceof Error ? err.message : 'An error occurred',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     }
   };
 
   const handlePlaceholderClick = (feature: string) => {
-    toast({
+    showToast({
       title: 'Coming soon',
       description: `${feature} will be available in the next phase of development.`,
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
+      type: 'info',
     });
   };
 
   if (loading) {
     return (
       <Center h="100vh">
-        <Spinner size="xl" />
+        <Spinner size="xl">Loading</Spinner>
       </Center>
     );
   }
@@ -97,16 +88,16 @@ export default function WelcomePage() {
 
   return (
     <Container maxW="2xl" centerContent py={10}>
-      <VStack spacing={8} w="100%">
+      <VStack gap="8" w="100%">
         <Box w="100%" bg="white" p={8} borderRadius="lg" shadow="md" textAlign="center">
-          <VStack spacing={6}>
+          <VStack gap="6">
             <Avatar
               size="2xl"
               name={`${currentPlayer.firstName} ${currentPlayer.lastName}`}
               src={playerPhotoUrl}
             />
 
-            <VStack spacing={2}>
+            <VStack gap="2">
               <Heading size="lg">Welcome, {currentPlayer.firstName}!</Heading>
               <Text color="gray.600" fontSize="sm" textTransform="capitalize">
                 Role: {currentPlayer.role}
@@ -114,31 +105,25 @@ export default function WelcomePage() {
             </VStack>
 
             {!gameEnabled && (
-              <Alert status="warning" borderRadius="md">
-                <AlertIcon />
-                <Box>
-                  <AlertTitle>Game Currently Disabled</AlertTitle>
-                  <AlertDescription>
-                    The game is currently in maintenance mode. Please check back later.
-                  </AlertDescription>
-                </Box>
+              <Alert status="warning" title="Game Currently Disabled">
+                The game is currently in maintenance mode. Please check back later.
               </Alert>
             )}
 
-            <VStack spacing={3} w="100%" pt={4}>
+            <VStack gap="3" w="100%" pt={4}>
               {currentPlayer.role === 'host' && (
                 <>
                   <Button
-                    colorScheme="blue"
+                    colorPalette="blue"
                     width="100%"
                     size="lg"
-                    onClick={() => handlePlaceholderClick('Game Control')}
-                    isDisabled={!gameEnabled}
+                    onClick={() => navigate('/host/game-control')}
+                    disabled={!gameEnabled}
                   >
                     Game Control
                   </Button>
                   <Button
-                    colorScheme="purple"
+                    colorPalette="purple"
                     width="100%"
                     size="lg"
                     onClick={() => navigate('/admin')}
@@ -150,11 +135,11 @@ export default function WelcomePage() {
 
               {currentPlayer.role === 'player' && (
                 <Button
-                  colorScheme="green"
+                  colorPalette="green"
                   width="100%"
                   size="lg"
                   onClick={() => handlePlaceholderClick('Enter Game')}
-                  isDisabled={!gameEnabled}
+                  disabled={!gameEnabled}
                 >
                   Enter Game
                 </Button>
@@ -162,11 +147,11 @@ export default function WelcomePage() {
 
               {currentPlayer.role === 'audience' && (
                 <Button
-                  colorScheme="teal"
+                  colorPalette="teal"
                   width="100%"
                   size="lg"
                   onClick={() => handlePlaceholderClick('Watch Game')}
-                  isDisabled={!gameEnabled}
+                  disabled={!gameEnabled}
                 >
                   Watch Game
                 </Button>
@@ -175,7 +160,7 @@ export default function WelcomePage() {
           </VStack>
         </Box>
 
-        <HStack spacing={4}>
+        <HStack gap="4">
           <Button variant="outline" onClick={handleLogout}>
             Logout
           </Button>

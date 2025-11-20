@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '../test/test-utils';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import AdminPage from './AdminPage';
@@ -327,7 +327,7 @@ describe('AdminPage', () => {
         expect(screen.getByText('Game Enabled')).toBeInTheDocument();
       });
 
-      expect(apiModule.apiRequest).toHaveBeenCalledWith('/api/game/status');
+      expect(apiModule.apiRequest).toHaveBeenCalledWith('/game/status');
     });
 
     it('should display "Game Disabled" when game is disabled', async () => {
@@ -358,7 +358,9 @@ describe('AdminPage', () => {
       );
 
       await waitFor(() => {
-        const switchElement = screen.getByRole('checkbox', { name: /game enabled/i });
+        const switchElement = screen.getByRole('checkbox', {
+          name: /game enabled/i,
+        });
         expect(switchElement).toBeInTheDocument();
         expect(switchElement).toBeChecked();
       });
@@ -384,12 +386,14 @@ describe('AdminPage', () => {
       });
 
       // Click the toggle switch
-      const switchElement = screen.getByRole('checkbox', { name: /game enabled/i });
+      const switchElement = screen.getByRole('checkbox', {
+        name: /game enabled/i,
+      });
       await user.click(switchElement);
 
       // Verify PUT was called with correct payload
       await waitFor(() => {
-        expect(apiModule.apiRequest).toHaveBeenCalledWith('/api/game/status', {
+        expect(apiModule.apiRequest).toHaveBeenCalledWith('/game/status', {
           method: 'PUT',
           body: JSON.stringify({ enabled: false }),
         });
@@ -416,7 +420,9 @@ describe('AdminPage', () => {
       });
 
       // Click toggle
-      const switchElement = screen.getByRole('checkbox', { name: /game enabled/i });
+      const switchElement = screen.getByRole('checkbox', {
+        name: /game enabled/i,
+      });
       await user.click(switchElement);
 
       // Should now show "Disabled"
@@ -429,15 +435,15 @@ describe('AdminPage', () => {
       const user = userEvent.setup();
 
       // Create a promise we can control
-      let resolveToggle: (value: any) => void;
-      const togglePromise = new Promise((resolve) => {
+      let resolveToggle: (value: { enabled: boolean }) => void;
+      const togglePromise = new Promise<{ enabled: boolean }>((resolve) => {
         resolveToggle = resolve;
       });
 
       vi.mocked(apiModule.apiRequest)
         .mockResolvedValueOnce(mockPlayersResponse)
         .mockResolvedValueOnce({ enabled: true })
-        .mockReturnValueOnce(togglePromise as any); // Toggle in progress
+        .mockReturnValueOnce(togglePromise as Promise<{ enabled: boolean }>); // Toggle in progress
 
       render(
         <MemoryRouter>
@@ -449,7 +455,9 @@ describe('AdminPage', () => {
         expect(screen.getByText('Game Enabled')).toBeInTheDocument();
       });
 
-      const switchElement = screen.getByRole('checkbox', { name: /game enabled/i });
+      const switchElement = screen.getByRole('checkbox', {
+        name: /game enabled/i,
+      });
       await user.click(switchElement);
 
       // Switch should be disabled while loading
@@ -482,7 +490,9 @@ describe('AdminPage', () => {
         expect(screen.getByText('Game Enabled')).toBeInTheDocument();
       });
 
-      const switchElement = screen.getByRole('checkbox', { name: /game enabled/i });
+      const switchElement = screen.getByRole('checkbox', {
+        name: /game enabled/i,
+      });
       await user.click(switchElement);
 
       // Should still show enabled (toggle failed)

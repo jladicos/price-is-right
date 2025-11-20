@@ -1,24 +1,17 @@
 import { useState } from 'react';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  Text,
-  VStack,
-  useToast,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  Checkbox,
-  Box,
-} from '@chakra-ui/react';
+  DialogRoot,
+  DialogContent,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogCloseTrigger,
+} from './ui/dialog';
+import { Button, Text, VStack } from '@chakra-ui/react';
+import { Alert } from './ui/alert';
+import { Checkbox } from './ui/checkbox';
 import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
 
 interface ResetAllCodesModalProps {
   isOpen: boolean;
@@ -27,7 +20,6 @@ interface ResetAllCodesModalProps {
 }
 
 export function ResetAllCodesModal({ isOpen, onClose, onSuccess }: ResetAllCodesModalProps) {
-  const toast = useToast();
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isResetting, setIsResetting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -51,12 +43,10 @@ export function ResetAllCodesModal({ isOpen, onClose, onSuccess }: ResetAllCodes
 
       const data = await response.json();
 
-      toast({
+      showToast({
         title: 'Access codes reset',
         description: data.message,
-        status: 'success',
-        duration: 5000,
-        isClosable: true,
+        type: 'success',
       });
 
       if (onSuccess) {
@@ -65,12 +55,10 @@ export function ResetAllCodesModal({ isOpen, onClose, onSuccess }: ResetAllCodes
 
       handleClose();
     } catch (error) {
-      toast({
+      showToast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to reset codes',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
+        type: 'error',
       });
     } finally {
       setIsResetting(false);
@@ -83,25 +71,18 @@ export function ResetAllCodesModal({ isOpen, onClose, onSuccess }: ResetAllCodes
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered size="lg">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Reset All Access Codes</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <VStack spacing={4} align="stretch">
-            <Alert status="error">
-              <AlertIcon />
-              <Box>
-                <AlertTitle>Destructive Action Warning</AlertTitle>
-                <AlertDescription>
-                  This will reset access codes for ALL players in the system.
-                </AlertDescription>
-              </Box>
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && handleClose()} size="lg">
+      <DialogContent>
+        <DialogHeader>Reset All Access Codes</DialogHeader>
+        <DialogCloseTrigger />
+        <DialogBody>
+          <VStack gap="4" align="stretch">
+            <Alert status="error" title="Destructive Action Warning">
+              This will reset access codes for ALL players in the system.
             </Alert>
 
             <Text fontWeight="bold">What will happen:</Text>
-            <VStack spacing={2} align="stretch" pl={4}>
+            <VStack gap="2" align="stretch" pl={4}>
               <Text>• ALL players will receive new access codes</Text>
               <Text>• ALL players will be immediately logged out</Text>
               <Text>• This affects EVERY player, ignoring current filters</Text>
@@ -114,30 +95,30 @@ export function ResetAllCodesModal({ isOpen, onClose, onSuccess }: ResetAllCodes
             </Text>
 
             <Checkbox
-              isChecked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
-              colorScheme="red"
+              checked={confirmed}
+              onCheckedChange={(e) => setConfirmed(e.checked === true)}
+              colorPalette="red"
             >
               <Text fontWeight="bold">
                 I understand this will affect ALL players and cannot be undone
               </Text>
             </Checkbox>
           </VStack>
-        </ModalBody>
-        <ModalFooter>
+        </DialogBody>
+        <DialogFooter>
           <Button variant="ghost" mr={3} onClick={handleClose}>
             Cancel
           </Button>
           <Button
-            colorScheme="red"
+            colorPalette="red"
             onClick={handleReset}
-            isLoading={isResetting}
-            isDisabled={!confirmed}
+            loading={isResetting}
+            disabled={!confirmed}
           >
             Reset All Codes
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </DialogRoot>
   );
 }

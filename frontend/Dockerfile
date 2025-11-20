@@ -2,14 +2,12 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy source code first
+COPY . .
 
 # Install dependencies
+# Using --no-optional helps avoid some binary compatibility issues
 RUN npm install
-
-# Copy source code
-COPY . .
 
 # Expose port
 EXPOSE 3000

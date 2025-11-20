@@ -51,9 +51,24 @@
       "images": ["cruise-ship.jpg", "europe-coast.jpg"]
     }
   },
-  "assignments": {
-    "bidding_set_1": ["car-001", "tv-001", "laptop-001", "vacation-001", "bike-001"],
-    "bidding_set_2": ["camera-001", "furniture-001", "boat-001"],
-    "showcase_showdown": ["car-002", "vacation-002"]
+  "game_structure": {
+    "section_1": [
+      { "type": "bidding", "product_id": "car-001" },
+      { "type": "bidding", "product_id": "tv-001" },
+      { "type": "bidding", "product_id": "laptop-001" },
+      { "type": "bidding", "product_id": "vacation-001" },
+      { "type": "bidding", "product_id": "bike-001" }
+    ],
+    "section_1_finale": { "type": "wheel" },
+    "section_2": [
+      { "type": "bidding", "product_id": "camera-001" },
+      { "type": "bidding", "product_id": "furniture-001" },
+      { "type": "bidding", "product_id": "boat-001" }
+    ],
+    "section_2_finale": { "type": "wheel" },
+    "finale": {
+      "type": "showcase",
+      "products": ["car-002", "vacation-002"]
+    }
   }
 }

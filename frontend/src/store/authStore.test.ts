@@ -111,7 +111,7 @@ describe('Auth Store', () => {
 
       try {
         await useAuthStore.getState().login('INVALID');
-      } catch (error) {
+      } catch (_error) {
         // Expected to throw
       }
 
