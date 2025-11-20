@@ -46,6 +46,11 @@ public/images/players/*
 !public/images/players/default.png
 !public/images/players/default.jpg
 
+# Product photos (keep only default image)
+public/images/products/*
+!public/images/products/default.png
+!public/images/products/default.jpg
+
 # Data files (keep only example files)
 data/*.xlsx
 data/*.json

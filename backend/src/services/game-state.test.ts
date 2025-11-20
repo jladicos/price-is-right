@@ -483,19 +483,29 @@ describe("Game State Service", () => {
         photoFilename: "default.jpg",
       });
 
-      const firstContestant = manualSelectContestant(player1.id, "section_1", 1);
+      const firstContestant = manualSelectContestant(
+        player1.id,
+        "section_1",
+        1,
+      );
       expect(firstContestant.player_id).toBe(player1.id);
       expect(firstContestant.position).toBe(1);
 
       // Select second player at same position - should replace first
-      const secondContestant = manualSelectContestant(player2.id, "section_1", 1);
+      const secondContestant = manualSelectContestant(
+        player2.id,
+        "section_1",
+        1,
+      );
       expect(secondContestant.player_id).toBe(player2.id);
       expect(secondContestant.position).toBe(1);
       expect(secondContestant.status).toBe("pending_reveal");
 
       // Verify first contestant marked as replaced
       const allContestants = getContestantsRow("section_1");
-      const replacedContestant = allContestants.find((c) => c.id === firstContestant.id);
+      const replacedContestant = allContestants.find(
+        (c) => c.id === firstContestant.id,
+      );
       expect(replacedContestant?.status).toBe("replaced");
     });
   });
@@ -892,10 +902,10 @@ describe("Game State Service", () => {
     });
 
     describe("getCurrentState - edge cases", () => {
-      it("should return only current segment contestants, not both", () => {
+      it("should return all active contestants regardless of segment", () => {
         const db = getDatabase();
 
-        // Add contestants to both segments
+        // Add contestants from different segments
         const p1 = createPlayer(db, {
           firstName: "S1",
           lastName: "Player",
@@ -913,18 +923,19 @@ describe("Game State Service", () => {
         });
 
         addContestantToRow(p1.id, 1, "section_1", "active");
-        addContestantToRow(p2.id, 1, "section_2", "active");
+        addContestantToRow(p2.id, 2, "section_2", "active");
 
-        // Set current segment to section_1
+        // Set current segment to section_2
         db.prepare(
-          "UPDATE game_workflow SET current_segment = 'section_1'",
+          "UPDATE game_workflow SET current_segment = 'section_2'",
         ).run();
 
         const state = getCurrentState();
 
-        // Should only return section_1 contestants
-        expect(state.contestantsRow.length).toBe(1);
+        // Should return ALL active contestants (contestants persist across sections)
+        expect(state.contestantsRow.length).toBe(2);
         expect(state.contestantsRow[0].game_segment).toBe("section_1");
+        expect(state.contestantsRow[1].game_segment).toBe("section_2");
       });
 
       it("should exclude replaced contestants from count", () => {
@@ -954,6 +965,85 @@ describe("Game State Service", () => {
         // Should only return active contestant
         expect(state.contestantsRow.length).toBe(1);
         expect(state.contestantsRow[0].status).toBe("active");
+      });
+
+      it("should persist contestants when advancing to section_1_finale", () => {
+        const db = getDatabase();
+
+        const p1 = createPlayer(db, {
+          firstName: "Finalist",
+          lastName: "One",
+          accessCode: "FIN1",
+          role: "player",
+          photoFilename: "default.jpg",
+        });
+
+        addContestantToRow(p1.id, 1, "section_1", "active");
+
+        // Set current segment to section_1_finale (wheel)
+        db.prepare(
+          "UPDATE game_workflow SET current_segment = 'section_1_finale', phase_type = 'wheel'",
+        ).run();
+
+        const state = getCurrentState();
+
+        // Contestants persist across all phases
+        expect(state.contestantsRow.length).toBe(1);
+        expect(state.contestantsRow[0].game_segment).toBe("section_1");
+        expect(state.contestantsRow[0].first_name).toBe("Finalist");
+      });
+
+      it("should persist contestants when advancing to section_2", () => {
+        const db = getDatabase();
+
+        const p1 = createPlayer(db, {
+          firstName: "Persisting",
+          lastName: "Player",
+          accessCode: "PERS",
+          role: "player",
+          photoFilename: "default.jpg",
+        });
+
+        // Contestant added during section_1
+        addContestantToRow(p1.id, 1, "section_1", "active");
+
+        // Advance to section_2
+        db.prepare(
+          "UPDATE game_workflow SET current_segment = 'section_2', phase_type = 'bidding'",
+        ).run();
+
+        const state = getCurrentState();
+
+        // Section 1 contestants should still be visible in section 2
+        expect(state.contestantsRow.length).toBe(1);
+        expect(state.contestantsRow[0].game_segment).toBe("section_1");
+        expect(state.contestantsRow[0].first_name).toBe("Persisting");
+      });
+
+      it("should persist contestants through finale phases", () => {
+        const db = getDatabase();
+
+        const p1 = createPlayer(db, {
+          firstName: "Showcase",
+          lastName: "Player",
+          accessCode: "SHOW",
+          role: "player",
+          photoFilename: "default.jpg",
+        });
+
+        addContestantToRow(p1.id, 1, "section_2", "active");
+
+        // Set current segment to finale (showcase)
+        db.prepare(
+          "UPDATE game_workflow SET current_segment = 'finale', phase_type = 'showcase'",
+        ).run();
+
+        const state = getCurrentState();
+
+        // Contestants persist to finale
+        expect(state.contestantsRow.length).toBe(1);
+        expect(state.contestantsRow[0].game_segment).toBe("section_2");
+        expect(state.contestantsRow[0].first_name).toBe("Showcase");
       });
     });
 

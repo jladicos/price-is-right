@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { useAuthStore } from './authStore';
-import { useGameStore, setGameStoreSessionTokenGetter } from './gameStore';
-import { AUTH_STORAGE_KEY } from '../constants/auth';
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { useAuthStore } from "./authStore";
+import { useGameStore, setGameStoreSessionTokenGetter } from "./gameStore";
+import { AUTH_STORAGE_KEY } from "../constants/auth";
 
 /**
  * Integration tests to ensure auth storage alignment between authStore and gameStore
  * These tests verify that both stores access the same authentication data correctly
  */
-describe('Auth Storage Integration', () => {
+describe("Auth Storage Integration", () => {
   // Mock fetch for API calls
   const mockFetch = vi.fn();
   const originalFetch = global.fetch;
@@ -40,18 +40,18 @@ describe('Auth Storage Integration', () => {
     global.fetch = originalFetch;
   });
 
-  describe('Storage Key Consistency', () => {
-    it('should use the same storage key constant', () => {
+  describe("Storage Key Consistency", () => {
+    it("should use the same storage key constant", () => {
       // This test verifies that AUTH_STORAGE_KEY is being used consistently
-      const testToken = 'test-session-token-123';
+      const testToken = "test-session-token-123";
       const testPlayer = {
         id: 1,
-        firstName: 'Test',
-        lastName: 'Host',
-        accessCode: 'HOST001',
-        role: 'host' as const,
-        email: 'host@test.com',
-        photoFilename: 'host.jpg',
+        firstName: "Test",
+        lastName: "Host",
+        accessCode: "HOST001",
+        role: "host" as const,
+        email: "host@test.com",
+        photoFilename: "host.jpg",
         active: true,
         sessionToken: testToken,
         createdAt: new Date().toISOString(),
@@ -74,21 +74,21 @@ describe('Auth Storage Integration', () => {
     });
   });
 
-  describe('Token Access via Callback', () => {
-    it('should allow gameStore to access authStore token via callback', async () => {
-      const testToken = 'callback-test-token';
+  describe("Token Access via Callback", () => {
+    it("should allow gameStore to access authStore token via callback", async () => {
+      const testToken = "callback-test-token";
 
       // Set up authStore with a token
       useAuthStore.setState({
         sessionToken: testToken,
         currentPlayer: {
           id: 1,
-          firstName: 'Test',
-          lastName: 'Host',
-          accessCode: 'HOST001',
-          role: 'host',
-          email: 'host@test.com',
-          photoFilename: 'host.jpg',
+          firstName: "Test",
+          lastName: "Host",
+          accessCode: "HOST001",
+          role: "host",
+          email: "host@test.com",
+          photoFilename: "host.jpg",
           active: true,
           sessionToken: testToken,
           createdAt: new Date().toISOString(),
@@ -97,7 +97,9 @@ describe('Auth Storage Integration', () => {
       });
 
       // Set up gameStore callback (this happens in authStore.ts at app startup)
-      setGameStoreSessionTokenGetter(() => useAuthStore.getState().sessionToken);
+      setGameStoreSessionTokenGetter(
+        () => useAuthStore.getState().sessionToken,
+      );
 
       // Mock a successful game state fetch
       mockFetch.mockResolvedValueOnce({
@@ -106,9 +108,9 @@ describe('Auth Storage Integration', () => {
           state: {
             workflow: {
               id: 1,
-              current_segment: 'section_1',
+              current_segment: "section_1",
               current_segment_index: 0,
-              phase_type: 'bidding',
+              phase_type: "bidding",
               phase_metadata: null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
@@ -124,7 +126,7 @@ describe('Auth Storage Integration', () => {
 
       // Verify the token was passed correctly
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/game/state'),
+        expect.stringContaining("/game/state"),
         expect.objectContaining({
           headers: expect.objectContaining({
             Authorization: `Bearer ${testToken}`,
@@ -138,7 +140,9 @@ describe('Auth Storage Integration', () => {
 
     it('should get "Not authenticated" error when authStore has no token', async () => {
       // Set up gameStore callback
-      setGameStoreSessionTokenGetter(() => useAuthStore.getState().sessionToken);
+      setGameStoreSessionTokenGetter(
+        () => useAuthStore.getState().sessionToken,
+      );
 
       // authStore has no token
       expect(useAuthStore.getState().sessionToken).toBeNull();
@@ -147,16 +151,18 @@ describe('Auth Storage Integration', () => {
       await useGameStore.getState().fetchGameState();
 
       // Should get authentication error
-      expect(useGameStore.getState().error).toBe('Not authenticated');
+      expect(useGameStore.getState().error).toBe("Not authenticated");
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it('should handle token changes dynamically', async () => {
-      const token1 = 'token-one';
-      const token2 = 'token-two';
+    it("should handle token changes dynamically", async () => {
+      const token1 = "token-one";
+      const token2 = "token-two";
 
       // Set up gameStore callback
-      setGameStoreSessionTokenGetter(() => useAuthStore.getState().sessionToken);
+      setGameStoreSessionTokenGetter(
+        () => useAuthStore.getState().sessionToken,
+      );
 
       // Set first token
       useAuthStore.setState({ sessionToken: token1 });
@@ -198,17 +204,17 @@ describe('Auth Storage Integration', () => {
     });
   });
 
-  describe('Persistence Integration', () => {
-    it('should persist auth token and allow gameStore to access it after page reload', () => {
-      const testToken = 'persistent-token-123';
+  describe("Persistence Integration", () => {
+    it("should persist auth token and allow gameStore to access it after page reload", () => {
+      const testToken = "persistent-token-123";
       const testPlayer = {
         id: 1,
-        firstName: 'Test',
-        lastName: 'Host',
-        accessCode: 'HOST001',
-        role: 'host' as const,
-        email: 'host@test.com',
-        photoFilename: 'host.jpg',
+        firstName: "Test",
+        lastName: "Host",
+        accessCode: "HOST001",
+        role: "host" as const,
+        email: "host@test.com",
+        photoFilename: "host.jpg",
         active: true,
         sessionToken: testToken,
         createdAt: new Date().toISOString(),
@@ -242,13 +248,13 @@ describe('Auth Storage Integration', () => {
     });
   });
 
-  describe('Error Prevention', () => {
-    it('should catch mismatched storage keys at test time', () => {
+  describe("Error Prevention", () => {
+    it("should catch mismatched storage keys at test time", () => {
       // This test ensures AUTH_STORAGE_KEY is imported and used
-      expect(AUTH_STORAGE_KEY).toBe('pir_auth_storage');
+      expect(AUTH_STORAGE_KEY).toBe("pir_auth_storage");
 
       // If authStore starts using a different key, this test will fail
-      const testToken = 'mismatch-test';
+      const testToken = "mismatch-test";
       useAuthStore.setState({ sessionToken: testToken });
 
       // Verify the token is stored under the expected key
@@ -259,7 +265,7 @@ describe('Auth Storage Integration', () => {
       expect(parsed.state.sessionToken).toBe(testToken);
 
       // If we try to read from the wrong key, we should get nothing
-      const wrongKey = localStorage.getItem('wrong-storage-key');
+      const wrongKey = localStorage.getItem("wrong-storage-key");
       expect(wrongKey).toBeNull();
     });
   });

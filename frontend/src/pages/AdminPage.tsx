@@ -16,8 +16,8 @@
  * Authentication: Automatically redirected to /welcome if not authenticated as host
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -30,23 +30,26 @@ import {
   Spinner,
   Center,
   Text,
-} from '@chakra-ui/react';
-import { NativeSelectRoot, NativeSelectField } from '../components/ui/native-select';
-import { Tag } from '../components/ui/tag';
-import { Switch } from '../components/ui/switch';
-import { Field } from '../components/ui/field';
-import { apiRequest } from '../utils/api';
-import { showToast } from '../utils/toast';
-import type { Player } from '../../../backend/src/types/player';
-import { ViewCodeModal } from '../components/ViewCodeModal';
-import { ResetCodeModal } from '../components/ResetCodeModal';
-import { DeactivateModal } from '../components/DeactivateModal';
-import { EditPlayerModal } from '../components/EditPlayerModal';
-import { AddPlayerModal } from '../components/AddPlayerModal';
-import { ResetAllCodesModal } from '../components/ResetAllCodesModal';
-import { DeleteAllPlayersModal } from '../components/DeleteAllPlayersModal';
-import { ExportDatabaseModal } from '../components/ExportDatabaseModal';
-import { ImportDatabaseModal } from '../components/ImportDatabaseModal';
+} from "@chakra-ui/react";
+import {
+  NativeSelectRoot,
+  NativeSelectField,
+} from "../components/ui/native-select";
+import { Tag } from "../components/ui/tag";
+import { Switch } from "../components/ui/switch";
+import { Field } from "../components/ui/field";
+import { apiRequest } from "../utils/api";
+import { showToast } from "../utils/toast";
+import type { Player } from "../../../backend/src/types/player";
+import { ViewCodeModal } from "../components/ViewCodeModal";
+import { ResetCodeModal } from "../components/ResetCodeModal";
+import { DeactivateModal } from "../components/DeactivateModal";
+import { EditPlayerModal } from "../components/EditPlayerModal";
+import { AddPlayerModal } from "../components/AddPlayerModal";
+import { ResetAllCodesModal } from "../components/ResetAllCodesModal";
+import { DeleteAllPlayersModal } from "../components/DeleteAllPlayersModal";
+import { ExportDatabaseModal } from "../components/ExportDatabaseModal";
+import { ImportDatabaseModal } from "../components/ImportDatabaseModal";
 
 interface PlayersResponse {
   players: Player[];
@@ -60,11 +63,13 @@ export default function AdminPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [activeFilter, setActiveFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'name' | 'role' | 'created_at'>('created_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"name" | "role" | "created_at">(
+    "created_at",
+  );
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [gameEnabled, setGameEnabled] = useState(true);
   const [isTogglingGame, setIsTogglingGame] = useState(false);
 
@@ -76,7 +81,8 @@ export default function AdminPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addPlayerModalOpen, setAddPlayerModalOpen] = useState(false);
   const [resetAllCodesModalOpen, setResetAllCodesModalOpen] = useState(false);
-  const [deleteAllPlayersModalOpen, setDeleteAllPlayersModalOpen] = useState(false);
+  const [deleteAllPlayersModalOpen, setDeleteAllPlayersModalOpen] =
+    useState(false);
   const [exportDatabaseModalOpen, setExportDatabaseModalOpen] = useState(false);
   const [importDatabaseModalOpen, setImportDatabaseModalOpen] = useState(false);
 
@@ -87,21 +93,23 @@ export default function AdminPage() {
 
       // Build query params
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (roleFilter !== 'all') params.append('role', roleFilter);
-      if (activeFilter !== 'all') params.append('active', activeFilter);
-      params.append('sortBy', sortBy);
-      params.append('sortOrder', sortOrder);
+      if (search) params.append("search", search);
+      if (roleFilter !== "all") params.append("role", roleFilter);
+      if (activeFilter !== "all") params.append("active", activeFilter);
+      params.append("sortBy", sortBy);
+      params.append("sortOrder", sortOrder);
 
-      const response = await apiRequest<PlayersResponse>(`/players?${params.toString()}`);
+      const response = await apiRequest<PlayersResponse>(
+        `/players?${params.toString()}`,
+      );
 
       setPlayers(response.players);
       setTotal(response.total);
     } catch (err) {
       showToast({
-        title: 'Failed to load players',
-        description: err instanceof Error ? err.message : 'An error occurred',
-        type: 'error',
+        title: "Failed to load players",
+        description: err instanceof Error ? err.message : "An error occurred",
+        type: "error",
       });
     } finally {
       setLoading(false);
@@ -116,10 +124,10 @@ export default function AdminPage() {
   // Fetch game status
   const fetchGameStatus = useCallback(async () => {
     try {
-      const response = await apiRequest<{ enabled: boolean }>('/game/status');
+      const response = await apiRequest<{ enabled: boolean }>("/game/status");
       setGameEnabled(response.enabled);
     } catch (err) {
-      console.error('Failed to fetch game status:', err);
+      console.error("Failed to fetch game status:", err);
     }
   }, []);
 
@@ -132,21 +140,24 @@ export default function AdminPage() {
   const toggleGameEnabled = async () => {
     setIsTogglingGame(true);
     try {
-      const response = await apiRequest<{ enabled: boolean; message: string }>('/game/status', {
-        method: 'PUT',
-        body: JSON.stringify({ enabled: !gameEnabled }),
-      });
+      const response = await apiRequest<{ enabled: boolean; message: string }>(
+        "/game/status",
+        {
+          method: "PUT",
+          body: JSON.stringify({ enabled: !gameEnabled }),
+        },
+      );
 
       setGameEnabled(response.enabled);
       showToast({
         title: response.message,
-        type: response.enabled ? 'success' : 'warning',
+        type: response.enabled ? "success" : "warning",
       });
     } catch (err) {
       showToast({
-        title: 'Failed to update game status',
-        description: err instanceof Error ? err.message : 'An error occurred',
-        type: 'error',
+        title: "Failed to update game status",
+        description: err instanceof Error ? err.message : "An error occurred",
+        type: "error",
       });
     } finally {
       setIsTogglingGame(false);
@@ -156,26 +167,26 @@ export default function AdminPage() {
   // Role badge colors
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'host':
-        return 'red';
-      case 'player':
-        return 'blue';
-      case 'audience':
-        return 'gray';
+      case "host":
+        return "red";
+      case "player":
+        return "blue";
+      case "audience":
+        return "gray";
       default:
-        return 'gray';
+        return "gray";
     }
   };
 
   // Toggle sort
-  const toggleSort = (field: 'name' | 'role' | 'created_at') => {
+  const toggleSort = (field: "name" | "role" | "created_at") => {
     if (sortBy === field) {
       // Toggle order
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       // New field, default to ascending
       setSortBy(field);
-      setSortOrder('asc');
+      setSortOrder("asc");
     }
   };
 
@@ -229,19 +240,19 @@ export default function AdminPage() {
           <Heading size="lg">Admin Tools</Heading>
           <HStack gap="4">
             <Field
-              label={`Game ${gameEnabled ? 'Enabled' : 'Disabled'}`}
+              label={`Game ${gameEnabled ? "Enabled" : "Disabled"}`}
               display="flex"
               alignItems="center"
             >
               <Switch
                 id="game-toggle"
-                colorPalette={gameEnabled ? 'green' : 'red'}
+                colorPalette={gameEnabled ? "green" : "red"}
                 checked={gameEnabled}
                 onCheckedChange={() => toggleGameEnabled()}
                 disabled={isTogglingGame}
               />
             </Field>
-            <Button variant="outline" onClick={() => navigate('/welcome')}>
+            <Button variant="outline" onClick={() => navigate("/welcome")}>
               Back to Welcome
             </Button>
           </HStack>
@@ -281,7 +292,10 @@ export default function AdminPage() {
             </HStack>
 
             <HStack gap="4" wrap="wrap">
-              <Button colorPalette="green" onClick={() => setAddPlayerModalOpen(true)}>
+              <Button
+                colorPalette="green"
+                onClick={() => setAddPlayerModalOpen(true)}
+              >
                 Add Player
               </Button>
               <Button
@@ -326,11 +340,17 @@ export default function AdminPage() {
           <Table.Root>
             <Table.Header bg="gray.50">
               <Table.Row>
-                <Table.ColumnHeader cursor="pointer" onClick={() => toggleSort('name')}>
-                  Name {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                <Table.ColumnHeader
+                  cursor="pointer"
+                  onClick={() => toggleSort("name")}
+                >
+                  Name {sortBy === "name" && (sortOrder === "asc" ? "↑" : "↓")}
                 </Table.ColumnHeader>
-                <Table.ColumnHeader cursor="pointer" onClick={() => toggleSort('role')}>
-                  Role {sortBy === 'role' && (sortOrder === 'asc' ? '↑' : '↓')}
+                <Table.ColumnHeader
+                  cursor="pointer"
+                  onClick={() => toggleSort("role")}
+                >
+                  Role {sortBy === "role" && (sortOrder === "asc" ? "↑" : "↓")}
                 </Table.ColumnHeader>
                 <Table.ColumnHeader>Status</Table.ColumnHeader>
                 <Table.ColumnHeader>Access Code</Table.ColumnHeader>
@@ -351,11 +371,13 @@ export default function AdminPage() {
                       {player.firstName} {player.lastName}
                     </Table.Cell>
                     <Table.Cell>
-                      <Tag colorPalette={getRoleBadgeColor(player.role)}>{player.role}</Tag>
+                      <Tag colorPalette={getRoleBadgeColor(player.role)}>
+                        {player.role}
+                      </Tag>
                     </Table.Cell>
                     <Table.Cell>
-                      <Tag colorPalette={player.active ? 'green' : 'red'}>
-                        {player.active ? 'Active' : 'Inactive'}
+                      <Tag colorPalette={player.active ? "green" : "red"}>
+                        {player.active ? "Active" : "Inactive"}
                       </Tag>
                     </Table.Cell>
                     <Table.Cell fontFamily="mono" fontSize="sm">
@@ -389,11 +411,11 @@ export default function AdminPage() {
                         </Button>
                         <Button
                           size="sm"
-                          colorPalette={player.active ? 'red' : 'green'}
+                          colorPalette={player.active ? "red" : "green"}
                           variant="outline"
                           onClick={() => openDeactivateModal(player)}
                         >
-                          {player.active ? 'Deactivate' : 'Activate'}
+                          {player.active ? "Deactivate" : "Activate"}
                         </Button>
                       </HStack>
                     </Table.Cell>

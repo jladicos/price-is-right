@@ -144,7 +144,9 @@ function importPlayersFromXLSX(filePath: string): void {
   // Display host access codes
   if (hosts.length > 0) {
     console.log("\n" + "=".repeat(60));
-    console.log(`HOST ACCESS CODES (${hosts.length} host${hosts.length === 1 ? "" : "s"})`);
+    console.log(
+      `HOST ACCESS CODES (${hosts.length} host${hosts.length === 1 ? "" : "s"})`,
+    );
     console.log("=".repeat(60));
     hosts.forEach((host) => {
       console.log(`  ${host.name}: ${host.accessCode}`);

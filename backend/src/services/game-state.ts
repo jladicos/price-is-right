@@ -9,6 +9,7 @@ import {
   addContestantToRow,
   getContestantsRow,
   getActiveContestants,
+  getAllActiveContestants,
   revealContestant as dbRevealContestant,
   replaceContestant as dbReplaceContestant,
   clearContestantsRow,
@@ -40,10 +41,11 @@ export function startNewGame(): GameWorkflow {
  */
 export function getCurrentState(): GameState {
   const workflow = getGameWorkflow();
-  const segment = workflow.current_segment as "section_1" | "section_2";
 
-  // Only return active contestants (exclude replaced ones)
-  const contestantsRow = getActiveContestants(segment);
+  // Get ALL active contestants regardless of segment
+  // Contestants persist across sections unless explicitly replaced by the host
+  // The game_segment field is just metadata about when they were added
+  const contestantsRow = getAllActiveContestants();
 
   // Count eligible audience members
   const db = getDatabase();

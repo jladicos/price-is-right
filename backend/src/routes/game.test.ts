@@ -1233,7 +1233,8 @@ describe("Game API Routes", () => {
           Authorization: `Bearer ${hostToken}`,
         },
       });
-      const oldContestant = JSON.parse(stateResponse.body).state.contestantsRow[0];
+      const oldContestant = JSON.parse(stateResponse.body).state
+        .contestantsRow[0];
 
       // Find an audience member not selected
       const eligiblePlayer = db
@@ -1711,8 +1712,8 @@ describe("Game API Routes", () => {
       });
 
       // Advance through all section_1 phases
-      // products.example.json has 5 bidding phases in section_1
-      for (let i = 0; i < 5; i++) {
+      // products.json has 2 bidding phases in section_1
+      for (let i = 0; i < 2; i++) {
         await app.inject({
           method: "POST",
           url: "/api/game/advance",
@@ -1785,8 +1786,8 @@ describe("Game API Routes", () => {
         },
       });
 
-      // Advance through all section_2 phases (3 bidding phases)
-      for (let i = 0; i < 3; i++) {
+      // Advance through all section_2 phases (2 bidding phases)
+      for (let i = 0; i < 2; i++) {
         await app.inject({
           method: "POST",
           url: "/api/game/advance",

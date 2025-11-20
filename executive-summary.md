@@ -392,16 +392,17 @@ During the showcase showdown
 #### Phase 6: Bidding Rounds (Core Gameplay)
 - [ ] Backend: Bidding logic (sequential, duplicate detection, winner calculation)
 - [ ] Backend: "All over" detection and retry logic
-- [ ] REST API: POST /api/game/submit-bid (player action)
+- [ ] REST API: POST /api/game/submit-bid (player or host action)
 - [ ] REST API: POST /api/game/show-product (host control)
 - [ ] REST API: POST /api/game/reveal-winner (host control)
 - [ ] REST API: POST /api/game/unlock-bid (host override)
-- [ ] Product display system (show/hide on host command)
-- [ ] Player input form (bid entry, validation)
-- [ ] Host controls (advance between players, unlock bids, reveal winner)
-- [ ] Player/audience view: Podiums with bid display (updates via polling)
+- [ ] Product display system (modal + inset card, host controlled)
+- [ ] TV-style podium UI with digital displays for bids
+- [ ] Player bid input (self-entry when it's their turn)
+- [ ] Host controls (show product, reveal winner, advance phase, enter bids)
+- [ ] Player/audience view: Unified game view with role-based features
 - [ ] Winner announcement and visual indication
-- [ ] Bid clearing between rounds
+- [ ] Bid clearing and retry logic for "all over" scenario
 - [ ] Unit tests for bidding logic
 - [ ] Integration tests for bid submission flow
 

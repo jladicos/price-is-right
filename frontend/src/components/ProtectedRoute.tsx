@@ -1,13 +1,16 @@
-import { Navigate } from 'react-router-dom';
-import { Center, Spinner } from '@chakra-ui/react';
-import { useAuthStore } from '../store/authStore';
+import { Navigate } from "react-router-dom";
+import { Center, Spinner } from "@chakra-ui/react";
+import { useAuthStore } from "../store/authStore";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireRole?: 'host' | 'player' | 'audience';
+  requireRole?: "host" | "player" | "audience";
 }
 
-export default function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
+export default function ProtectedRoute({
+  children,
+  requireRole,
+}: ProtectedRouteProps) {
   const { sessionToken, currentPlayer, loading } = useAuthStore();
 
   // If we're still loading (validating session), show spinner
@@ -30,7 +33,7 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
     return (
       <Navigate
         to="/welcome"
-        state={{ error: 'You do not have permission to access this page' }}
+        state={{ error: "You do not have permission to access this page" }}
         replace
       />
     );

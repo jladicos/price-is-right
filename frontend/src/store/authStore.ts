@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import {
   login as apiLogin,
   logout as apiLogout,
@@ -7,9 +7,9 @@ import {
   setSessionExpiredHandler,
   setSessionTokenGetter,
   type Player,
-} from '../utils/api';
-import { AUTH_STORAGE_KEY } from '../constants/auth';
-import { setGameStoreSessionTokenGetter } from './gameStore';
+} from "../utils/api";
+import { AUTH_STORAGE_KEY } from "../constants/auth";
+import { setGameStoreSessionTokenGetter } from "./gameStore";
 
 // Auth store state
 interface AuthState {
@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthStore>()(
             sessionToken: null,
             currentPlayer: null,
             loading: false,
-            error: error instanceof Error ? error.message : 'Login failed',
+            error: error instanceof Error ? error.message : "Login failed",
           });
           throw error;
         }
@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthStore>()(
             sessionToken: null,
             currentPlayer: null,
             loading: false,
-            error: error instanceof Error ? error.message : 'Logout failed',
+            error: error instanceof Error ? error.message : "Logout failed",
           });
         }
       },
@@ -117,7 +117,7 @@ export const useAuthStore = create<AuthStore>()(
           sessionToken: null,
           currentPlayer: null,
           loading: false,
-          error: 'Your session has expired. Please log in again.',
+          error: "Your session has expired. Please log in again.",
         });
       },
 

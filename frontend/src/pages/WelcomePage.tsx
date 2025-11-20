@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Button,
@@ -9,13 +9,13 @@ import {
   HStack,
   Spinner,
   Center,
-} from '@chakra-ui/react';
-import { Avatar } from '../components/ui/avatar';
-import { Alert } from '../components/ui/alert';
-import { useAuthStore } from '../store/authStore';
-import { useEffect, useState } from 'react';
-import { apiRequest } from '../utils/api';
-import { showToast } from '../utils/toast';
+} from "@chakra-ui/react";
+import { Avatar } from "../components/ui/avatar";
+import { Alert } from "../components/ui/alert";
+import { useAuthStore } from "../store/authStore";
+import { useEffect, useState } from "react";
+import { apiRequest } from "../utils/api";
+import { showToast } from "../utils/toast";
 
 export default function WelcomePage() {
   const navigate = useNavigate();
@@ -28,9 +28,9 @@ export default function WelcomePage() {
     const locationState = location.state as { error?: string } | null;
     if (locationState?.error) {
       showToast({
-        title: 'Access Denied',
+        title: "Access Denied",
         description: locationState.error,
-        type: 'error',
+        type: "error",
       });
       // Clear the state so it doesn't show again on refresh
       navigate(location.pathname, { replace: true, state: {} });
@@ -41,10 +41,10 @@ export default function WelcomePage() {
   useEffect(() => {
     const fetchGameStatus = async () => {
       try {
-        const response = await apiRequest<{ enabled: boolean }>('/game/status');
+        const response = await apiRequest<{ enabled: boolean }>("/game/status");
         setGameEnabled(response.enabled);
       } catch (err) {
-        console.error('Failed to fetch game status:', err);
+        console.error("Failed to fetch game status:", err);
       }
     };
 
@@ -54,21 +54,21 @@ export default function WelcomePage() {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/');
+      navigate("/");
     } catch (err) {
       showToast({
-        title: 'Logout failed',
-        description: err instanceof Error ? err.message : 'An error occurred',
-        type: 'error',
+        title: "Logout failed",
+        description: err instanceof Error ? err.message : "An error occurred",
+        type: "error",
       });
     }
   };
 
   const handlePlaceholderClick = (feature: string) => {
     showToast({
-      title: 'Coming soon',
+      title: "Coming soon",
       description: `${feature} will be available in the next phase of development.`,
-      type: 'info',
+      type: "info",
     });
   };
 
@@ -89,7 +89,14 @@ export default function WelcomePage() {
   return (
     <Container maxW="2xl" centerContent py={10}>
       <VStack gap="8" w="100%">
-        <Box w="100%" bg="white" p={8} borderRadius="lg" shadow="md" textAlign="center">
+        <Box
+          w="100%"
+          bg="white"
+          p={8}
+          borderRadius="lg"
+          shadow="md"
+          textAlign="center"
+        >
           <VStack gap="6">
             <Avatar
               size="2xl"
@@ -106,18 +113,19 @@ export default function WelcomePage() {
 
             {!gameEnabled && (
               <Alert status="warning" title="Game Currently Disabled">
-                The game is currently in maintenance mode. Please check back later.
+                The game is currently in maintenance mode. Please check back
+                later.
               </Alert>
             )}
 
             <VStack gap="3" w="100%" pt={4}>
-              {currentPlayer.role === 'host' && (
+              {currentPlayer.role === "host" && (
                 <>
                   <Button
                     colorPalette="blue"
                     width="100%"
                     size="lg"
-                    onClick={() => navigate('/host/game-control')}
+                    onClick={() => navigate("/host/game-control")}
                     disabled={!gameEnabled}
                   >
                     Game Control
@@ -126,31 +134,31 @@ export default function WelcomePage() {
                     colorPalette="purple"
                     width="100%"
                     size="lg"
-                    onClick={() => navigate('/admin')}
+                    onClick={() => navigate("/admin")}
                   >
                     Admin Tools
                   </Button>
                 </>
               )}
 
-              {currentPlayer.role === 'player' && (
+              {currentPlayer.role === "player" && (
                 <Button
                   colorPalette="green"
                   width="100%"
                   size="lg"
-                  onClick={() => handlePlaceholderClick('Enter Game')}
+                  onClick={() => handlePlaceholderClick("Enter Game")}
                   disabled={!gameEnabled}
                 >
                   Enter Game
                 </Button>
               )}
 
-              {currentPlayer.role === 'audience' && (
+              {currentPlayer.role === "audience" && (
                 <Button
                   colorPalette="teal"
                   width="100%"
                   size="lg"
-                  onClick={() => handlePlaceholderClick('Watch Game')}
+                  onClick={() => handlePlaceholderClick("Watch Game")}
                   disabled={!gameEnabled}
                 >
                   Watch Game

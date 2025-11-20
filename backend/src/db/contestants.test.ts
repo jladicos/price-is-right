@@ -3,6 +3,7 @@ import {
   addContestantToRow,
   getContestantsRow,
   getActiveContestants,
+  getAllActiveContestants,
   revealContestant,
   updateContestantStatus,
   replaceContestant,
@@ -174,6 +175,58 @@ describe("Contestants Database Functions", () => {
       clearContestantsRow("section_1");
       const contestants = getActiveContestants("section_1");
       expect(contestants).toEqual([]);
+    });
+  });
+
+  describe("getAllActiveContestants", () => {
+    it("should return active contestants from all segments", () => {
+      addContestantToRow(1, 1, "section_1", "active");
+      addContestantToRow(2, 2, "section_1", "pending_reveal");
+      addContestantToRow(3, 3, "section_2", "active");
+      addContestantToRow(4, 4, "section_1", "replaced");
+
+      const contestants = getAllActiveContestants();
+
+      // Should get 3 contestants (2 from section_1, 1 from section_2)
+      expect(contestants.length).toBe(3);
+      expect(contestants.some((c) => c.game_segment === "section_1")).toBe(
+        true,
+      );
+      expect(contestants.some((c) => c.game_segment === "section_2")).toBe(
+        true,
+      );
+    });
+
+    it("should exclude replaced and won contestants", () => {
+      addContestantToRow(1, 1, "section_1", "active");
+      addContestantToRow(2, 2, "section_2", "replaced");
+      addContestantToRow(3, 3, "section_1", "won");
+
+      const contestants = getAllActiveContestants();
+
+      expect(contestants.length).toBe(1);
+      expect(contestants[0].status).toBe("active");
+    });
+
+    it("should return empty array when no active contestants exist", () => {
+      addContestantToRow(1, 1, "section_1", "replaced");
+      addContestantToRow(2, 2, "section_2", "won");
+
+      const contestants = getAllActiveContestants();
+
+      expect(contestants).toEqual([]);
+    });
+
+    it("should order by position", () => {
+      addContestantToRow(1, 3, "section_1", "active");
+      addContestantToRow(2, 1, "section_2", "active");
+      addContestantToRow(3, 2, "section_1", "active");
+
+      const contestants = getAllActiveContestants();
+
+      expect(contestants[0].position).toBe(1);
+      expect(contestants[1].position).toBe(2);
+      expect(contestants[2].position).toBe(3);
     });
   });
 
@@ -475,12 +528,23 @@ describe("Contestants Database Functions", () => {
       expect(position).toBe(1); // Positions 1 and 2 are available
     });
 
-    it("should be segment-specific", () => {
+    it("should check ALL segments (contestants persist across sections)", () => {
       addContestantToRow(1, 1, "section_1", "active");
       addContestantToRow(2, 2, "section_1", "active");
 
+      // When checking for section_2, it should see positions 1 and 2 are occupied
+      // (even though they're from section_1) because contestants persist
       const section2Position = findNextEmptyPosition("section_2");
-      expect(section2Position).toBe(1); // Section 2 is empty
+      expect(section2Position).toBe(3); // First empty position globally
+    });
+
+    it("should detect occupied positions across different segments", () => {
+      addContestantToRow(1, 1, "section_1", "active");
+      addContestantToRow(2, 3, "section_2", "active");
+      addContestantToRow(3, 5, "section_1", "active");
+
+      const position = findNextEmptyPosition("section_2");
+      expect(position).toBe(2); // Positions 1, 3, 5 occupied; next empty is 2
     });
   });
 

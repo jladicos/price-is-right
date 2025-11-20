@@ -100,6 +100,34 @@ export function getActiveContestants(segment: string): ContestantWithPlayer[] {
 }
 
 /**
+ * Get ALL active contestants regardless of segment
+ * Used for displaying the current contestant's row during gameplay
+ * Contestants persist across sections unless explicitly replaced
+ */
+export function getAllActiveContestants(): ContestantWithPlayer[] {
+  const db = getDatabase();
+
+  const contestants = db
+    .prepare(
+      `
+    SELECT
+      c.*,
+      p.first_name,
+      p.last_name,
+      p.photo_filename,
+      p.role
+    FROM contestants_row c
+    JOIN players p ON c.player_id = p.id
+    WHERE c.status IN ('active', 'pending_reveal')
+    ORDER BY c.position ASC
+  `,
+    )
+    .all() as ContestantWithPlayer[];
+
+  return contestants;
+}
+
+/**
  * Reveal a contestant to the audience
  * Updates status to 'active' and sets revealed_at timestamp
  * NOTE: This does NOT update the player's role - that's done in the service layer
@@ -311,21 +339,24 @@ export function getContestantById(
 /**
  * Find next empty position in contestant's row (1-5)
  * Returns the lowest available position, or null if all filled
+ * Note: The _segment parameter is kept for API compatibility but not used in the query
+ * since contestants persist across all segments
  */
-export function findNextEmptyPosition(segment: string): number | null {
+export function findNextEmptyPosition(_segment: string): number | null {
   const db = getDatabase();
 
+  // Check ALL active contestants regardless of segment
+  // Since contestants persist across sections, we need to check globally
   const occupiedPositions = db
     .prepare(
       `
     SELECT position
     FROM contestants_row
-    WHERE game_segment = ?
-      AND status IN ('active', 'pending_reveal')
+    WHERE status IN ('active', 'pending_reveal')
     ORDER BY position ASC
   `,
     )
-    .all(segment) as Array<{ position: number }>;
+    .all() as Array<{ position: number }>;
 
   const occupied = new Set(occupiedPositions.map((c) => c.position));
 
