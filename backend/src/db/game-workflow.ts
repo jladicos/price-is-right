@@ -1,4 +1,4 @@
-import { getDatabase } from "./connection.js";
+import { getDatabase } from './connection.js';
 
 export interface GameWorkflow {
   id: number;
@@ -23,12 +23,12 @@ export interface GameWorkflowUpdate {
  */
 export function getGameWorkflow(): GameWorkflow {
   const db = getDatabase();
-  const row = db.prepare("SELECT * FROM game_workflow WHERE id = 1").get() as
+  const row = db.prepare('SELECT * FROM game_workflow WHERE id = 1').get() as
     | GameWorkflow
     | undefined;
 
   if (!row) {
-    throw new Error("Game workflow not initialized");
+    throw new Error('Game workflow not initialized');
   }
 
   return row;
@@ -52,7 +52,7 @@ export function initializeGame(): GameWorkflow {
     WHERE id = 1
   `);
 
-  stmt.run("section_1", 0, "not_started", null);
+  stmt.run('section_1', 0, 'not_started', null);
 
   return getGameWorkflow();
 }
@@ -69,22 +69,22 @@ export function updateGameWorkflow(updates: GameWorkflowUpdate): GameWorkflow {
   const values: unknown[] = [];
 
   if (updates.current_segment !== undefined) {
-    fields.push("current_segment = ?");
+    fields.push('current_segment = ?');
     values.push(updates.current_segment);
   }
 
   if (updates.current_segment_index !== undefined) {
-    fields.push("current_segment_index = ?");
+    fields.push('current_segment_index = ?');
     values.push(updates.current_segment_index);
   }
 
   if (updates.phase_type !== undefined) {
-    fields.push("phase_type = ?");
+    fields.push('phase_type = ?');
     values.push(updates.phase_type);
   }
 
   if (updates.phase_metadata !== undefined) {
-    fields.push("phase_metadata = ?");
+    fields.push('phase_metadata = ?');
     values.push(updates.phase_metadata);
   }
 
@@ -96,7 +96,7 @@ export function updateGameWorkflow(updates: GameWorkflowUpdate): GameWorkflow {
   // Always update updated_at
   fields.push("updated_at = datetime('now')");
 
-  const sql = `UPDATE game_workflow SET ${fields.join(", ")} WHERE id = 1`;
+  const sql = `UPDATE game_workflow SET ${fields.join(', ')} WHERE id = 1`;
   const stmt = db.prepare(sql);
   stmt.run(...values);
 
@@ -113,10 +113,21 @@ export function resetGame(): void {
   // Use transaction to ensure atomic reset
   db.transaction(() => {
     // Clear all game data tables
-    db.prepare("DELETE FROM contestants_row").run();
-    db.prepare("DELETE FROM bids").run();
-    db.prepare("DELETE FROM wheel_spins").run();
-    db.prepare("DELETE FROM showcase_bids").run();
+    db.prepare('DELETE FROM contestants_row').run();
+    db.prepare('DELETE FROM bids').run();
+    db.prepare('DELETE FROM wheel_spins').run();
+    db.prepare('DELETE FROM showcase_bids').run();
+
+    // Reset all players with role='player' back to 'audience'
+    // This makes them eligible for selection in the next game
+    db.prepare(
+      `
+      UPDATE players
+      SET role = 'audience',
+          updated_at = datetime('now')
+      WHERE role = 'player'
+    `,
+    ).run();
 
     // Reset workflow to initial state
     db.prepare(

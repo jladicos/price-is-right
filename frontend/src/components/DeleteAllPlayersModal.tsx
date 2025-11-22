@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   DialogRoot,
   DialogContent,
@@ -6,13 +6,13 @@ import {
   DialogBody,
   DialogFooter,
   DialogCloseTrigger,
-} from "./ui/dialog";
-import { Button, Text, VStack, Input } from "@chakra-ui/react";
-import { Alert } from "./ui/alert";
-import { Checkbox } from "./ui/checkbox";
-import { Field } from "./ui/field";
-import { useAuthStore } from "../store/authStore";
-import { showToast } from "../utils/toast";
+} from './ui/dialog';
+import { Button, Text, VStack, Input } from '@chakra-ui/react';
+import { Alert } from './ui/alert';
+import { Checkbox } from './ui/checkbox';
+import { Field } from './ui/field';
+import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
 
 interface DeleteAllPlayersModalProps {
   isOpen: boolean;
@@ -20,44 +20,37 @@ interface DeleteAllPlayersModalProps {
   onSuccess?: () => void;
 }
 
-export function DeleteAllPlayersModal({
-  isOpen,
-  onClose,
-  onSuccess,
-}: DeleteAllPlayersModalProps) {
+export function DeleteAllPlayersModal({ isOpen, onClose, onSuccess }: DeleteAllPlayersModalProps) {
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
+  const [confirmText, setConfirmText] = useState('');
 
-  const CONFIRM_PHRASE = "DELETE ALL PLAYERS";
+  const CONFIRM_PHRASE = 'DELETE ALL PLAYERS';
 
   const handleDelete = async () => {
     if (!confirmed || confirmText !== CONFIRM_PHRASE) return;
 
     setIsDeleting(true);
     try {
-      const response = await fetch(
-        "http://localhost:3001/api/players/bulk/delete-all",
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${sessionToken}`,
-          },
+      const response = await fetch('http://localhost:3001/api/players/bulk/delete-all', {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
         },
-      );
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to delete players");
+        throw new Error(error.error || 'Failed to delete players');
       }
 
       const data = await response.json();
 
       showToast({
-        title: "Players deleted",
+        title: 'Players deleted',
         description: data.message,
-        type: "success",
+        type: 'success',
       });
 
       if (onSuccess) {
@@ -67,10 +60,9 @@ export function DeleteAllPlayersModal({
       handleClose();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to delete players",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete players',
+        type: 'error',
       });
     } finally {
       setIsDeleting(false);
@@ -79,37 +71,28 @@ export function DeleteAllPlayersModal({
 
   const handleClose = () => {
     setConfirmed(false);
-    setConfirmText("");
+    setConfirmText('');
     onClose();
   };
 
   return (
-    <DialogRoot
-      open={isOpen}
-      onOpenChange={(e) => !e.open && handleClose()}
-      size="lg"
-    >
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && handleClose()} size="lg">
       <DialogContent>
         <DialogHeader>Delete All Non-Host Players</DialogHeader>
         <DialogCloseTrigger />
         <DialogBody>
           <VStack gap="4" align="stretch">
             <Alert status="error" title="EXTREME DANGER: Permanent Data Loss">
-              This will PERMANENTLY DELETE all non-host players from the
-              database.
+              This will PERMANENTLY DELETE all non-host players from the database.
             </Alert>
 
             <Text fontWeight="bold" color="red.600">
               What will happen:
             </Text>
             <VStack gap="2" align="stretch" pl={4}>
-              <Text>
-                • ALL players (except hosts) will be PERMANENTLY DELETED
-              </Text>
+              <Text>• ALL players (except hosts) will be PERMANENTLY DELETED</Text>
               <Text>• ALL audience members will be PERMANENTLY DELETED</Text>
-              <Text>
-                • This affects EVERY non-host player, ignoring current filters
-              </Text>
+              <Text>• This affects EVERY non-host player, ignoring current filters</Text>
               <Text>• Host accounts will be preserved</Text>
               <Text fontWeight="bold" color="red.600">
                 • THIS CANNOT BE UNDONE
@@ -117,9 +100,8 @@ export function DeleteAllPlayersModal({
             </VStack>
 
             <Text color="gray.600" fontSize="sm">
-              This is a dangerous operation typically used only to reset the
-              game state between sessions. All deleted player data will be lost
-              permanently.
+              This is a dangerous operation typically used only to reset the game state between
+              sessions. All deleted player data will be lost permanently.
             </Text>
 
             <Checkbox
@@ -138,7 +120,7 @@ export function DeleteAllPlayersModal({
                 onChange={(e) => setConfirmText(e.target.value)}
                 placeholder={CONFIRM_PHRASE}
                 autoComplete="off"
-                bg={confirmText === CONFIRM_PHRASE ? "green.50" : "white"}
+                bg={confirmText === CONFIRM_PHRASE ? 'green.50' : 'white'}
               />
             </Field>
           </VStack>

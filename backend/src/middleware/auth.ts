@@ -1,10 +1,10 @@
-import type { FastifyRequest, FastifyReply } from "fastify";
-import { validateSession } from "../services/auth.js";
-import { getDatabase } from "../db/connection.js";
-import type { Player } from "../types/player.js";
+import type { FastifyRequest, FastifyReply } from 'fastify';
+import { validateSession } from '../services/auth.js';
+import { getDatabase } from '../db/connection.js';
+import type { Player } from '../types/player.js';
 
 // Extend Fastify request to include player
-declare module "fastify" {
+declare module 'fastify' {
   interface FastifyRequest {
     player?: Player;
   }
@@ -22,17 +22,17 @@ export async function authenticateRequest(
 
   if (!authHeader) {
     return reply.status(401).send({
-      error: "Unauthorized",
-      message: "Missing authorization header",
+      error: 'Unauthorized',
+      message: 'Missing authorization header',
     });
   }
 
   // Extract token from "Bearer <token>" format
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer") {
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') {
     return reply.status(401).send({
-      error: "Unauthorized",
-      message: "Invalid authorization header format",
+      error: 'Unauthorized',
+      message: 'Invalid authorization header format',
     });
   }
 
@@ -44,8 +44,8 @@ export async function authenticateRequest(
 
   if (!player) {
     return reply.status(401).send({
-      error: "Unauthorized",
-      message: "Invalid or expired session",
+      error: 'Unauthorized',
+      message: 'Invalid or expired session',
     });
   }
 

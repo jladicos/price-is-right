@@ -1,8 +1,8 @@
-import { FastifyPluginAsync } from "fastify";
-import { getDatabase } from "../db/connection.js";
-import { authenticateRequest } from "../middleware/auth.js";
-import { requireHost } from "../middleware/requireHost.js";
-import { getGameEnabled, setGameEnabled } from "../db/game-state.js";
+import { FastifyPluginAsync } from 'fastify';
+import { getDatabase } from '../db/connection.js';
+import { authenticateRequest } from '../middleware/auth.js';
+import { requireHost } from '../middleware/requireHost.js';
+import { getGameEnabled, setGameEnabled } from '../db/game-state.js';
 import {
   startNewGame,
   getCurrentState,
@@ -11,48 +11,40 @@ import {
   refreshContestantsRow,
   selectNextContestant,
   manualSelectContestant,
-} from "../services/game-state.js";
-import { updateGameWorkflow } from "../db/game-workflow.js";
-import { getGameStructure } from "../utils/products.js";
-import type { GamePhase, WheelPhase, ShowcasePhase } from "../types/product.js";
+} from '../services/game-state.js';
+import { updateGameWorkflow } from '../db/game-workflow.js';
+import { getGameStructure } from '../utils/products.js';
+import type { GamePhase, WheelPhase, ShowcasePhase } from '../types/product.js';
 
 const gameRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /api/game/status - Get game status (authenticated users only)
-  fastify.get(
-    "/game/status",
-    { preHandler: [authenticateRequest] },
-    async (_request, _reply) => {
-      const db = getDatabase();
-      const enabled = getGameEnabled(db);
+  fastify.get('/game/status', { preHandler: [authenticateRequest] }, async (_request, _reply) => {
+    const db = getDatabase();
+    const enabled = getGameEnabled(db);
 
-      return { enabled };
-    },
-  );
+    return { enabled };
+  });
 
   // PUT /api/game/status - Update game status (host only)
   fastify.put<{
     Body: {
       enabled: boolean;
     };
-  }>(
-    "/game/status",
-    { preHandler: [authenticateRequest, requireHost] },
-    async (request, reply) => {
-      const db = getDatabase();
-      const { enabled } = request.body;
+  }>('/game/status', { preHandler: [authenticateRequest, requireHost] }, async (request, reply) => {
+    const db = getDatabase();
+    const { enabled } = request.body;
 
-      if (typeof enabled !== "boolean") {
-        return reply.status(400).send({ error: "enabled must be a boolean" });
-      }
+    if (typeof enabled !== 'boolean') {
+      return reply.status(400).send({ error: 'enabled must be a boolean' });
+    }
 
-      setGameEnabled(db, enabled);
+    setGameEnabled(db, enabled);
 
-      return {
-        enabled,
-        message: enabled ? "Game enabled" : "Game disabled",
-      };
-    },
-  );
+    return {
+      enabled,
+      message: enabled ? 'Game enabled' : 'Game disabled',
+    };
+  });
 
   /**
    * POST /api/game/start
@@ -63,7 +55,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
    * Host only
    */
   fastify.post(
-    "/game/start",
+    '/game/start',
     {
       preHandler: [authenticateRequest, requireHost],
     },
@@ -75,19 +67,22 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         // Auto-select 5 random contestants for section_1
         // All start with status='pending_reveal' (must be revealed one-by-one)
         for (let i = 0; i < 5; i++) {
-          selectNextContestant("section_1");
+          selectNextContestant('section_1');
         }
 
         // Get game structure and set phase to first phase in section_1
         const gameStructure = getGameStructure();
         const firstPhase = gameStructure.section_1[0];
 
+        // Mark as fresh row since we just selected 5 initial contestants
+        const firstPhaseWithMetadata = { ...firstPhase, is_fresh_row: true };
+
         // Update workflow to first phase
         updateGameWorkflow({
-          current_segment: "section_1",
+          current_segment: 'section_1',
           current_segment_index: 0,
           phase_type: firstPhase.type,
-          phase_metadata: JSON.stringify(firstPhase),
+          phase_metadata: JSON.stringify(firstPhaseWithMetadata),
         });
 
         const state = getCurrentState();
@@ -100,8 +95,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error:
-            error instanceof Error ? error.message : "Failed to start game",
+          error: error instanceof Error ? error.message : 'Failed to start game',
         });
       }
     },
@@ -113,7 +107,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
    * Available to all authenticated users
    */
   fastify.get(
-    "/game/state",
+    '/game/state',
     {
       preHandler: [authenticateRequest],
     },
@@ -129,8 +123,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error:
-            error instanceof Error ? error.message : "Failed to get game state",
+          error: error instanceof Error ? error.message : 'Failed to get game state',
         });
       }
     },
@@ -145,7 +138,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: { contestantRowId: number };
   }>(
-    "/game/reveal-contestant",
+    '/game/reveal-contestant',
     {
       preHandler: [authenticateRequest, requireHost],
     },
@@ -153,10 +146,10 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
       try {
         const { contestantRowId } = request.body;
 
-        if (!contestantRowId || typeof contestantRowId !== "number") {
+        if (!contestantRowId || typeof contestantRowId !== 'number') {
           return reply.status(400).send({
             success: false,
-            error: "contestantRowId is required and must be a number",
+            error: 'contestantRowId is required and must be a number',
           });
         }
 
@@ -170,10 +163,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to reveal contestant",
+          error: error instanceof Error ? error.message : 'Failed to reveal contestant',
         });
       }
     },
@@ -188,7 +178,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: { contestantRowId: number };
   }>(
-    "/game/replace-contestant-random",
+    '/game/replace-contestant-random',
     {
       preHandler: [authenticateRequest, requireHost],
     },
@@ -196,10 +186,10 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
       try {
         const { contestantRowId } = request.body;
 
-        if (!contestantRowId || typeof contestantRowId !== "number") {
+        if (!contestantRowId || typeof contestantRowId !== 'number') {
           return reply.status(400).send({
             success: false,
-            error: "contestantRowId is required and must be a number",
+            error: 'contestantRowId is required and must be a number',
           });
         }
 
@@ -213,10 +203,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to replace contestant",
+          error: error instanceof Error ? error.message : 'Failed to replace contestant',
         });
       }
     },
@@ -233,7 +220,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: { playerId: number; position: number; segment: string };
   }>(
-    "/game/manual-select-contestant",
+    '/game/manual-select-contestant',
     {
       preHandler: [authenticateRequest, requireHost],
     },
@@ -241,24 +228,24 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
       try {
         const { playerId, position, segment } = request.body;
 
-        if (!playerId || typeof playerId !== "number") {
+        if (!playerId || typeof playerId !== 'number') {
           return reply.status(400).send({
             success: false,
-            error: "playerId is required and must be a number",
+            error: 'playerId is required and must be a number',
           });
         }
 
-        if (!position || typeof position !== "number") {
+        if (!position || typeof position !== 'number') {
           return reply.status(400).send({
             success: false,
-            error: "position is required and must be a number",
+            error: 'position is required and must be a number',
           });
         }
 
-        if (!segment || typeof segment !== "string") {
+        if (!segment || typeof segment !== 'string') {
           return reply.status(400).send({
             success: false,
-            error: "segment is required and must be a string",
+            error: 'segment is required and must be a string',
           });
         }
 
@@ -272,10 +259,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to manually select contestant",
+          error: error instanceof Error ? error.message : 'Failed to manually select contestant',
         });
       }
     },
@@ -291,7 +275,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{
     Body: { contestantRowId: number; newPlayerId: number };
   }>(
-    "/game/replace-contestant-manual",
+    '/game/replace-contestant-manual',
     {
       preHandler: [authenticateRequest, requireHost],
     },
@@ -299,17 +283,17 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
       try {
         const { contestantRowId, newPlayerId } = request.body;
 
-        if (!contestantRowId || typeof contestantRowId !== "number") {
+        if (!contestantRowId || typeof contestantRowId !== 'number') {
           return reply.status(400).send({
             success: false,
-            error: "contestantRowId is required and must be a number",
+            error: 'contestantRowId is required and must be a number',
           });
         }
 
-        if (!newPlayerId || typeof newPlayerId !== "number") {
+        if (!newPlayerId || typeof newPlayerId !== 'number') {
           return reply.status(400).send({
             success: false,
-            error: "newPlayerId is required and must be a number",
+            error: 'newPlayerId is required and must be a number',
           });
         }
 
@@ -323,10 +307,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to replace contestant",
+          error: error instanceof Error ? error.message : 'Failed to replace contestant',
         });
       }
     },
@@ -339,9 +320,9 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
    * Host only
    */
   fastify.post<{
-    Body: { segment: "section_1" | "section_2" };
+    Body: { segment: 'section_1' | 'section_2' };
   }>(
-    "/game/refresh-contestants-row",
+    '/game/refresh-contestants-row',
     {
       preHandler: [authenticateRequest, requireHost],
     },
@@ -349,15 +330,23 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
       try {
         const { segment } = request.body;
 
-        if (!segment || (segment !== "section_1" && segment !== "section_2")) {
+        if (!segment || (segment !== 'section_1' && segment !== 'section_2')) {
           return reply.status(400).send({
             success: false,
-            error:
-              "segment is required and must be either section_1 or section_2",
+            error: 'segment is required and must be either section_1 or section_2',
           });
         }
 
         const contestants = refreshContestantsRow(segment);
+
+        // Mark as fresh row since we just replaced all 5 contestants
+        const workflow = getCurrentState().workflow;
+        const metadata = workflow.phase_metadata ? JSON.parse(workflow.phase_metadata) : {};
+        metadata.is_fresh_row = true;
+
+        updateGameWorkflow({
+          phase_metadata: JSON.stringify(metadata),
+        });
 
         return reply.status(200).send({
           success: true,
@@ -367,10 +356,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to refresh contestants row",
+          error: error instanceof Error ? error.message : 'Failed to refresh contestants row',
         });
       }
     },
@@ -386,7 +372,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
    * Host only
    */
   fastify.post(
-    "/game/advance",
+    '/game/advance',
     {
       preHandler: [authenticateRequest, requireHost],
     },
@@ -399,29 +385,44 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         const currentIndex = workflow.current_segment_index;
 
         // Auto-select replacement contestant if advancing FROM a bidding phase
-        // Only if there's an empty position (winner has left)
-        if (currentPhaseType === "bidding") {
+        // Replace the winner with a new contestant
+        let replacementAdded = false;
+        if (currentPhaseType === 'bidding') {
           // Only auto-select if we're in a valid segment (not finale)
-          if (
-            currentSegment === "section_1" ||
-            currentSegment === "section_2"
-          ) {
-            try {
-              selectNextContestant(currentSegment as "section_1" | "section_2");
-            } catch (error) {
-              // If all positions are filled, skip auto-selection
-              // This can happen if testing or if winner hasn't been marked yet
-              if (
-                error instanceof Error &&
-                error.message.includes("All contestant positions are filled")
-              ) {
-                // Silently skip - this is expected when positions are full
-                request.log.debug(
-                  "Skipping auto-selection: all positions filled",
+          if (currentSegment === 'section_1' || currentSegment === 'section_2') {
+            // Find the winner (status='won') and replace them
+            const { getAllActiveContestants } = await import('../db/contestants.js');
+            const contestants = getAllActiveContestants();
+            const winner = contestants.find((c) => c.status === 'won');
+
+            if (winner) {
+              // Replace the winner with a random contestant
+              try {
+                replaceContestant(winner.id);
+                replacementAdded = true;
+                request.log.info(
+                  `Replaced winner at position ${winner.position} with new contestant`,
                 );
-              } else {
-                // Re-throw other errors
-                throw error;
+              } catch (error) {
+                request.log.error('Failed to replace winner:', error);
+                // Continue anyway - don't block phase advancement
+              }
+            } else {
+              // No winner found - try to fill empty position (if any)
+              try {
+                selectNextContestant(currentSegment as 'section_1' | 'section_2');
+                replacementAdded = true;
+              } catch (error) {
+                // If all positions are filled, skip auto-selection
+                if (
+                  error instanceof Error &&
+                  error.message.includes('All contestant positions are filled')
+                ) {
+                  request.log.debug('Skipping auto-selection: all positions filled');
+                } else {
+                  // Re-throw other errors
+                  throw error;
+                }
               }
             }
           }
@@ -432,47 +433,47 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         let nextIndex: number;
         let nextPhase: GamePhase | WheelPhase | ShowcasePhase;
 
-        if (currentSegment === "section_1") {
+        if (currentSegment === 'section_1') {
           const section1Phases = gameStructure.section_1;
           if (currentIndex < section1Phases.length - 1) {
             // More phases in section_1
-            nextSegment = "section_1";
+            nextSegment = 'section_1';
             nextIndex = currentIndex + 1;
             nextPhase = section1Phases[nextIndex];
           } else {
             // End of section_1, go to section_1_finale (wheel)
-            nextSegment = "section_1_finale";
+            nextSegment = 'section_1_finale';
             nextIndex = 0;
             nextPhase = gameStructure.section_1_finale;
           }
-        } else if (currentSegment === "section_1_finale") {
+        } else if (currentSegment === 'section_1_finale') {
           // After section_1_finale, go to section_2[0]
-          nextSegment = "section_2";
+          nextSegment = 'section_2';
           nextIndex = 0;
           nextPhase = gameStructure.section_2[0];
-        } else if (currentSegment === "section_2") {
+        } else if (currentSegment === 'section_2') {
           const section2Phases = gameStructure.section_2;
           if (currentIndex < section2Phases.length - 1) {
             // More phases in section_2
-            nextSegment = "section_2";
+            nextSegment = 'section_2';
             nextIndex = currentIndex + 1;
             nextPhase = section2Phases[nextIndex];
           } else {
             // End of section_2, go to section_2_finale (wheel)
-            nextSegment = "section_2_finale";
+            nextSegment = 'section_2_finale';
             nextIndex = 0;
             nextPhase = gameStructure.section_2_finale;
           }
-        } else if (currentSegment === "section_2_finale") {
+        } else if (currentSegment === 'section_2_finale') {
           // After section_2_finale, go to finale (showcase)
-          nextSegment = "finale";
+          nextSegment = 'finale';
           nextIndex = 0;
           nextPhase = gameStructure.finale;
-        } else if (currentSegment === "finale") {
+        } else if (currentSegment === 'finale') {
           // Already at finale, cannot advance further
           return reply.status(400).send({
             success: false,
-            error: "Cannot advance beyond finale",
+            error: 'Cannot advance beyond finale',
           });
         } else {
           // Invalid segment
@@ -482,12 +483,23 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
           });
         }
 
+        // Preserve is_fresh_row flag from current metadata
+        const currentMetadata = workflow.phase_metadata ? JSON.parse(workflow.phase_metadata) : {};
+        const nextMetadata = { ...nextPhase };
+
+        // Preserve is_fresh_row, but update to false if we just added a replacement
+        if (replacementAdded) {
+          nextMetadata.is_fresh_row = false;
+        } else if (currentMetadata.is_fresh_row !== undefined) {
+          nextMetadata.is_fresh_row = currentMetadata.is_fresh_row;
+        }
+
         // Update workflow to next phase
         updateGameWorkflow({
           current_segment: nextSegment,
           current_segment_index: nextIndex,
           phase_type: nextPhase.type,
-          phase_metadata: JSON.stringify(nextPhase),
+          phase_metadata: JSON.stringify(nextMetadata),
         });
 
         const state = getCurrentState();
@@ -500,8 +512,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error:
-            error instanceof Error ? error.message : "Failed to advance phase",
+          error: error instanceof Error ? error.message : 'Failed to advance phase',
         });
       }
     },
@@ -521,40 +532,39 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
       phaseMetadata?: GamePhase | WheelPhase | ShowcasePhase;
     };
   }>(
-    "/game/override-phase",
+    '/game/override-phase',
     {
       preHandler: [authenticateRequest, requireHost],
     },
     async (request, reply) => {
       try {
-        const { segment, segmentIndex, phaseType, phaseMetadata } =
-          request.body;
+        const { segment, segmentIndex, phaseType, phaseMetadata } = request.body;
 
-        if (!segment || typeof segment !== "string") {
+        if (!segment || typeof segment !== 'string') {
           return reply.status(400).send({
             success: false,
-            error: "segment is required and must be a string",
+            error: 'segment is required and must be a string',
           });
         }
 
-        if (segmentIndex === undefined || typeof segmentIndex !== "number") {
+        if (segmentIndex === undefined || typeof segmentIndex !== 'number') {
           return reply.status(400).send({
             success: false,
-            error: "segmentIndex is required and must be a number",
+            error: 'segmentIndex is required and must be a number',
           });
         }
 
-        if (!phaseType || typeof phaseType !== "string") {
+        if (!phaseType || typeof phaseType !== 'string') {
           return reply.status(400).send({
             success: false,
-            error: "phaseType is required and must be a string",
+            error: 'phaseType is required and must be a string',
           });
         }
 
         // Log warning for audit trail
         request.log.warn(
           { segment, segmentIndex, phaseType, phaseMetadata },
-          "Phase override requested - bypassing normal advancement",
+          'Phase override requested - bypassing normal advancement',
         );
 
         // Update workflow
@@ -575,8 +585,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error:
-            error instanceof Error ? error.message : "Failed to override phase",
+          error: error instanceof Error ? error.message : 'Failed to override phase',
         });
       }
     },

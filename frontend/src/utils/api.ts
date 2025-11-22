@@ -1,8 +1,7 @@
 // API client for communicating with the backend
 
 // Base API URL - defaults to localhost:3001/api in development
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Type definitions for API requests/responses
 export interface Player {
@@ -10,7 +9,7 @@ export interface Player {
   firstName: string;
   lastName: string;
   accessCode: string;
-  role: "host" | "player" | "audience";
+  role: 'host' | 'player' | 'audience';
   email: string | null;
   photoFilename: string;
   active: boolean;
@@ -52,22 +51,19 @@ export function setSessionTokenGetter(getter: () => string | null) {
 }
 
 // Base fetch wrapper with auth header injection and error handling
-async function apiFetch<T>(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
   // Add authorization header if session token is available
   const headers: HeadersInit = {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
     ...options.headers,
   };
 
   if (getSessionToken) {
     const token = getSessionToken();
     if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+      headers['Authorization'] = `Bearer ${token}`;
     }
   }
 
@@ -82,13 +78,13 @@ async function apiFetch<T>(
       onSessionExpired();
     }
     const errorData = (await response.json()) as ErrorResponse;
-    throw new Error(errorData.message || errorData.error || "Unauthorized");
+    throw new Error(errorData.message || errorData.error || 'Unauthorized');
   }
 
   // Handle other error responses
   if (!response.ok) {
     const errorData = (await response.json()) as ErrorResponse;
-    throw new Error(errorData.message || errorData.error || "Request failed");
+    throw new Error(errorData.message || errorData.error || 'Request failed');
   }
 
   return response.json() as Promise<T>;
@@ -100,21 +96,21 @@ export const apiRequest = apiFetch;
 // Auth API endpoints
 
 export async function login(accessCode: string): Promise<LoginResponse> {
-  return apiFetch<LoginResponse>("/auth/login", {
-    method: "POST",
+  return apiFetch<LoginResponse>('/auth/login', {
+    method: 'POST',
     body: JSON.stringify({ accessCode }),
   });
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch<void>("/auth/logout", {
-    method: "POST",
+  await apiFetch<void>('/auth/logout', {
+    method: 'POST',
   });
 }
 
 export async function validateSession(): Promise<SessionResponse> {
-  return apiFetch<SessionResponse>("/auth/session", {
-    method: "GET",
+  return apiFetch<SessionResponse>('/auth/session', {
+    method: 'GET',
   });
 }
 
@@ -125,8 +121,8 @@ export interface GetPlayersResponse {
 }
 
 export async function getPlayers(): Promise<GetPlayersResponse> {
-  return apiFetch<GetPlayersResponse>("/players", {
-    method: "GET",
+  return apiFetch<GetPlayersResponse>('/players', {
+    method: 'GET',
   });
 }
 
@@ -136,6 +132,6 @@ export interface GetPlayerResponse {
 
 export async function getPlayer(id: number): Promise<GetPlayerResponse> {
   return apiFetch<GetPlayerResponse>(`/players/${id}`, {
-    method: "GET",
+    method: 'GET',
   });
 }

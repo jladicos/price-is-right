@@ -1,8 +1,5 @@
-import { getGameWorkflow, type GameWorkflow } from "../db/game-workflow.js";
-import {
-  getActiveContestants,
-  type ContestantWithPlayer,
-} from "../db/contestants.js";
+import { getGameWorkflow, type GameWorkflow } from '../db/game-workflow.js';
+import { getActiveContestants, type ContestantWithPlayer } from '../db/contestants.js';
 
 export interface ResumedGameState {
   workflow: GameWorkflow;
@@ -16,7 +13,7 @@ export interface ResumedGameState {
  */
 export function checkForInProgressGame(): boolean {
   const workflow = getGameWorkflow();
-  return workflow.phase_type !== "not_started";
+  return workflow.phase_type !== 'not_started';
 }
 
 /**
@@ -28,8 +25,8 @@ export function resumeGame(): ResumedGameState {
   const workflow = getGameWorkflow();
 
   // Load contestants for both sections
-  const section1Contestants = getActiveContestants("section_1");
-  const section2Contestants = getActiveContestants("section_2");
+  const section1Contestants = getActiveContestants('section_1');
+  const section2Contestants = getActiveContestants('section_2');
 
   return {
     workflow,

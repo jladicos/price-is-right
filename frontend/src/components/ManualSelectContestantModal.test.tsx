@@ -1,45 +1,45 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "../test/test-utils";
-import userEvent from "@testing-library/user-event";
-import { ManualSelectContestantModal } from "./ManualSelectContestantModal";
-import * as apiModule from "../utils/api";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor } from '../test/test-utils';
+import userEvent from '@testing-library/user-event';
+import { ManualSelectContestantModal } from './ManualSelectContestantModal';
+import * as apiModule from '../utils/api';
 
 // Mock API and toast
-vi.mock("../utils/api", () => ({
+vi.mock('../utils/api', () => ({
   apiRequest: vi.fn(),
 }));
 
-vi.mock("../utils/toast", () => ({
+vi.mock('../utils/toast', () => ({
   showToast: vi.fn(),
 }));
 
-describe("ManualSelectContestantModal", () => {
+describe('ManualSelectContestantModal', () => {
   const mockOnClose = vi.fn();
   const mockOnConfirm = vi.fn();
 
   const mockPlayers = [
     {
       id: 1,
-      firstName: "John",
-      lastName: "Doe",
-      photoFilename: "john.jpg",
-      role: "audience",
+      firstName: 'John',
+      lastName: 'Doe',
+      photoFilename: 'john.jpg',
+      role: 'audience',
       active: true,
     },
     {
       id: 2,
-      firstName: "Jane",
-      lastName: "Smith",
-      photoFilename: "jane.jpg",
-      role: "player",
+      firstName: 'Jane',
+      lastName: 'Smith',
+      photoFilename: 'jane.jpg',
+      role: 'player',
       active: true,
     },
     {
       id: 3,
-      firstName: "Bob",
-      lastName: "Johnson",
-      photoFilename: "bob.jpg",
-      role: "audience",
+      firstName: 'Bob',
+      lastName: 'Johnson',
+      photoFilename: 'bob.jpg',
+      role: 'audience',
       active: true,
     },
   ];
@@ -53,8 +53,8 @@ describe("ManualSelectContestantModal", () => {
     });
   });
 
-  describe("Rendering", () => {
-    it("should not render when closed", () => {
+  describe('Rendering', () => {
+    it('should not render when closed', () => {
       render(
         <ManualSelectContestantModal
           isOpen={false}
@@ -63,12 +63,10 @@ describe("ManualSelectContestantModal", () => {
         />,
       );
 
-      expect(
-        screen.queryByText("Manually Select Contestant"),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText('Manually Select Contestant')).not.toBeInTheDocument();
     });
 
-    it("should render modal when open", async () => {
+    it('should render modal when open', async () => {
       render(
         <ManualSelectContestantModal
           isOpen={true}
@@ -77,15 +75,13 @@ describe("ManualSelectContestantModal", () => {
         />,
       );
 
-      expect(
-        screen.getByText("Manually Select Contestant"),
-      ).toBeInTheDocument();
-      expect(screen.getByText("Position")).toBeInTheDocument();
-      expect(screen.getByText("Segment")).toBeInTheDocument();
-      expect(screen.getByText("Search Players")).toBeInTheDocument();
+      expect(screen.getByText('Manually Select Contestant')).toBeInTheDocument();
+      expect(screen.getByText('Position')).toBeInTheDocument();
+      expect(screen.getByText('Segment')).toBeInTheDocument();
+      expect(screen.getByText('Search Players')).toBeInTheDocument();
     });
 
-    it("should fetch players when modal opens", async () => {
+    it('should fetch players when modal opens', async () => {
       render(
         <ManualSelectContestantModal
           isOpen={true}
@@ -94,16 +90,16 @@ describe("ManualSelectContestantModal", () => {
         />,
       );
 
-      expect(apiModule.apiRequest).toHaveBeenCalledWith("/players?active=true");
+      expect(apiModule.apiRequest).toHaveBeenCalledWith('/players?active=true');
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
-        expect(screen.getByText("Jane Smith")).toBeInTheDocument();
-        expect(screen.getByText("Bob Johnson")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+        expect(screen.getByText('Bob Johnson')).toBeInTheDocument();
       });
     });
 
-    it("should show loading state while fetching players", async () => {
+    it('should show loading state while fetching players', async () => {
       let resolveApi: (value: unknown) => void;
       const apiPromise = new Promise((resolve) => {
         resolveApi = resolve;
@@ -118,16 +114,16 @@ describe("ManualSelectContestantModal", () => {
         />,
       );
 
-      expect(screen.getByText("Loading players...")).toBeInTheDocument();
+      expect(screen.getByText('Loading players...')).toBeInTheDocument();
 
       resolveApi!({ players: mockPlayers, total: 3 });
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
     });
 
-    it("should use current segment prop as default", async () => {
+    it('should use current segment prop as default', async () => {
       render(
         <ManualSelectContestantModal
           isOpen={true}
@@ -138,21 +134,19 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Find the segment select element by checking all selects for section_2 value
-      const selects = document.querySelectorAll("select");
-      const segmentSelect = Array.from(selects).find(
-        (select) => select.value === "section_2",
-      );
+      const selects = document.querySelectorAll('select');
+      const segmentSelect = Array.from(selects).find((select) => select.value === 'section_2');
       expect(segmentSelect).toBeDefined();
-      expect(segmentSelect?.value).toBe("section_2");
+      expect(segmentSelect?.value).toBe('section_2');
     });
   });
 
-  describe("Position and Segment Selection", () => {
-    it("should allow changing position", async () => {
+  describe('Position and Segment Selection', () => {
+    it('should allow changing position', async () => {
       const user = userEvent.setup();
 
       render(
@@ -164,19 +158,19 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Find position select - it's the first select element
-      const selects = document.querySelectorAll("select");
+      const selects = document.querySelectorAll('select');
       const positionSelect = selects[0];
 
-      await user.selectOptions(positionSelect, "3");
+      await user.selectOptions(positionSelect, '3');
 
-      expect(positionSelect.value).toBe("3");
+      expect(positionSelect.value).toBe('3');
     });
 
-    it("should allow changing segment", async () => {
+    it('should allow changing segment', async () => {
       const user = userEvent.setup();
 
       render(
@@ -188,21 +182,21 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Find segment select - it's the second select element
-      const selects = document.querySelectorAll("select");
+      const selects = document.querySelectorAll('select');
       const segmentSelect = selects[1];
 
-      await user.selectOptions(segmentSelect, "section_2");
+      await user.selectOptions(segmentSelect, 'section_2');
 
-      expect(segmentSelect.value).toBe("section_2");
+      expect(segmentSelect.value).toBe('section_2');
     });
   });
 
-  describe("Player Search", () => {
-    it("should filter players based on first name", async () => {
+  describe('Player Search', () => {
+    it('should filter players based on first name', async () => {
       const user = userEvent.setup();
 
       render(
@@ -214,20 +208,20 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText("Search by name...");
-      await user.type(searchInput, "jane");
+      const searchInput = screen.getByPlaceholderText('Search by name...');
+      await user.type(searchInput, 'jane');
 
       await waitFor(() => {
-        expect(screen.getByText("Jane Smith")).toBeInTheDocument();
-        expect(screen.queryByText("John Doe")).not.toBeInTheDocument();
-        expect(screen.queryByText("Bob Johnson")).not.toBeInTheDocument();
+        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+        expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
+        expect(screen.queryByText('Bob Johnson')).not.toBeInTheDocument();
       });
     });
 
-    it("should filter players based on last name", async () => {
+    it('should filter players based on last name', async () => {
       const user = userEvent.setup();
 
       render(
@@ -239,20 +233,20 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText("Search by name...");
-      await user.type(searchInput, "doe");
+      const searchInput = screen.getByPlaceholderText('Search by name...');
+      await user.type(searchInput, 'doe');
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
-        expect(screen.queryByText("Jane Smith")).not.toBeInTheDocument();
-        expect(screen.queryByText("Bob Johnson")).not.toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+        expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument();
+        expect(screen.queryByText('Bob Johnson')).not.toBeInTheDocument();
       });
     });
 
-    it("should show all players when search is cleared", async () => {
+    it('should show all players when search is cleared', async () => {
       const user = userEvent.setup();
 
       render(
@@ -264,26 +258,26 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText("Search by name...");
-      await user.type(searchInput, "jane");
+      const searchInput = screen.getByPlaceholderText('Search by name...');
+      await user.type(searchInput, 'jane');
 
       await waitFor(() => {
-        expect(screen.queryByText("John Doe")).not.toBeInTheDocument();
+        expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
       });
 
       await user.clear(searchInput);
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
-        expect(screen.getByText("Jane Smith")).toBeInTheDocument();
-        expect(screen.getByText("Bob Johnson")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+        expect(screen.getByText('Bob Johnson')).toBeInTheDocument();
       });
     });
 
-    it("should show no players found message when search has no results", async () => {
+    it('should show no players found message when search has no results', async () => {
       const user = userEvent.setup();
 
       render(
@@ -295,18 +289,18 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText("Search by name...");
-      await user.type(searchInput, "nonexistent");
+      const searchInput = screen.getByPlaceholderText('Search by name...');
+      await user.type(searchInput, 'nonexistent');
 
       await waitFor(() => {
-        expect(screen.getByText("No players found")).toBeInTheDocument();
+        expect(screen.getByText('No players found')).toBeInTheDocument();
       });
     });
 
-    it("should update player count in header", async () => {
+    it('should update player count in header', async () => {
       const user = userEvent.setup();
 
       render(
@@ -321,8 +315,8 @@ describe("ManualSelectContestantModal", () => {
         expect(screen.getByText(/3 found/)).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText("Search by name...");
-      await user.type(searchInput, "jane");
+      const searchInput = screen.getByPlaceholderText('Search by name...');
+      await user.type(searchInput, 'jane');
 
       await waitFor(() => {
         expect(screen.getByText(/1 found/)).toBeInTheDocument();
@@ -330,8 +324,8 @@ describe("ManualSelectContestantModal", () => {
     });
   });
 
-  describe("Player Selection", () => {
-    it("should allow selecting a player", async () => {
+  describe('Player Selection', () => {
+    it('should allow selecting a player', async () => {
       const user = userEvent.setup();
 
       render(
@@ -343,19 +337,19 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
       // Should show preview
       await waitFor(() => {
-        expect(screen.getByText("Selection Preview")).toBeInTheDocument();
+        expect(screen.getByText('Selection Preview')).toBeInTheDocument();
       });
     });
 
-    it("should highlight selected player", async () => {
+    it('should highlight selected player', async () => {
       const user = userEvent.setup();
 
       render(
@@ -367,17 +361,17 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
       // Check if the card has selected styling (blue border)
-      expect(johnCard).toHaveStyle({ borderColor: "blue.500" });
+      expect(johnCard).toHaveStyle({ borderColor: 'blue.500' });
     });
 
-    it("should show selection preview with player details", async () => {
+    it('should show selection preview with player details', async () => {
       const user = userEvent.setup();
 
       render(
@@ -389,21 +383,21 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
       await waitFor(() => {
-        const preview = screen.getByText("Selection Preview").closest("div")!;
-        expect(preview).toHaveTextContent("Player: John Doe");
-        expect(preview).toHaveTextContent("Position: 1");
-        expect(preview).toHaveTextContent("Segment: section_1");
+        const preview = screen.getByText('Selection Preview').closest('div')!;
+        expect(preview).toHaveTextContent('Player: John Doe');
+        expect(preview).toHaveTextContent('Position: 1');
+        expect(preview).toHaveTextContent('Segment: section_1');
       });
     });
 
-    it("should allow changing selection", async () => {
+    it('should allow changing selection', async () => {
       const user = userEvent.setup();
 
       render(
@@ -415,30 +409,30 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Select John
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
       await waitFor(() => {
-        expect(screen.getByText("Selection Preview")).toBeInTheDocument();
+        expect(screen.getByText('Selection Preview')).toBeInTheDocument();
       });
 
       // Change to Jane
-      const janeCard = screen.getByText("Jane Smith").closest("div")!;
+      const janeCard = screen.getByText('Jane Smith').closest('div')!;
       await user.click(janeCard);
 
       await waitFor(() => {
-        const preview = screen.getByText("Selection Preview").closest("div")!;
-        expect(preview).toHaveTextContent("Player: Jane Smith");
+        const preview = screen.getByText('Selection Preview').closest('div')!;
+        expect(preview).toHaveTextContent('Player: Jane Smith');
       });
     });
   });
 
-  describe("Confirmation", () => {
-    it("should call onConfirm with correct parameters when confirmed", async () => {
+  describe('Confirmation', () => {
+    it('should call onConfirm with correct parameters when confirmed', async () => {
       const user = userEvent.setup();
 
       render(
@@ -450,23 +444,23 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Select a player
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
       // Click confirm button
-      const confirmButton = screen.getByRole("button", {
+      const confirmButton = screen.getByRole('button', {
         name: /Confirm Selection/i,
       });
       await user.click(confirmButton);
 
-      expect(mockOnConfirm).toHaveBeenCalledWith(1, 1, "section_1");
+      expect(mockOnConfirm).toHaveBeenCalledWith(1, 1, 'section_1');
     });
 
-    it("should prevent confirmation when no player selected via disabled button", async () => {
+    it('should prevent confirmation when no player selected via disabled button', async () => {
       render(
         <ManualSelectContestantModal
           isOpen={true}
@@ -476,11 +470,11 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Confirm button should be disabled when no player selected
-      const confirmButton = screen.getByRole("button", {
+      const confirmButton = screen.getByRole('button', {
         name: /Confirm Selection/i,
       });
       expect(confirmButton).toBeDisabled();
@@ -489,7 +483,7 @@ describe("ManualSelectContestantModal", () => {
       expect(mockOnConfirm).not.toHaveBeenCalled();
     });
 
-    it("should disable confirm button when no player selected", async () => {
+    it('should disable confirm button when no player selected', async () => {
       render(
         <ManualSelectContestantModal
           isOpen={true}
@@ -499,16 +493,16 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const confirmButton = screen.getByRole("button", {
+      const confirmButton = screen.getByRole('button', {
         name: /Confirm Selection/i,
       });
       expect(confirmButton).toBeDisabled();
     });
 
-    it("should enable confirm button when player selected", async () => {
+    it('should enable confirm button when player selected', async () => {
       const user = userEvent.setup();
 
       render(
@@ -520,16 +514,16 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const confirmButton = screen.getByRole("button", {
+      const confirmButton = screen.getByRole('button', {
         name: /Confirm Selection/i,
       });
       expect(confirmButton).toBeDisabled();
 
       // Select a player
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
       await waitFor(() => {
@@ -537,7 +531,7 @@ describe("ManualSelectContestantModal", () => {
       });
     });
 
-    it("should close modal after successful confirmation", async () => {
+    it('should close modal after successful confirmation', async () => {
       const user = userEvent.setup();
 
       render(
@@ -549,14 +543,14 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Select and confirm
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
-      const confirmButton = screen.getByRole("button", {
+      const confirmButton = screen.getByRole('button', {
         name: /Confirm Selection/i,
       });
       await user.click(confirmButton);
@@ -566,7 +560,7 @@ describe("ManualSelectContestantModal", () => {
       });
     });
 
-    it("should show loading state while confirming", async () => {
+    it('should show loading state while confirming', async () => {
       const user = userEvent.setup();
       let resolveConfirm: () => void;
       const confirmPromise = new Promise<void>((resolve) => {
@@ -583,13 +577,13 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
-      const confirmButton = screen.getByRole("button", {
+      const confirmButton = screen.getByRole('button', {
         name: /Confirm Selection/i,
       });
       await user.click(confirmButton);
@@ -604,8 +598,8 @@ describe("ManualSelectContestantModal", () => {
     });
   });
 
-  describe("Cancel and Close", () => {
-    it("should call onClose when cancel button clicked", async () => {
+  describe('Cancel and Close', () => {
+    it('should call onClose when cancel button clicked', async () => {
       const user = userEvent.setup();
 
       render(
@@ -617,16 +611,16 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+      const cancelButton = screen.getByRole('button', { name: /Cancel/i });
       await user.click(cancelButton);
 
       expect(mockOnClose).toHaveBeenCalled();
     });
 
-    it("should reset state when modal closes", async () => {
+    it('should reset state when modal closes', async () => {
       const user = userEvent.setup();
       const { unmount } = render(
         <ManualSelectContestantModal
@@ -637,19 +631,19 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Select a player and search
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
-      const searchInput = screen.getByPlaceholderText("Search by name...");
-      await user.type(searchInput, "john");
+      const searchInput = screen.getByPlaceholderText('Search by name...');
+      await user.type(searchInput, 'john');
 
       // Verify selection preview and filtered search
       await waitFor(() => {
-        expect(screen.getByText("Selection Preview")).toBeInTheDocument();
+        expect(screen.getByText('Selection Preview')).toBeInTheDocument();
       });
 
       // Unmount and remount to simulate full reset
@@ -664,21 +658,19 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Search should be cleared and no player selected
-      expect(screen.getByPlaceholderText("Search by name...")).toHaveValue("");
-      expect(screen.queryByText("Selection Preview")).not.toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Search by name...')).toHaveValue('');
+      expect(screen.queryByText('Selection Preview')).not.toBeInTheDocument();
     });
   });
 
-  describe("Error Handling", () => {
-    it("should show error toast when player fetch fails", async () => {
-      const showToast = await import("../utils/toast");
-      vi.mocked(apiModule.apiRequest).mockRejectedValue(
-        new Error("Network error"),
-      );
+  describe('Error Handling', () => {
+    it('should show error toast when player fetch fails', async () => {
+      const showToast = await import('../utils/toast');
+      vi.mocked(apiModule.apiRequest).mockRejectedValue(new Error('Network error'));
 
       render(
         <ManualSelectContestantModal
@@ -690,17 +682,17 @@ describe("ManualSelectContestantModal", () => {
 
       await waitFor(() => {
         expect(showToast.showToast).toHaveBeenCalledWith({
-          title: "Error",
-          description: "Network error",
-          type: "error",
+          title: 'Error',
+          description: 'Network error',
+          type: 'error',
         });
       });
     });
 
-    it("should show error toast when confirmation fails", async () => {
+    it('should show error toast when confirmation fails', async () => {
       const user = userEvent.setup();
-      const showToast = await import("../utils/toast");
-      mockOnConfirm.mockRejectedValue(new Error("Failed to add contestant"));
+      const showToast = await import('../utils/toast');
+      mockOnConfirm.mockRejectedValue(new Error('Failed to add contestant'));
 
       render(
         <ManualSelectContestantModal
@@ -711,22 +703,22 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
-      const confirmButton = screen.getByRole("button", {
+      const confirmButton = screen.getByRole('button', {
         name: /Confirm Selection/i,
       });
       await user.click(confirmButton);
 
       await waitFor(() => {
         expect(showToast.showToast).toHaveBeenCalledWith({
-          title: "Error",
-          description: "Failed to add contestant",
-          type: "error",
+          title: 'Error',
+          description: 'Failed to add contestant',
+          type: 'error',
         });
       });
 
@@ -735,8 +727,8 @@ describe("ManualSelectContestantModal", () => {
     });
   });
 
-  describe("Additional Edge Cases", () => {
-    it("should handle empty players array from API", async () => {
+  describe('Additional Edge Cases', () => {
+    it('should handle empty players array from API', async () => {
       vi.mocked(apiModule.apiRequest).mockResolvedValue({
         players: [],
         total: 0,
@@ -751,14 +743,14 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("No players found")).toBeInTheDocument();
+        expect(screen.getByText('No players found')).toBeInTheDocument();
         expect(screen.getByText(/0 found/)).toBeInTheDocument();
       });
     });
 
-    it("should handle API returning malformed data gracefully", async () => {
+    it('should handle API returning malformed data gracefully', async () => {
       vi.mocked(apiModule.apiRequest).mockResolvedValue({
-        players: null as any,
+        players: null as unknown,
         total: 0,
       });
 
@@ -771,12 +763,10 @@ describe("ManualSelectContestantModal", () => {
       );
 
       // Component should not crash
-      expect(
-        screen.getByText("Manually Select Contestant"),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Manually Select Contestant')).toBeInTheDocument();
     });
 
-    it("should maintain selection when filtering players", async () => {
+    it('should maintain selection when filtering players', async () => {
       const user = userEvent.setup();
 
       render(
@@ -788,32 +778,32 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Select John
-      const johnCard = screen.getByText("John Doe").closest("div")!;
+      const johnCard = screen.getByText('John Doe').closest('div')!;
       await user.click(johnCard);
 
       await waitFor(() => {
-        expect(screen.getByText("Selection Preview")).toBeInTheDocument();
+        expect(screen.getByText('Selection Preview')).toBeInTheDocument();
       });
 
       // Search for Jane (filters out John from player list but not from preview)
-      const searchInput = screen.getByPlaceholderText("Search by name...");
-      await user.type(searchInput, "jane");
+      const searchInput = screen.getByPlaceholderText('Search by name...');
+      await user.type(searchInput, 'jane');
 
       // Confirm button should still be enabled because John is still selected
-      const confirmButton = screen.getByRole("button", {
+      const confirmButton = screen.getByRole('button', {
         name: /Confirm Selection/i,
       });
       expect(confirmButton).not.toBeDisabled();
 
       // Preview should still show John
-      expect(screen.getByText("Selection Preview")).toBeInTheDocument();
+      expect(screen.getByText('Selection Preview')).toBeInTheDocument();
     });
 
-    it("should handle case-insensitive search", async () => {
+    it('should handle case-insensitive search', async () => {
       const user = userEvent.setup();
 
       render(
@@ -825,28 +815,28 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Search with uppercase
-      const searchInput = screen.getByPlaceholderText("Search by name...");
-      await user.type(searchInput, "JOHN");
+      const searchInput = screen.getByPlaceholderText('Search by name...');
+      await user.type(searchInput, 'JOHN');
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
-        expect(screen.queryByText("Jane Smith")).not.toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+        expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument();
       });
     });
 
-    it("should handle special characters in player names", async () => {
+    it('should handle special characters in player names', async () => {
       vi.mocked(apiModule.apiRequest).mockResolvedValue({
         players: [
           {
             id: 1,
             firstName: "O'Brien",
-            lastName: "Smith-Jones",
-            photoFilename: "test.jpg",
-            role: "audience",
+            lastName: 'Smith-Jones',
+            photoFilename: 'test.jpg',
+            role: 'audience',
             active: true,
           },
         ],
@@ -866,7 +856,7 @@ describe("ManualSelectContestantModal", () => {
       });
     });
 
-    it("should not fetch players when modal is closed", () => {
+    it('should not fetch players when modal is closed', () => {
       render(
         <ManualSelectContestantModal
           isOpen={false}
@@ -879,7 +869,7 @@ describe("ManualSelectContestantModal", () => {
       expect(apiModule.apiRequest).not.toHaveBeenCalled();
     });
 
-    it("should refetch players when modal reopens", async () => {
+    it('should refetch players when modal reopens', async () => {
       const { rerender } = render(
         <ManualSelectContestantModal
           isOpen={true}
@@ -916,7 +906,7 @@ describe("ManualSelectContestantModal", () => {
       });
     });
 
-    it("should preserve segment when currentSegment prop changes", async () => {
+    it('should preserve segment when currentSegment prop changes', async () => {
       const { rerender } = render(
         <ManualSelectContestantModal
           isOpen={true}
@@ -927,7 +917,7 @@ describe("ManualSelectContestantModal", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("John Doe")).toBeInTheDocument();
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
       // Change prop
@@ -942,10 +932,8 @@ describe("ManualSelectContestantModal", () => {
 
       // Segment should update
       await waitFor(() => {
-        const selects = document.querySelectorAll("select");
-        const segmentSelect = Array.from(selects).find(
-          (select) => select.value === "section_2",
-        );
+        const selects = document.querySelectorAll('select');
+        const segmentSelect = Array.from(selects).find((select) => select.value === 'section_2');
         expect(segmentSelect).toBeDefined();
       });
     });

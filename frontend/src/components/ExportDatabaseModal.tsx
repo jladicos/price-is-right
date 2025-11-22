@@ -33,9 +33,9 @@
  * - Test restore process on development environment
  */
 
-import { useState } from "react";
-import { showToast } from "../utils/toast";
-import { useAuthStore } from "../store/authStore";
+import { useState } from 'react';
+import { showToast } from '../utils/toast';
+import { useAuthStore } from '../store/authStore';
 import {
   DialogRoot,
   DialogContent,
@@ -43,19 +43,16 @@ import {
   DialogBody,
   DialogFooter,
   DialogCloseTrigger,
-} from "./ui/dialog";
-import { Button, Text, VStack } from "@chakra-ui/react";
-import { Alert } from "./ui/alert";
+} from './ui/dialog';
+import { Button, Text, VStack } from '@chakra-ui/react';
+import { Alert } from './ui/alert';
 
 interface ExportDatabaseModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function ExportDatabaseModal({
-  isOpen,
-  onClose,
-}: ExportDatabaseModalProps) {
+export function ExportDatabaseModal({ isOpen, onClose }: ExportDatabaseModalProps) {
   const [isExporting, setIsExporting] = useState(false);
   const sessionToken = useAuthStore((state) => state.sessionToken);
 
@@ -63,10 +60,10 @@ export function ExportDatabaseModal({
     setIsExporting(true);
     try {
       if (!sessionToken) {
-        throw new Error("Not authenticated");
+        throw new Error('Not authenticated');
       }
 
-      const response = await fetch("http://localhost:3001/api/admin/export", {
+      const response = await fetch('http://localhost:3001/api/admin/export', {
         headers: {
           Authorization: `Bearer ${sessionToken}`,
         },
@@ -74,20 +71,20 @@ export function ExportDatabaseModal({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Export failed");
+        throw new Error(errorData.error || 'Export failed');
       }
 
       // Get filename from Content-Disposition header or use default
-      const contentDisposition = response.headers.get("Content-Disposition");
+      const contentDisposition = response.headers.get('Content-Disposition');
       const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
       const filename =
         filenameMatch?.[1] ||
-        `price-is-right-backup-${new Date().toISOString().split("T")[0]}.json`;
+        `price-is-right-backup-${new Date().toISOString().split('T')[0]}.json`;
 
       // Download the file
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = filename;
       document.body.appendChild(a);
@@ -96,17 +93,17 @@ export function ExportDatabaseModal({
       document.body.removeChild(a);
 
       showToast({
-        title: "Database exported",
+        title: 'Database exported',
         description: `Backup saved as ${filename}`,
-        type: "success",
+        type: 'success',
       });
 
       onClose();
     } catch (err) {
       showToast({
-        title: "Export failed",
-        description: err instanceof Error ? err.message : "An error occurred",
-        type: "error",
+        title: 'Export failed',
+        description: err instanceof Error ? err.message : 'An error occurred',
+        type: 'error',
       });
     } finally {
       setIsExporting(false);
@@ -114,42 +111,26 @@ export function ExportDatabaseModal({
   };
 
   return (
-    <DialogRoot
-      open={isOpen}
-      onOpenChange={(e) => !e.open && onClose()}
-      size="md"
-    >
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()} size="md">
       <DialogContent>
         <DialogHeader>Export Database</DialogHeader>
         <DialogCloseTrigger />
         <DialogBody>
           <VStack gap="4" align="stretch">
-            <Text>
-              This will export the entire database to a JSON file that you can
-              download.
-            </Text>
+            <Text>This will export the entire database to a JSON file that you can download.</Text>
 
             <Alert status="info">
-              The export includes all players and game state. Session tokens are
-              not included for security.
+              The export includes all players and game state. Session tokens are not included for
+              security.
             </Alert>
           </VStack>
         </DialogBody>
 
         <DialogFooter>
-          <Button
-            variant="ghost"
-            mr={3}
-            onClick={onClose}
-            disabled={isExporting}
-          >
+          <Button variant="ghost" mr={3} onClick={onClose} disabled={isExporting}>
             Cancel
           </Button>
-          <Button
-            colorPalette="blue"
-            onClick={handleExport}
-            loading={isExporting}
-          >
+          <Button colorPalette="blue" onClick={handleExport} loading={isExporting}>
             Export & Download
           </Button>
         </DialogFooter>

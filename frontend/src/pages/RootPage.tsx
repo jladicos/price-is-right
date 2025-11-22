@@ -1,29 +1,21 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  Box,
-  Button,
-  Container,
-  Input,
-  VStack,
-  Heading,
-} from "@chakra-ui/react";
-import { Field } from "../components/ui/field";
-import { Alert } from "../components/ui/alert";
-import { useAuthStore } from "../store/authStore";
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Box, Button, Container, Input, VStack, Heading } from '@chakra-ui/react';
+import { Field } from '../components/ui/field';
+import { Alert } from '../components/ui/alert';
+import { useAuthStore } from '../store/authStore';
 
 export default function RootPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [accessCode, setAccessCode] = useState("");
+  const [accessCode, setAccessCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { sessionToken, currentPlayer, loading, error, login, clearError } =
-    useAuthStore();
+  const { sessionToken, currentPlayer, loading, error, login, clearError } = useAuthStore();
 
   // Check for URL parameter on mount
   useEffect(() => {
-    const codeFromUrl = searchParams.get("code");
+    const codeFromUrl = searchParams.get('code');
 
     if (codeFromUrl) {
       // If code in URL, auto-fill and submit
@@ -31,7 +23,7 @@ export default function RootPage() {
       handleLogin(codeFromUrl);
     } else if (sessionToken && currentPlayer && !loading) {
       // If already authenticated and no code param, redirect to welcome
-      navigate("/welcome");
+      navigate('/welcome');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -48,7 +40,7 @@ export default function RootPage() {
       const normalizedCode = codeToUse.trim().toUpperCase();
       await login(normalizedCode);
       // On success, navigate to welcome page
-      navigate("/welcome");
+      navigate('/welcome');
     } catch (_err) {
       // Error is already set in the store
       setIsSubmitting(false);

@@ -1,4 +1,4 @@
-import { getDatabase } from "./connection.js";
+import { getDatabase } from './connection.js';
 
 export interface Contestant {
   id: number;
@@ -39,7 +39,7 @@ export function addContestantToRow(
 
   // Fetch and return the created contestant
   const contestant = db
-    .prepare("SELECT * FROM contestants_row WHERE id = ?")
+    .prepare('SELECT * FROM contestants_row WHERE id = ?')
     .get(result.lastInsertRowid) as Contestant;
 
   return contestant;
@@ -103,6 +103,7 @@ export function getActiveContestants(segment: string): ContestantWithPlayer[] {
  * Get ALL active contestants regardless of segment
  * Used for displaying the current contestant's row during gameplay
  * Contestants persist across sections unless explicitly replaced
+ * Includes winners (status='won') so they remain visible after winning
  */
 export function getAllActiveContestants(): ContestantWithPlayer[] {
   const db = getDatabase();
@@ -118,7 +119,7 @@ export function getAllActiveContestants(): ContestantWithPlayer[] {
       p.role
     FROM contestants_row c
     JOIN players p ON c.player_id = p.id
-    WHERE c.status IN ('active', 'pending_reveal')
+    WHERE c.status IN ('active', 'pending_reveal', 'won')
     ORDER BY c.position ASC
   `,
     )
@@ -146,7 +147,7 @@ export function revealContestant(contestantId: number): Contestant {
   stmt.run(contestantId);
 
   const contestant = db
-    .prepare("SELECT * FROM contestants_row WHERE id = ?")
+    .prepare('SELECT * FROM contestants_row WHERE id = ?')
     .get(contestantId) as Contestant;
 
   return contestant;
@@ -155,10 +156,7 @@ export function revealContestant(contestantId: number): Contestant {
 /**
  * Update a contestant's status
  */
-export function updateContestantStatus(
-  contestantId: number,
-  status: string,
-): Contestant {
+export function updateContestantStatus(contestantId: number, status: string): Contestant {
   const db = getDatabase();
 
   const stmt = db.prepare(`
@@ -171,7 +169,7 @@ export function updateContestantStatus(
   stmt.run(status, contestantId);
 
   const contestant = db
-    .prepare("SELECT * FROM contestants_row WHERE id = ?")
+    .prepare('SELECT * FROM contestants_row WHERE id = ?')
     .get(contestantId) as Contestant;
 
   return contestant;
@@ -191,7 +189,7 @@ export function replaceContestant(
 
   // Get the old contestant to preserve position and segment
   const oldContestant = db
-    .prepare("SELECT * FROM contestants_row WHERE id = ?")
+    .prepare('SELECT * FROM contestants_row WHERE id = ?')
     .get(oldContestantId) as Contestant;
 
   if (!oldContestant) {
@@ -218,20 +216,15 @@ export function replaceContestant(
       VALUES (?, ?, ?, ?)
     `,
       )
-      .run(
-        newPlayerId,
-        oldContestant.position,
-        oldContestant.game_segment,
-        newStatus,
-      );
+      .run(newPlayerId, oldContestant.position, oldContestant.game_segment, newStatus);
 
     // Get updated records
     const updatedOld = db
-      .prepare("SELECT * FROM contestants_row WHERE id = ?")
+      .prepare('SELECT * FROM contestants_row WHERE id = ?')
       .get(oldContestantId) as Contestant;
 
     const newContestant = db
-      .prepare("SELECT * FROM contestants_row WHERE id = ?")
+      .prepare('SELECT * FROM contestants_row WHERE id = ?')
       .get(insertResult.lastInsertRowid) as Contestant;
 
     return { old: updatedOld, new: newContestant };
@@ -324,14 +317,12 @@ export function getBiddingOrder(segment: string): number[] {
 /**
  * Get a specific contestant by ID
  */
-export function getContestantById(
-  contestantId: number,
-): Contestant | undefined {
+export function getContestantById(contestantId: number): Contestant | undefined {
   const db = getDatabase();
 
-  const contestant = db
-    .prepare("SELECT * FROM contestants_row WHERE id = ?")
-    .get(contestantId) as Contestant | undefined;
+  const contestant = db.prepare('SELECT * FROM contestants_row WHERE id = ?').get(contestantId) as
+    | Contestant
+    | undefined;
 
   return contestant;
 }
@@ -347,12 +338,13 @@ export function findNextEmptyPosition(_segment: string): number | null {
 
   // Check ALL active contestants regardless of segment
   // Since contestants persist across sections, we need to check globally
+  // Include 'won' status since winners still occupy their position until replaced
   const occupiedPositions = db
     .prepare(
       `
     SELECT position
     FROM contestants_row
-    WHERE status IN ('active', 'pending_reveal')
+    WHERE status IN ('active', 'pending_reveal', 'won')
     ORDER BY position ASC
   `,
     )

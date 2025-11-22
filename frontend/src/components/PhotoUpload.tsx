@@ -1,16 +1,8 @@
-import { useState, useRef } from "react";
-import {
-  Box,
-  Button,
-  Image,
-  VStack,
-  HStack,
-  Text,
-  Input,
-} from "@chakra-ui/react";
-import { Field } from "./ui/field";
-import { useAuthStore } from "../store/authStore";
-import { showToast } from "../utils/toast";
+import { useState, useRef } from 'react';
+import { Box, Button, Image, VStack, HStack, Text, Input } from '@chakra-ui/react';
+import { Field } from './ui/field';
+import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
 
 interface PhotoUploadProps {
   playerId: number;
@@ -18,11 +10,7 @@ interface PhotoUploadProps {
   onUploadSuccess?: (filename: string) => void;
 }
 
-export function PhotoUpload({
-  playerId,
-  currentPhoto,
-  onUploadSuccess,
-}: PhotoUploadProps) {
+export function PhotoUpload({ playerId, currentPhoto, onUploadSuccess }: PhotoUploadProps) {
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -31,18 +19,18 @@ export function PhotoUpload({
 
   const currentPhotoUrl = currentPhoto
     ? `http://localhost:3001/images/players/${currentPhoto}`
-    : "http://localhost:3001/images/players/default.jpg";
+    : 'http://localhost:3001/images/players/default.jpg';
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith("image/")) {
+    if (!file.type.startsWith('image/')) {
       showToast({
-        title: "Invalid file type",
-        description: "Please select an image file (JPG, PNG, or GIF)",
-        type: "error",
+        title: 'Invalid file type',
+        description: 'Please select an image file (JPG, PNG, or GIF)',
+        type: 'error',
       });
       return;
     }
@@ -50,9 +38,9 @@ export function PhotoUpload({
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       showToast({
-        title: "File too large",
-        description: "Please select an image under 5MB",
-        type: "error",
+        title: 'File too large',
+        description: 'Please select an image under 5MB',
+        type: 'error',
       });
       return;
     }
@@ -73,37 +61,34 @@ export function PhotoUpload({
     setIsUploading(true);
     try {
       const formData = new FormData();
-      formData.append("file", selectedFile);
+      formData.append('file', selectedFile);
 
-      const response = await fetch(
-        `http://localhost:3001/api/players/${playerId}/photo`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${sessionToken}`,
-          },
-          body: formData,
+      const response = await fetch(`http://localhost:3001/api/players/${playerId}/photo`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
         },
-      );
+        body: formData,
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to upload photo");
+        throw new Error(error.error || 'Failed to upload photo');
       }
 
       const data = await response.json();
 
       showToast({
-        title: "Photo uploaded",
-        description: "Player photo has been updated",
-        type: "success",
+        title: 'Photo uploaded',
+        description: 'Player photo has been updated',
+        type: 'success',
       });
 
       // Clear selection
       setSelectedFile(null);
       setPreviewUrl(null);
       if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        fileInputRef.current.value = '';
       }
 
       if (onUploadSuccess) {
@@ -111,10 +96,9 @@ export function PhotoUpload({
       }
     } catch (error) {
       showToast({
-        title: "Upload failed",
-        description:
-          error instanceof Error ? error.message : "Failed to upload photo",
-        type: "error",
+        title: 'Upload failed',
+        description: error instanceof Error ? error.message : 'Failed to upload photo',
+        type: 'error',
       });
     } finally {
       setIsUploading(false);
@@ -125,7 +109,7 @@ export function PhotoUpload({
     setSelectedFile(null);
     setPreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -150,12 +134,7 @@ export function PhotoUpload({
                 borderRadius="md"
               />
               <HStack>
-                <Button
-                  onClick={handleUpload}
-                  colorPalette="blue"
-                  loading={isUploading}
-                  size="sm"
-                >
+                <Button onClick={handleUpload} colorPalette="blue" loading={isUploading} size="sm">
                   Upload Photo
                 </Button>
                 <Button onClick={handleCancel} size="sm" variant="ghost">
@@ -192,7 +171,7 @@ export function PhotoUpload({
                 variant="outline"
                 size="sm"
               >
-                {currentPhoto ? "Change Photo" : "Upload Photo"}
+                {currentPhoto ? 'Change Photo' : 'Upload Photo'}
               </Button>
               <Text fontSize="xs" color="gray.500">
                 JPG, PNG, or GIF (max 5MB)

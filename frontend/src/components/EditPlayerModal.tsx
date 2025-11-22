@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   DialogRoot,
   DialogContent,
@@ -6,15 +6,15 @@ import {
   DialogBody,
   DialogFooter,
   DialogCloseTrigger,
-} from "./ui/dialog";
-import { Button, Input, VStack, Separator, Text } from "@chakra-ui/react";
-import { Field } from "./ui/field";
-import { NativeSelectRoot, NativeSelectField } from "./ui/native-select";
-import { Alert } from "./ui/alert";
-import type { Player, PlayerRole } from "../../../backend/src/types/player";
-import { useAuthStore } from "../store/authStore";
-import { PhotoUpload } from "./PhotoUpload";
-import { showToast } from "../utils/toast";
+} from './ui/dialog';
+import { Button, Input, VStack, Separator, Text } from '@chakra-ui/react';
+import { Field } from './ui/field';
+import { NativeSelectRoot, NativeSelectField } from './ui/native-select';
+import { Alert } from './ui/alert';
+import type { Player, PlayerRole } from '../../../backend/src/types/player';
+import { useAuthStore } from '../store/authStore';
+import { PhotoUpload } from './PhotoUpload';
+import { showToast } from '../utils/toast';
 
 interface EditPlayerModalProps {
   isOpen: boolean;
@@ -23,17 +23,13 @@ interface EditPlayerModalProps {
   onSuccess?: () => void;
 }
 
-export function EditPlayerModal({
-  isOpen,
-  onClose,
-  player,
-  onSuccess,
-}: EditPlayerModalProps) {
+export function EditPlayerModal({ isOpen, onClose, player, onSuccess }: EditPlayerModalProps) {
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isUpdating, setIsUpdating] = useState(false);
   const [firstName, setFirstName] = useState(player.firstName);
   const [lastName, setLastName] = useState(player.lastName);
   const [role, setRole] = useState<PlayerRole>(player.role);
+  const [weight, setWeight] = useState<number>(player.weight ?? 1.0);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,42 +38,40 @@ export function EditPlayerModal({
 
     // Client-side validation
     if (!firstName.trim() || !lastName.trim()) {
-      setValidationError("First name and last name are required");
+      setValidationError('First name and last name are required');
       return;
     }
 
     // Validate role change: player -> host is not allowed
-    if (player.role === "player" && role === "host") {
-      setValidationError("Cannot promote a player to host (unfair advantage)");
+    if (player.role === 'player' && role === 'host') {
+      setValidationError('Cannot promote a player to host (unfair advantage)');
       return;
     }
 
     setIsUpdating(true);
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/players/${player.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionToken}`,
-          },
-          body: JSON.stringify({
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            role,
-          }),
+      const response = await fetch(`http://localhost:3001/api/players/${player.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionToken}`,
         },
-      );
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          role,
+          weight,
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to update player");
+        throw new Error(error.error || 'Failed to update player');
       }
 
       showToast({
-        title: "Player updated",
-        type: "success",
+        title: 'Player updated',
+        type: 'success',
       });
 
       if (onSuccess) {
@@ -86,13 +80,12 @@ export function EditPlayerModal({
 
       onClose();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to update player";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update player';
       setValidationError(errorMessage);
       showToast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        type: "error",
+        type: 'error',
       });
     } finally {
       setIsUpdating(false);
@@ -123,9 +116,7 @@ export function EditPlayerModal({
                 Player Details
               </Text>
 
-              {validationError && (
-                <Alert status="error">{validationError}</Alert>
-              )}
+              {validationError && <Alert status="error">{validationError}</Alert>}
 
               <Field label="First Name" required>
                 <Input
@@ -156,7 +147,28 @@ export function EditPlayerModal({
                 </NativeSelectRoot>
               </Field>
 
-              {player.role === "player" && role === "host" && (
+              <Field
+                label="Selection Weight"
+                helperText="0.0 = backup only, 1.0 = full probability"
+              >
+                <Input
+                  type="number"
+                  value={weight}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    // Clamp to [0, 1] range
+                    if (!isNaN(value)) {
+                      setWeight(Math.max(0, Math.min(1, value)));
+                    }
+                  }}
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  placeholder="1.0"
+                />
+              </Field>
+
+              {player.role === 'player' && role === 'host' && (
                 <Alert status="warning">
                   Players cannot be promoted to host (unfair advantage)
                 </Alert>
@@ -174,7 +186,7 @@ export function EditPlayerModal({
               disabled={
                 !firstName.trim() ||
                 !lastName.trim() ||
-                (player.role === "player" && role === "host")
+                (player.role === 'player' && role === 'host')
               }
             >
               Save Changes

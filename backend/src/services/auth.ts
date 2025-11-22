@@ -1,11 +1,11 @@
-import type { Database } from "better-sqlite3";
-import type { Player } from "../types/player.js";
-import { generateSessionToken } from "../utils/session-token.js";
+import type { Database } from 'better-sqlite3';
+import type { Player } from '../types/player.js';
+import { generateSessionToken } from '../utils/session-token.js';
 import {
   findPlayerByAccessCode,
   findPlayerBySessionToken,
   updateSessionToken,
-} from "../db/players.js";
+} from '../db/players.js';
 
 export interface LoginResult {
   sessionToken: string;
@@ -18,7 +18,7 @@ export class AuthError extends Error {
     public statusCode: number = 401,
   ) {
     super(message);
-    this.name = "AuthError";
+    this.name = 'AuthError';
   }
 }
 
@@ -36,11 +36,11 @@ export function login(db: Database, accessCode: string): LoginResult {
   const player = findPlayerByAccessCode(db, normalizedCode);
 
   if (!player) {
-    throw new AuthError("Invalid access code", 401);
+    throw new AuthError('Invalid access code', 401);
   }
 
   if (!player.active) {
-    throw new AuthError("Your account has been deactivated", 401);
+    throw new AuthError('Your account has been deactivated', 401);
   }
 
   // Generate new session token
@@ -60,11 +60,8 @@ export function login(db: Database, accessCode: string): LoginResult {
  *
  * @returns Player if token is valid, null otherwise
  */
-export function validateSession(
-  db: Database,
-  sessionToken: string,
-): Player | null {
-  if (!sessionToken || sessionToken.trim() === "") {
+export function validateSession(db: Database, sessionToken: string): Player | null {
+  if (!sessionToken || sessionToken.trim() === '') {
     return null;
   }
 
@@ -88,14 +85,14 @@ export function validateSession(
  * @throws AuthError if session token is invalid
  */
 export function logout(db: Database, sessionToken: string): void {
-  if (!sessionToken || sessionToken.trim() === "") {
-    throw new AuthError("Invalid or expired session", 401);
+  if (!sessionToken || sessionToken.trim() === '') {
+    throw new AuthError('Invalid or expired session', 401);
   }
 
   const player = findPlayerBySessionToken(db, sessionToken);
 
   if (!player) {
-    throw new AuthError("Invalid or expired session", 401);
+    throw new AuthError('Invalid or expired session', 401);
   }
 
   // Clear the session token

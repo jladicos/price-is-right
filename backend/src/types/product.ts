@@ -7,13 +7,13 @@ export interface Product {
 /**
  * Game phase types
  */
-export type PhaseType = "bidding" | "mini_game" | "wheel" | "showcase";
+export type PhaseType = 'bidding' | 'mini_game' | 'wheel' | 'showcase';
 
 /**
  * Bidding phase configuration
  */
 export interface BiddingPhase {
-  type: "bidding";
+  type: 'bidding';
   product_id: string;
 }
 
@@ -21,7 +21,7 @@ export interface BiddingPhase {
  * Mini-game phase configuration (future extension)
  */
 export interface MiniGamePhase {
-  type: "mini_game";
+  type: 'mini_game';
   game_type: string; // e.g., "plinko", "price_tags", etc.
   product_id: string;
 }
@@ -30,25 +30,21 @@ export interface MiniGamePhase {
  * Wheel spin phase configuration
  */
 export interface WheelPhase {
-  type: "wheel";
+  type: 'wheel';
 }
 
 /**
  * Showcase phase configuration
  */
 export interface ShowcasePhase {
-  type: "showcase";
+  type: 'showcase';
   products: string[]; // Array of product IDs
 }
 
 /**
  * Union type for all game phases
  */
-export type GamePhase =
-  | BiddingPhase
-  | MiniGamePhase
-  | WheelPhase
-  | ShowcasePhase;
+export type GamePhase = BiddingPhase | MiniGamePhase | WheelPhase | ShowcasePhase;
 
 /**
  * Game structure defining the complete game flow

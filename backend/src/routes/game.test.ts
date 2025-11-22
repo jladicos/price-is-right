@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import Fastify, { FastifyInstance } from "fastify";
-import gameRoutes from "./game.js";
-import { initDatabase, closeDatabase } from "../db/connection.js";
-import Database from "better-sqlite3";
-import { setGameEnabled } from "../db/game-state.js";
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import Fastify, { FastifyInstance } from 'fastify';
+import gameRoutes from './game.js';
+import { initDatabase, closeDatabase } from '../db/connection.js';
+import Database from 'better-sqlite3';
+import { setGameEnabled } from '../db/game-state.js';
 
-describe("Game API Routes", () => {
+describe('Game API Routes', () => {
   let app: FastifyInstance;
   let db: Database.Database;
   let hostToken: string;
@@ -13,35 +13,29 @@ describe("Game API Routes", () => {
 
   beforeEach(async () => {
     // Use in-memory database for tests
-    db = initDatabase(":memory:");
+    db = initDatabase(':memory:');
 
     // Create test players
     db.prepare(
-      "INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)",
-    ).run("Host", "User", "HOST123", "host", 1, "host-token-123");
+      'INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run('Host', 'User', 'HOST123', 'host', 1, 'host-token-123');
 
     db.prepare(
-      "INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)",
-    ).run("Player", "User", "PLAY456", "player", 1, "player-token-456");
+      'INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run('Player', 'User', 'PLAY456', 'player', 1, 'player-token-456');
 
     // Create audience members for contestant selection
     for (let i = 1; i <= 10; i++) {
       db.prepare(
-        "INSERT INTO players (first_name, last_name, access_code, role, active) VALUES (?, ?, ?, ?, ?)",
-      ).run(
-        `Audience${i}`,
-        "Member",
-        `AUD${i.toString().padStart(3, "0")}`,
-        "audience",
-        1,
-      );
+        'INSERT INTO players (first_name, last_name, access_code, role, active) VALUES (?, ?, ?, ?, ?)',
+      ).run(`Audience${i}`, 'Member', `AUD${i.toString().padStart(3, '0')}`, 'audience', 1);
     }
 
-    hostToken = "host-token-123";
-    playerToken = "player-token-456";
+    hostToken = 'host-token-123';
+    playerToken = 'player-token-456';
 
     app = Fastify();
-    await app.register(gameRoutes, { prefix: "/api" });
+    await app.register(gameRoutes, { prefix: '/api' });
   });
 
   afterEach(async () => {
@@ -49,11 +43,11 @@ describe("Game API Routes", () => {
     closeDatabase();
   });
 
-  describe("GET /api/game/status", () => {
-    it("should return game status when authenticated as host", async () => {
+  describe('GET /api/game/status', () => {
+    it('should return game status when authenticated as host', async () => {
       const response = await app.inject({
-        method: "GET",
-        url: "/api/game/status",
+        method: 'GET',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -61,15 +55,15 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body).toHaveProperty("enabled");
-      expect(typeof body.enabled).toBe("boolean");
+      expect(body).toHaveProperty('enabled');
+      expect(typeof body.enabled).toBe('boolean');
       expect(body.enabled).toBe(true); // Default from migration
     });
 
-    it("should return game status when authenticated as player", async () => {
+    it('should return game status when authenticated as player', async () => {
       const response = await app.inject({
-        method: "GET",
-        url: "/api/game/status",
+        method: 'GET',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${playerToken}`,
         },
@@ -77,38 +71,38 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body).toHaveProperty("enabled");
+      expect(body).toHaveProperty('enabled');
       expect(body.enabled).toBe(true);
     });
 
-    it("should return 401 when not authenticated", async () => {
+    it('should return 401 when not authenticated', async () => {
       const response = await app.inject({
-        method: "GET",
-        url: "/api/game/status",
+        method: 'GET',
+        url: '/api/game/status',
       });
 
       expect(response.statusCode).toBe(401);
     });
 
-    it("should return 401 with invalid token", async () => {
+    it('should return 401 with invalid token', async () => {
       const response = await app.inject({
-        method: "GET",
-        url: "/api/game/status",
+        method: 'GET',
+        url: '/api/game/status',
         headers: {
-          Authorization: "Bearer invalid-token",
+          Authorization: 'Bearer invalid-token',
         },
       });
 
       expect(response.statusCode).toBe(401);
     });
 
-    it("should reflect game state changes", async () => {
+    it('should reflect game state changes', async () => {
       // Disable the game
       setGameEnabled(db, false);
 
       const response = await app.inject({
-        method: "GET",
-        url: "/api/game/status",
+        method: 'GET',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -120,14 +114,14 @@ describe("Game API Routes", () => {
     });
   });
 
-  describe("PUT /api/game/status", () => {
-    it("should update game status when authenticated as host", async () => {
+  describe('PUT /api/game/status', () => {
+    it('should update game status when authenticated as host', async () => {
       const response = await app.inject({
-        method: "PUT",
-        url: "/api/game/status",
+        method: 'PUT',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           enabled: false,
@@ -137,12 +131,12 @@ describe("Game API Routes", () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.enabled).toBe(false);
-      expect(body.message).toBe("Game disabled");
+      expect(body.message).toBe('Game disabled');
 
       // Verify it was actually updated in database
       const statusResponse = await app.inject({
-        method: "GET",
-        url: "/api/game/status",
+        method: 'GET',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -151,17 +145,17 @@ describe("Game API Routes", () => {
       expect(statusBody.enabled).toBe(false);
     });
 
-    it("should enable game with appropriate message", async () => {
+    it('should enable game with appropriate message', async () => {
       // First disable
       setGameEnabled(db, false);
 
       // Then enable
       const response = await app.inject({
-        method: "PUT",
-        url: "/api/game/status",
+        method: 'PUT',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           enabled: true,
@@ -171,16 +165,16 @@ describe("Game API Routes", () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.enabled).toBe(true);
-      expect(body.message).toBe("Game enabled");
+      expect(body.message).toBe('Game enabled');
     });
 
-    it("should return 403 when authenticated as non-host", async () => {
+    it('should return 403 when authenticated as non-host', async () => {
       const response = await app.inject({
-        method: "PUT",
-        url: "/api/game/status",
+        method: 'PUT',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${playerToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           enabled: false,
@@ -190,12 +184,12 @@ describe("Game API Routes", () => {
       expect(response.statusCode).toBe(403);
     });
 
-    it("should return 401 when not authenticated", async () => {
+    it('should return 401 when not authenticated', async () => {
       const response = await app.inject({
-        method: "PUT",
-        url: "/api/game/status",
+        method: 'PUT',
+        url: '/api/game/status',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           enabled: false,
@@ -205,47 +199,47 @@ describe("Game API Routes", () => {
       expect(response.statusCode).toBe(401);
     });
 
-    it("should return 400 with missing enabled field", async () => {
+    it('should return 400 with missing enabled field', async () => {
       const response = await app.inject({
-        method: "PUT",
-        url: "/api/game/status",
+        method: 'PUT',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {},
       });
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toBe("enabled must be a boolean");
+      expect(body.error).toBe('enabled must be a boolean');
     });
 
-    it("should return 400 with non-boolean enabled field", async () => {
+    it('should return 400 with non-boolean enabled field', async () => {
       const response = await app.inject({
-        method: "PUT",
-        url: "/api/game/status",
+        method: 'PUT',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          enabled: "true", // String instead of boolean
+          enabled: 'true', // String instead of boolean
         },
       });
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toBe("enabled must be a boolean");
+      expect(body.error).toBe('enabled must be a boolean');
     });
 
-    it("should return 400 with null enabled field", async () => {
+    it('should return 400 with null enabled field', async () => {
       const response = await app.inject({
-        method: "PUT",
-        url: "/api/game/status",
+        method: 'PUT',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           enabled: null,
@@ -254,18 +248,18 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toBe("enabled must be a boolean");
+      expect(body.error).toBe('enabled must be a boolean');
     });
 
-    it("should handle rapid toggle changes", async () => {
+    it('should handle rapid toggle changes', async () => {
       // Toggle multiple times quickly
       for (let i = 0; i < 5; i++) {
         const response = await app.inject({
-          method: "PUT",
-          url: "/api/game/status",
+          method: 'PUT',
+          url: '/api/game/status',
           headers: {
             Authorization: `Bearer ${hostToken}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           payload: {
             enabled: i % 2 === 0,
@@ -279,8 +273,8 @@ describe("Game API Routes", () => {
 
       // Final state should be false (i=4, even)
       const statusResponse = await app.inject({
-        method: "GET",
-        url: "/api/game/status",
+        method: 'GET',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -290,16 +284,16 @@ describe("Game API Routes", () => {
     });
   });
 
-  describe("Edge Cases", () => {
-    it("should handle setting game to same state repeatedly", async () => {
+  describe('Edge Cases', () => {
+    it('should handle setting game to same state repeatedly', async () => {
       // Set to false multiple times
       for (let i = 0; i < 3; i++) {
         const response = await app.inject({
-          method: "PUT",
-          url: "/api/game/status",
+          method: 'PUT',
+          url: '/api/game/status',
           headers: {
             Authorization: `Bearer ${hostToken}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           payload: {
             enabled: false,
@@ -312,33 +306,33 @@ describe("Game API Routes", () => {
       }
     });
 
-    it("should handle malformed JSON gracefully", async () => {
+    it('should handle malformed JSON gracefully', async () => {
       const response = await app.inject({
-        method: "PUT",
-        url: "/api/game/status",
+        method: 'PUT',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-        payload: "{invalid json",
+        payload: '{invalid json',
       });
 
       // Fastify will handle JSON parse errors
       expect(response.statusCode).toBeGreaterThanOrEqual(400);
     });
 
-    it("should not accept extra fields in payload", async () => {
+    it('should not accept extra fields in payload', async () => {
       // This should still work, just ignore extra fields
       const response = await app.inject({
-        method: "PUT",
-        url: "/api/game/status",
+        method: 'PUT',
+        url: '/api/game/status',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           enabled: false,
-          extraField: "should be ignored",
+          extraField: 'should be ignored',
         },
       });
 
@@ -348,11 +342,11 @@ describe("Game API Routes", () => {
     });
   });
 
-  describe("POST /api/game/start", () => {
-    it("should start a new game and auto-select 5 contestants", async () => {
+  describe('POST /api/game/start', () => {
+    it('should start a new game and auto-select 5 contestants', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -363,22 +357,20 @@ describe("Game API Routes", () => {
       expect(body.success).toBe(true);
       expect(body.state).toBeDefined();
       expect(body.state.workflow).toBeDefined();
-      expect(body.state.workflow.phase_type).toBe("bidding"); // First phase from config
-      expect(body.state.workflow.current_segment).toBe("section_1");
+      expect(body.state.workflow.phase_type).toBe('bidding'); // First phase from config
+      expect(body.state.workflow.current_segment).toBe('section_1');
       expect(body.state.workflow.current_segment_index).toBe(0);
       expect(body.state.contestantsRow).toHaveLength(5);
       // All contestants should be pending_reveal
       expect(
-        body.state.contestantsRow.every(
-          (c: { status: string }) => c.status === "pending_reveal",
-        ),
+        body.state.contestantsRow.every((c: { status: string }) => c.status === 'pending_reveal'),
       ).toBe(true);
     });
 
-    it("should select 5 unique contestants", async () => {
+    it('should select 5 unique contestants', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -388,20 +380,18 @@ describe("Game API Routes", () => {
       const body = JSON.parse(response.body);
 
       // Extract player IDs
-      const playerIds = body.state.contestantsRow.map(
-        (c: { player_id: number }) => c.player_id,
-      );
+      const playerIds = body.state.contestantsRow.map((c: { player_id: number }) => c.player_id);
 
       // Check for uniqueness
       const uniqueIds = new Set(playerIds);
       expect(uniqueIds.size).toBe(5); // All 5 should be unique
     });
 
-    it("should reset previous game data", async () => {
+    it('should reset previous game data', async () => {
       // Start first game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -409,8 +399,8 @@ describe("Game API Routes", () => {
 
       // Verify contestants exist
       const state1 = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -419,8 +409,8 @@ describe("Game API Routes", () => {
 
       // Start second game
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -430,8 +420,8 @@ describe("Game API Routes", () => {
 
       // Verify old contestants are gone from active list
       const state2 = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -440,20 +430,20 @@ describe("Game API Routes", () => {
       expect(newContestants.length).toBe(5);
 
       // Verify in database that old contestants_row was cleared
-      const allContestants = db.prepare("SELECT * FROM contestants_row").all();
+      const allContestants = db.prepare('SELECT * FROM contestants_row').all();
       const activeContestants = allContestants.filter(
-        (c: { status: string }) => c.status !== "replaced",
+        (c: { status: string }) => c.status !== 'replaced',
       );
       expect(activeContestants.length).toBe(5); // Only new ones
     });
 
-    it("should fail with insufficient audience members", async () => {
+    it('should fail with insufficient audience members', async () => {
       // Deactivate all but 3 audience members
       db.prepare("UPDATE players SET active = 0 WHERE role = 'audience'").run();
 
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -465,10 +455,10 @@ describe("Game API Routes", () => {
       expect(body.error).toBeDefined();
     });
 
-    it("should require host role", async () => {
+    it('should require host role', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${playerToken}`,
         },
@@ -477,21 +467,21 @@ describe("Game API Routes", () => {
       expect(response.statusCode).toBe(403);
     });
 
-    it("should require authentication", async () => {
+    it('should require authentication', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
       });
 
       expect(response.statusCode).toBe(401);
     });
   });
 
-  describe("GET /api/game/state", () => {
-    it("should return current game state for authenticated user", async () => {
+  describe('GET /api/game/state', () => {
+    it('should return current game state for authenticated user', async () => {
       const response = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${playerToken}`,
         },
@@ -506,22 +496,22 @@ describe("Game API Routes", () => {
       expect(body.state.eligibleAudienceCount).toBe(10); // 10 audience members created
     });
 
-    it("should require authentication", async () => {
+    it('should require authentication', async () => {
       const response = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
       });
 
       expect(response.statusCode).toBe(401);
     });
   });
 
-  describe("POST /api/game/reveal-contestant", () => {
-    it("should reveal a contestant and update player role", async () => {
+  describe('POST /api/game/reveal-contestant', () => {
+    it('should reveal a contestant and update player role', async () => {
       // Start game first
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -529,8 +519,8 @@ describe("Game API Routes", () => {
 
       // Get state to find a contestant
       const stateResponse = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -540,11 +530,11 @@ describe("Game API Routes", () => {
 
       // Reveal the contestant
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: contestant.id,
@@ -555,18 +545,18 @@ describe("Game API Routes", () => {
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
       expect(body.contestant).toBeDefined();
-      expect(body.contestant.status).toBe("active");
-      expect(body.contestant.role).toBe("player"); // Role should be updated
+      expect(body.contestant.status).toBe('active');
+      expect(body.contestant.role).toBe('player'); // Role should be updated
       expect(body.contestant.revealed_at).toBeDefined();
     });
 
-    it("should require host role", async () => {
+    it('should require host role', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${playerToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: 1,
@@ -576,29 +566,29 @@ describe("Game API Routes", () => {
       expect(response.statusCode).toBe(403);
     });
 
-    it("should return 400 with missing contestantRowId", async () => {
+    it('should return 400 with missing contestantRowId', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {},
       });
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("contestantRowId");
+      expect(body.error).toContain('contestantRowId');
     });
 
-    it("should fail when revealing non-existent contestant", async () => {
+    it('should fail when revealing non-existent contestant', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: 99999, // Non-existent ID
@@ -610,11 +600,11 @@ describe("Game API Routes", () => {
       expect(body.success).toBe(false);
     });
 
-    it("should update player role from audience to player in database", async () => {
+    it('should update player role from audience to player in database', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -622,8 +612,8 @@ describe("Game API Routes", () => {
 
       // Get contestant
       const state = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -631,15 +621,15 @@ describe("Game API Routes", () => {
       const contestant = JSON.parse(state.body).state.contestantsRow[0];
 
       // Verify player is audience before reveal
-      expect(contestant.role).toBe("audience");
+      expect(contestant.role).toBe('audience');
 
       // Reveal contestant
       await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: contestant.id,
@@ -648,24 +638,24 @@ describe("Game API Routes", () => {
 
       // Verify player role changed in database
       const player = db
-        .prepare("SELECT role FROM players WHERE id = ?")
+        .prepare('SELECT role FROM players WHERE id = ?')
         .get(contestant.player_id) as { role: string };
-      expect(player.role).toBe("player");
+      expect(player.role).toBe('player');
     });
 
-    it("should be idempotent - revealing same contestant twice should succeed", async () => {
+    it('should be idempotent - revealing same contestant twice should succeed', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
 
       const state = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -674,11 +664,11 @@ describe("Game API Routes", () => {
 
       // First reveal
       await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: contestant.id,
@@ -687,11 +677,11 @@ describe("Game API Routes", () => {
 
       // Second reveal of same contestant should succeed (idempotent)
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: contestant.id,
@@ -701,17 +691,17 @@ describe("Game API Routes", () => {
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.contestant.status).toBe("active");
-      expect(body.contestant.role).toBe("player");
+      expect(body.contestant.status).toBe('active');
+      expect(body.contestant.role).toBe('player');
     });
   });
 
-  describe("POST /api/game/replace-contestant-random", () => {
-    it("should replace a contestant with random selection", async () => {
+  describe('POST /api/game/replace-contestant-random', () => {
+    it('should replace a contestant with random selection', async () => {
       // Start game first
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -719,8 +709,8 @@ describe("Game API Routes", () => {
 
       // Get state to find a contestant
       const stateResponse = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -730,11 +720,11 @@ describe("Game API Routes", () => {
 
       // Replace the contestant
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-random",
+        method: 'POST',
+        url: '/api/game/replace-contestant-random',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: contestant.id,
@@ -745,22 +735,22 @@ describe("Game API Routes", () => {
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
       expect(body.contestant).toBeDefined();
-      expect(body.contestant.status).toBe("pending_reveal"); // New contestant needs reveal
+      expect(body.contestant.status).toBe('pending_reveal'); // New contestant needs reveal
     });
 
-    it("should mark old contestant as replaced in database", async () => {
+    it('should mark old contestant as replaced in database', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
 
       const state = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -770,11 +760,11 @@ describe("Game API Routes", () => {
 
       // Replace the contestant
       await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-random",
+        method: 'POST',
+        url: '/api/game/replace-contestant-random',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: oldContestantId,
@@ -783,24 +773,24 @@ describe("Game API Routes", () => {
 
       // Verify old contestant marked as replaced in database
       const dbContestant = db
-        .prepare("SELECT status FROM contestants_row WHERE id = ?")
+        .prepare('SELECT status FROM contestants_row WHERE id = ?')
         .get(oldContestantId) as { status: string };
-      expect(dbContestant.status).toBe("replaced");
+      expect(dbContestant.status).toBe('replaced');
     });
 
-    it("should select a contestant from eligible pool when replacing", async () => {
+    it('should select a contestant from eligible pool when replacing', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
 
       const state = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -809,11 +799,11 @@ describe("Game API Routes", () => {
 
       // Replace the contestant
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-random",
+        method: 'POST',
+        url: '/api/game/replace-contestant-random',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: oldContestant.id,
@@ -824,22 +814,22 @@ describe("Game API Routes", () => {
       const body = JSON.parse(response.body);
       // New contestant should be someone from the eligible pool (could be same player after being replaced)
       expect(body.contestant.player_id).toBeGreaterThan(0);
-      expect(body.contestant.status).toBe("pending_reveal");
+      expect(body.contestant.status).toBe('pending_reveal');
     });
 
-    it("should preserve the position of replaced contestant", async () => {
+    it('should preserve the position of replaced contestant', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
 
       const state = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -849,11 +839,11 @@ describe("Game API Routes", () => {
 
       // Replace the contestant
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-random",
+        method: 'POST',
+        url: '/api/game/replace-contestant-random',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: oldContestant.id,
@@ -865,11 +855,11 @@ describe("Game API Routes", () => {
       expect(body.contestant.position).toBe(expectedPosition);
     });
 
-    it("should fail when no eligible audience members available", async () => {
+    it('should fail when no eligible audience members available', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -880,15 +870,13 @@ describe("Game API Routes", () => {
 
       // Verify no active audience members
       const audienceCount = db
-        .prepare(
-          "SELECT COUNT(*) as count FROM players WHERE role = 'audience' AND active = 1",
-        )
+        .prepare("SELECT COUNT(*) as count FROM players WHERE role = 'audience' AND active = 1")
         .get() as { count: number };
       expect(audienceCount.count).toBe(0);
 
       const state = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -897,11 +885,11 @@ describe("Game API Routes", () => {
 
       // Try to replace when no eligible audience
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-random",
+        method: 'POST',
+        url: '/api/game/replace-contestant-random',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: contestant.id,
@@ -910,16 +898,16 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(500);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("No eligible audience");
+      expect(body.error).toContain('No eligible audience');
     });
 
-    it("should require host role", async () => {
+    it('should require host role', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-random",
+        method: 'POST',
+        url: '/api/game/replace-contestant-random',
         headers: {
           Authorization: `Bearer ${playerToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: 1,
@@ -930,12 +918,12 @@ describe("Game API Routes", () => {
     });
   });
 
-  describe("POST /api/game/replace-contestant-manual", () => {
-    it("should replace contestant with specific player", async () => {
+  describe('POST /api/game/replace-contestant-manual', () => {
+    it('should replace contestant with specific player', async () => {
       // Start game first
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -943,8 +931,8 @@ describe("Game API Routes", () => {
 
       // Get state to find a contestant
       const stateResponse = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -954,8 +942,8 @@ describe("Game API Routes", () => {
 
       // Find an audience member not already selected
       const allPlayers = db
-        .prepare("SELECT * FROM players WHERE role = ?")
-        .all("audience") as Array<{ id: number }>;
+        .prepare('SELECT * FROM players WHERE role = ?')
+        .all('audience') as Array<{ id: number }>;
       const selectedIds = new Set(
         state.contestantsRow.map((c: { player_id: number }) => c.player_id),
       );
@@ -963,11 +951,11 @@ describe("Game API Routes", () => {
 
       // Replace with specific player
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-manual",
+        method: 'POST',
+        url: '/api/game/replace-contestant-manual',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: contestant.id,
@@ -981,13 +969,13 @@ describe("Game API Routes", () => {
       expect(body.contestant.player_id).toBe(availablePlayer.id);
     });
 
-    it("should require both contestantRowId and newPlayerId", async () => {
+    it('should require both contestantRowId and newPlayerId', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-manual",
+        method: 'POST',
+        url: '/api/game/replace-contestant-manual',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: 1,
@@ -996,22 +984,22 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("newPlayerId");
+      expect(body.error).toContain('newPlayerId');
     });
 
-    it("should give audience member pending_reveal status", async () => {
+    it('should give audience member pending_reveal status', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
 
       const state = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1020,22 +1008,20 @@ describe("Game API Routes", () => {
 
       // Find an audience member not selected
       const allPlayers = db
-        .prepare("SELECT * FROM players WHERE role = ?")
-        .all("audience") as Array<{ id: number }>;
+        .prepare('SELECT * FROM players WHERE role = ?')
+        .all('audience') as Array<{ id: number }>;
       const selectedIds = new Set(
-        JSON.parse(state.body).state.contestantsRow.map(
-          (c: { player_id: number }) => c.player_id,
-        ),
+        JSON.parse(state.body).state.contestantsRow.map((c: { player_id: number }) => c.player_id),
       );
       const audienceMember = allPlayers.find((p) => !selectedIds.has(p.id));
 
       // Replace with audience member
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-manual",
+        method: 'POST',
+        url: '/api/game/replace-contestant-manual',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: contestant.id,
@@ -1045,22 +1031,22 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.contestant.status).toBe("pending_reveal"); // Audience needs reveal
+      expect(body.contestant.status).toBe('pending_reveal'); // Audience needs reveal
     });
 
-    it("should give existing player active status immediately", async () => {
+    it('should give existing player active status immediately', async () => {
       // Start game and reveal a contestant to create a player
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
 
       const state = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1069,25 +1055,42 @@ describe("Game API Routes", () => {
 
       // Reveal to make them a player
       await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: firstContestant.id,
         },
       });
 
-      // Now replace another contestant with this existing player
-      const secondContestant = JSON.parse(state.body).state.contestantsRow[1];
-      const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-manual",
+      // Replace the first contestant with someone else (removing them from the row)
+      const newAudienceMember = db
+        .prepare("SELECT id FROM players WHERE role = 'audience' AND active = 1 LIMIT 1")
+        .get() as { id: number };
+      await app.inject({
+        method: 'POST',
+        url: '/api/game/replace-contestant-manual',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
+        },
+        payload: {
+          contestantRowId: firstContestant.id,
+          newPlayerId: newAudienceMember.id,
+        },
+      });
+
+      // Now replace another contestant with the original player (who is no longer in the row but has role='player')
+      const secondContestant = JSON.parse(state.body).state.contestantsRow[1];
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/game/replace-contestant-manual',
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: secondContestant.id,
@@ -1097,22 +1100,22 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.contestant.status).toBe("active"); // Existing player is immediately active
+      expect(body.contestant.status).toBe('active'); // Existing player is immediately active
     });
 
-    it("should fail when replacing with inactive player", async () => {
+    it('should fail when replacing with inactive player', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
 
       const state = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1120,9 +1123,9 @@ describe("Game API Routes", () => {
       const contestant = JSON.parse(state.body).state.contestantsRow[0];
 
       // Find an inactive player
-      const inactivePlayer = db
-        .prepare("SELECT id FROM players WHERE active = 0 LIMIT 1")
-        .get() as { id: number } | undefined;
+      const inactivePlayer = db.prepare('SELECT id FROM players WHERE active = 0 LIMIT 1').get() as
+        | { id: number }
+        | undefined;
 
       // If no inactive player, create one
       let inactiveId: number;
@@ -1139,11 +1142,11 @@ describe("Game API Routes", () => {
 
       // Try to replace with inactive player
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-manual",
+        method: 'POST',
+        url: '/api/game/replace-contestant-manual',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: contestant.id,
@@ -1153,16 +1156,16 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(500);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("not active");
+      expect(body.error).toContain('not active');
     });
 
-    it("should require host role", async () => {
+    it('should require host role', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/replace-contestant-manual",
+        method: 'POST',
+        url: '/api/game/replace-contestant-manual',
         headers: {
           Authorization: `Bearer ${playerToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: 1,
@@ -1174,12 +1177,12 @@ describe("Game API Routes", () => {
     });
   });
 
-  describe("POST /api/game/manual-select-contestant", () => {
-    it("should manually select a player to empty position", async () => {
+  describe('POST /api/game/manual-select-contestant', () => {
+    it('should manually select a player to empty position', async () => {
       // Start game first
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1194,16 +1197,16 @@ describe("Game API Routes", () => {
 
       // Replace position 1
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/manual-select-contestant",
+        method: 'POST',
+        url: '/api/game/manual-select-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           playerId: eligiblePlayer.id,
           position: 3,
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
@@ -1212,14 +1215,14 @@ describe("Game API Routes", () => {
       expect(body.success).toBe(true);
       expect(body.contestant.player_id).toBe(eligiblePlayer.id);
       expect(body.contestant.position).toBe(3);
-      expect(body.contestant.status).toBe("pending_reveal");
+      expect(body.contestant.status).toBe('pending_reveal');
     });
 
-    it("should replace existing contestant when position is occupied", async () => {
+    it('should replace existing contestant when position is occupied', async () => {
       // Start game first
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1227,14 +1230,13 @@ describe("Game API Routes", () => {
 
       // Get first contestant
       const stateResponse = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
-      const oldContestant = JSON.parse(stateResponse.body).state
-        .contestantsRow[0];
+      const oldContestant = JSON.parse(stateResponse.body).state.contestantsRow[0];
 
       // Find an audience member not selected
       const eligiblePlayer = db
@@ -1245,16 +1247,16 @@ describe("Game API Routes", () => {
 
       // Replace at same position
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/manual-select-contestant",
+        method: 'POST',
+        url: '/api/game/manual-select-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           playerId: eligiblePlayer.id,
           position: oldContestant.position,
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
@@ -1265,110 +1267,112 @@ describe("Game API Routes", () => {
 
       // Verify old contestant marked as replaced
       const dbContestant = db
-        .prepare("SELECT status FROM contestants_row WHERE id = ?")
+        .prepare('SELECT status FROM contestants_row WHERE id = ?')
         .get(oldContestant.id) as { status: string };
-      expect(dbContestant.status).toBe("replaced");
+      expect(dbContestant.status).toBe('replaced');
     });
 
-    it("should create pending_reveal status even for existing players", async () => {
-      // Start game first
+    it('should create pending_reveal status even for existing players', async () => {
+      // Create a player by manually updating an audience member's role to 'player'
+      // This simulates a player who was previously a contestant but is no longer in the row
+      const existingPlayer = db
+        .prepare("SELECT id FROM players WHERE role = 'audience' AND active = 1 LIMIT 1")
+        .get() as { id: number };
+
+      db.prepare("UPDATE players SET role = 'player' WHERE id = ?").run(existingPlayer.id);
+
+      // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
 
-      // Find a player who already has role='player'
-      const existingPlayer = db
-        .prepare(
-          "SELECT id FROM players WHERE role = 'player' AND active = 1 LIMIT 1",
-        )
-        .get() as { id: number };
-
+      // Now manually select this player (who has role='player' but is not in the row) for position 4
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/manual-select-contestant",
+        method: 'POST',
+        url: '/api/game/manual-select-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           playerId: existingPlayer.id,
           position: 4,
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.contestant.status).toBe("pending_reveal");
+      expect(body.contestant.status).toBe('pending_reveal');
     });
 
-    it("should require host role", async () => {
+    it('should require host role', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/manual-select-contestant",
+        method: 'POST',
+        url: '/api/game/manual-select-contestant',
         headers: {
           Authorization: `Bearer ${playerToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           playerId: 1,
           position: 1,
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
       expect(response.statusCode).toBe(403);
     });
 
-    it("should validate playerId is required", async () => {
+    it('should validate playerId is required', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/manual-select-contestant",
+        method: 'POST',
+        url: '/api/game/manual-select-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           position: 1,
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("playerId");
+      expect(body.error).toContain('playerId');
     });
 
-    it("should validate position is required", async () => {
+    it('should validate position is required', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/manual-select-contestant",
+        method: 'POST',
+        url: '/api/game/manual-select-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           playerId: 1,
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("position");
+      expect(body.error).toContain('position');
     });
 
-    it("should validate segment is required", async () => {
+    it('should validate segment is required', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/manual-select-contestant",
+        method: 'POST',
+        url: '/api/game/manual-select-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           playerId: 1,
@@ -1378,30 +1382,30 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("segment");
+      expect(body.error).toContain('segment');
     });
   });
 
-  describe("POST /api/game/refresh-contestants-row", () => {
-    it("should refresh all 5 contestants for a segment", async () => {
+  describe('POST /api/game/refresh-contestants-row', () => {
+    it('should refresh all 5 contestants for a segment', async () => {
       // Start game first
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
 
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/refresh-contestants-row",
+        method: 'POST',
+        url: '/api/game/refresh-contestants-row',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
@@ -1410,79 +1414,77 @@ describe("Game API Routes", () => {
       expect(body.success).toBe(true);
       expect(body.contestants).toHaveLength(5);
       // All should be pending_reveal
-      expect(
-        body.contestants.every(
-          (c: { status: string }) => c.status === "pending_reveal",
-        ),
-      ).toBe(true);
+      expect(body.contestants.every((c: { status: string }) => c.status === 'pending_reveal')).toBe(
+        true,
+      );
     });
 
-    it("should require valid segment", async () => {
+    it('should require valid segment', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/refresh-contestants-row",
+        method: 'POST',
+        url: '/api/game/refresh-contestants-row',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "invalid_segment",
+          segment: 'invalid_segment',
         },
       });
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("segment");
+      expect(body.error).toContain('segment');
     });
 
-    it("should mark all old contestants as replaced in database", async () => {
+    it('should mark all old contestants as replaced in database', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
 
       const stateBefore = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
-      const oldContestantIds = JSON.parse(
-        stateBefore.body,
-      ).state.contestantsRow.map((c: { id: number }) => c.id);
+      const oldContestantIds = JSON.parse(stateBefore.body).state.contestantsRow.map(
+        (c: { id: number }) => c.id,
+      );
 
       // Refresh the row
       await app.inject({
-        method: "POST",
-        url: "/api/game/refresh-contestants-row",
+        method: 'POST',
+        url: '/api/game/refresh-contestants-row',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
       // Verify all old contestants marked as replaced
       for (const oldId of oldContestantIds) {
         const contestant = db
-          .prepare("SELECT status FROM contestants_row WHERE id = ?")
+          .prepare('SELECT status FROM contestants_row WHERE id = ?')
           .get(oldId) as { status: string };
-        expect(contestant.status).toBe("replaced");
+        expect(contestant.status).toBe('replaced');
       }
     });
 
-    it("should select 5 unique contestants", async () => {
+    it('should select 5 unique contestants', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1490,33 +1492,31 @@ describe("Game API Routes", () => {
 
       // Refresh the row
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/refresh-contestants-row",
+        method: 'POST',
+        url: '/api/game/refresh-contestants-row',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      const playerIds = body.contestants.map(
-        (c: { player_id: number }) => c.player_id,
-      );
+      const playerIds = body.contestants.map((c: { player_id: number }) => c.player_id);
 
       // Verify uniqueness
       const uniqueIds = new Set(playerIds);
       expect(uniqueIds.size).toBe(5);
     });
 
-    it("should fail when insufficient audience members available", async () => {
+    it('should fail when insufficient audience members available', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1525,38 +1525,36 @@ describe("Game API Routes", () => {
       // Deactivate all but 3 audience members
       db.prepare("UPDATE players SET active = 0 WHERE role = 'audience'").run();
       // Reactivate only 3
-      db.prepare(
-        "UPDATE players SET active = 1 WHERE role = 'audience' LIMIT 3",
-      ).run();
+      db.prepare("UPDATE players SET active = 1 WHERE role = 'audience' LIMIT 3").run();
 
       // Try to refresh (needs 5, only 3 available)
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/refresh-contestants-row",
+        method: 'POST',
+        url: '/api/game/refresh-contestants-row',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
       expect(response.statusCode).toBe(500);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("Not enough eligible audience");
+      expect(body.error).toContain('Not enough eligible audience');
     });
 
-    it("should require host role", async () => {
+    it('should require host role', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/refresh-contestants-row",
+        method: 'POST',
+        url: '/api/game/refresh-contestants-row',
         headers: {
           Authorization: `Bearer ${playerToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_1",
+          segment: 'section_1',
         },
       });
 
@@ -1564,12 +1562,12 @@ describe("Game API Routes", () => {
     });
   });
 
-  describe("POST /api/game/advance", () => {
-    it("should advance to next phase in config", async () => {
+  describe('POST /api/game/advance', () => {
+    it('should advance to next phase in config', async () => {
       // Start game first (will be at first bidding phase)
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1577,8 +1575,8 @@ describe("Game API Routes", () => {
 
       // Advance to next phase
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/advance",
+        method: 'POST',
+        url: '/api/game/advance',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1590,11 +1588,11 @@ describe("Game API Routes", () => {
       expect(body.state.workflow.current_segment_index).toBe(1);
     });
 
-    it("should not auto-select when all positions are filled", async () => {
+    it('should not auto-select when all positions are filled', async () => {
       // Start game (fills all 5 positions)
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1602,20 +1600,19 @@ describe("Game API Routes", () => {
 
       // Get initial contestant count
       const initialState = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
-      const initialCount = JSON.parse(initialState.body).state.contestantsRow
-        .length;
+      const initialCount = JSON.parse(initialState.body).state.contestantsRow.length;
       expect(initialCount).toBe(5); // All positions filled
 
       // Advance (should NOT select replacement since positions are full)
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/advance",
+        method: 'POST',
+        url: '/api/game/advance',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1627,23 +1624,22 @@ describe("Game API Routes", () => {
 
       // Check that no additional contestant was added
       const finalState = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
-      const finalCount = JSON.parse(finalState.body).state.contestantsRow
-        .length;
+      const finalCount = JSON.parse(finalState.body).state.contestantsRow.length;
 
       expect(finalCount).toBe(initialCount); // Same count, no new contestant
     });
 
-    it("should auto-select replacement when position is empty", async () => {
+    it('should auto-select replacement when position is empty', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1651,8 +1647,8 @@ describe("Game API Routes", () => {
 
       // Get a contestant and manually mark them as replaced to create empty position
       const state = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1660,26 +1656,23 @@ describe("Game API Routes", () => {
       const contestantId = JSON.parse(state.body).state.contestantsRow[0].id;
 
       // Mark contestant as replaced (simulate winner leaving)
-      db.prepare(
-        "UPDATE contestants_row SET status = 'replaced' WHERE id = ?",
-      ).run(contestantId);
+      db.prepare("UPDATE contestants_row SET status = 'replaced' WHERE id = ?").run(contestantId);
 
       // Get count before advance
       const beforeState = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
-      const beforeCount = JSON.parse(beforeState.body).state.contestantsRow
-        .length;
+      const beforeCount = JSON.parse(beforeState.body).state.contestantsRow.length;
       expect(beforeCount).toBe(4); // One was replaced
 
       // Advance (should auto-select replacement)
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/advance",
+        method: 'POST',
+        url: '/api/game/advance',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1689,23 +1682,22 @@ describe("Game API Routes", () => {
 
       // Verify a new contestant was selected
       const afterState = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
-      const afterCount = JSON.parse(afterState.body).state.contestantsRow
-        .length;
+      const afterCount = JSON.parse(afterState.body).state.contestantsRow.length;
 
       expect(afterCount).toBe(5); // Back to 5 contestants
     });
 
-    it("should transition from section_1 to section_1_finale", async () => {
+    it('should transition from section_1 to section_1_finale', async () => {
       // Start game at section_1[0]
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1715,8 +1707,8 @@ describe("Game API Routes", () => {
       // products.json has 2 bidding phases in section_1
       for (let i = 0; i < 2; i++) {
         await app.inject({
-          method: "POST",
-          url: "/api/game/advance",
+          method: 'POST',
+          url: '/api/game/advance',
           headers: {
             Authorization: `Bearer ${hostToken}`,
           },
@@ -1725,8 +1717,8 @@ describe("Game API Routes", () => {
 
       // Get current state - should be at section_1_finale now
       const response = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1734,30 +1726,30 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.state.workflow.current_segment).toBe("section_1_finale");
-      expect(body.state.workflow.phase_type).toBe("wheel");
+      expect(body.state.workflow.current_segment).toBe('section_1_finale');
+      expect(body.state.workflow.phase_type).toBe('wheel');
     });
 
-    it("should transition from section_1_finale to section_2", async () => {
+    it('should transition from section_1_finale to section_2', async () => {
       // Override to section_1_finale
       await app.inject({
-        method: "POST",
-        url: "/api/game/override-phase",
+        method: 'POST',
+        url: '/api/game/override-phase',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_1_finale",
+          segment: 'section_1_finale',
           segmentIndex: 0,
-          phaseType: "wheel",
+          phaseType: 'wheel',
         },
       });
 
       // Advance from finale to section_2
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/advance",
+        method: 'POST',
+        url: '/api/game/advance',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1765,32 +1757,32 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.state.workflow.current_segment).toBe("section_2");
+      expect(body.state.workflow.current_segment).toBe('section_2');
       expect(body.state.workflow.current_segment_index).toBe(0);
-      expect(body.state.workflow.phase_type).toBe("bidding"); // First phase of section_2
+      expect(body.state.workflow.phase_type).toBe('bidding'); // First phase of section_2
     });
 
-    it("should transition from section_2 to section_2_finale", async () => {
+    it('should transition from section_2 to section_2_finale', async () => {
       // Override to section_2[0]
       await app.inject({
-        method: "POST",
-        url: "/api/game/override-phase",
+        method: 'POST',
+        url: '/api/game/override-phase',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_2",
+          segment: 'section_2',
           segmentIndex: 0,
-          phaseType: "bidding",
+          phaseType: 'bidding',
         },
       });
 
       // Advance through all section_2 phases (2 bidding phases)
       for (let i = 0; i < 2; i++) {
         await app.inject({
-          method: "POST",
-          url: "/api/game/advance",
+          method: 'POST',
+          url: '/api/game/advance',
           headers: {
             Authorization: `Bearer ${hostToken}`,
           },
@@ -1799,8 +1791,8 @@ describe("Game API Routes", () => {
 
       // Get current state - should be at section_2_finale now
       const response = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1808,30 +1800,30 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.state.workflow.current_segment).toBe("section_2_finale");
-      expect(body.state.workflow.phase_type).toBe("wheel");
+      expect(body.state.workflow.current_segment).toBe('section_2_finale');
+      expect(body.state.workflow.phase_type).toBe('wheel');
     });
 
-    it("should transition from section_2_finale to finale", async () => {
+    it('should transition from section_2_finale to finale', async () => {
       // Override to section_2_finale
       await app.inject({
-        method: "POST",
-        url: "/api/game/override-phase",
+        method: 'POST',
+        url: '/api/game/override-phase',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_2_finale",
+          segment: 'section_2_finale',
           segmentIndex: 0,
-          phaseType: "wheel",
+          phaseType: 'wheel',
         },
       });
 
       // Advance to finale
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/advance",
+        method: 'POST',
+        url: '/api/game/advance',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1839,15 +1831,15 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
-      expect(body.state.workflow.current_segment).toBe("finale");
-      expect(body.state.workflow.phase_type).toBe("showcase");
+      expect(body.state.workflow.current_segment).toBe('finale');
+      expect(body.state.workflow.phase_type).toBe('showcase');
     });
 
-    it("should set phase metadata correctly from config", async () => {
+    it('should set phase metadata correctly from config', async () => {
       // Start game
       await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1855,42 +1847,41 @@ describe("Game API Routes", () => {
 
       // Get initial state
       const initialState = await app.inject({
-        method: "GET",
-        url: "/api/game/state",
+        method: 'GET',
+        url: '/api/game/state',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
       });
-      const initialMetadata = JSON.parse(initialState.body).state.workflow
-        .phase_metadata;
+      const initialMetadata = JSON.parse(initialState.body).state.workflow.phase_metadata;
       const initialPhaseData = JSON.parse(initialMetadata);
 
       // Should have bidding phase with product_id
-      expect(initialPhaseData.type).toBe("bidding");
+      expect(initialPhaseData.type).toBe('bidding');
       expect(initialPhaseData.product_id).toBeDefined();
-      expect(typeof initialPhaseData.product_id).toBe("string");
+      expect(typeof initialPhaseData.product_id).toBe('string');
     });
 
-    it("should fail when advancing beyond finale", async () => {
+    it('should fail when advancing beyond finale', async () => {
       // Override to finale
       await app.inject({
-        method: "POST",
-        url: "/api/game/override-phase",
+        method: 'POST',
+        url: '/api/game/override-phase',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "finale",
+          segment: 'finale',
           segmentIndex: 0,
-          phaseType: "showcase",
+          phaseType: 'showcase',
         },
       });
 
       // Try to advance beyond finale
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/advance",
+        method: 'POST',
+        url: '/api/game/advance',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -1898,13 +1889,13 @@ describe("Game API Routes", () => {
 
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("Cannot advance beyond finale");
+      expect(body.error).toContain('Cannot advance beyond finale');
     });
 
-    it("should require host role", async () => {
+    it('should require host role', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/advance",
+        method: 'POST',
+        url: '/api/game/advance',
         headers: {
           Authorization: `Bearer ${playerToken}`,
         },
@@ -1914,41 +1905,41 @@ describe("Game API Routes", () => {
     });
   });
 
-  describe("POST /api/game/override-phase", () => {
-    it("should override to specific phase", async () => {
+  describe('POST /api/game/override-phase', () => {
+    it('should override to specific phase', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/override-phase",
+        method: 'POST',
+        url: '/api/game/override-phase',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_2",
+          segment: 'section_2',
           segmentIndex: 0,
-          phaseType: "bidding",
-          phaseMetadata: { type: "bidding", product_id: "test-product" },
+          phaseType: 'bidding',
+          phaseMetadata: { type: 'bidding', product_id: 'test-product' },
         },
       });
 
       expect(response.statusCode).toBe(200);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(true);
-      expect(body.state.workflow.current_segment).toBe("section_2");
+      expect(body.state.workflow.current_segment).toBe('section_2');
       expect(body.state.workflow.current_segment_index).toBe(0);
-      expect(body.state.workflow.phase_type).toBe("bidding");
+      expect(body.state.workflow.phase_type).toBe('bidding');
     });
 
-    it("should require all fields", async () => {
+    it('should require all fields', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/override-phase",
+        method: 'POST',
+        url: '/api/game/override-phase',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_2",
+          segment: 'section_2',
           // Missing segmentIndex and phaseType
         },
       });
@@ -1956,54 +1947,52 @@ describe("Game API Routes", () => {
       expect(response.statusCode).toBe(400);
     });
 
-    it("should actually update workflow in database", async () => {
+    it('should actually update workflow in database', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/override-phase",
+        method: 'POST',
+        url: '/api/game/override-phase',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_2",
+          segment: 'section_2',
           segmentIndex: 2,
-          phaseType: "bidding",
-          phaseMetadata: { type: "bidding", product_id: "test-123" },
+          phaseType: 'bidding',
+          phaseMetadata: { type: 'bidding', product_id: 'test-123' },
         },
       });
 
       expect(response.statusCode).toBe(200);
 
       // Verify database was actually updated
-      const dbWorkflow = db
-        .prepare("SELECT * FROM game_workflow WHERE id = 1")
-        .get() as {
+      const dbWorkflow = db.prepare('SELECT * FROM game_workflow WHERE id = 1').get() as {
         current_segment: string;
         current_segment_index: number;
         phase_type: string;
         phase_metadata: string;
       };
 
-      expect(dbWorkflow.current_segment).toBe("section_2");
+      expect(dbWorkflow.current_segment).toBe('section_2');
       expect(dbWorkflow.current_segment_index).toBe(2);
-      expect(dbWorkflow.phase_type).toBe("bidding");
+      expect(dbWorkflow.phase_type).toBe('bidding');
 
       const metadata = JSON.parse(dbWorkflow.phase_metadata);
-      expect(metadata.product_id).toBe("test-123");
+      expect(metadata.product_id).toBe('test-123');
     });
 
-    it("should handle invalid segment gracefully", async () => {
+    it('should handle invalid segment gracefully', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/override-phase",
+        method: 'POST',
+        url: '/api/game/override-phase',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "invalid_segment_name",
+          segment: 'invalid_segment_name',
           segmentIndex: 0,
-          phaseType: "bidding",
+          phaseType: 'bidding',
         },
       });
 
@@ -2012,18 +2001,18 @@ describe("Game API Routes", () => {
       expect(response.statusCode).toBe(200);
     });
 
-    it("should require host role", async () => {
+    it('should require host role', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/override-phase",
+        method: 'POST',
+        url: '/api/game/override-phase',
         headers: {
           Authorization: `Bearer ${playerToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          segment: "section_2",
+          segment: 'section_2',
           segmentIndex: 0,
-          phaseType: "bidding",
+          phaseType: 'bidding',
         },
       });
 
@@ -2031,19 +2020,19 @@ describe("Game API Routes", () => {
     });
   });
 
-  describe("Edge Cases & Data Validation", () => {
-    it("should handle large audience pool efficiently", async () => {
+  describe('Edge Cases & Data Validation', () => {
+    it('should handle large audience pool efficiently', async () => {
       // Create 100 additional audience members
       for (let i = 0; i < 100; i++) {
         db.prepare(
           "INSERT INTO players (first_name, last_name, access_code, role, active) VALUES (?, ?, ?, 'audience', 1)",
-        ).run(`Bulk${i}`, "User", `BULK${i.toString().padStart(3, "0")}`);
+        ).run(`Bulk${i}`, 'User', `BULK${i.toString().padStart(3, '0')}`);
       }
 
       // Start game should still work and select 5 unique contestants
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/start",
+        method: 'POST',
+        url: '/api/game/start',
         headers: {
           Authorization: `Bearer ${hostToken}`,
         },
@@ -2054,20 +2043,18 @@ describe("Game API Routes", () => {
       expect(body.state.contestantsRow).toHaveLength(5);
 
       // Verify uniqueness
-      const playerIds = body.state.contestantsRow.map(
-        (c: { player_id: number }) => c.player_id,
-      );
+      const playerIds = body.state.contestantsRow.map((c: { player_id: number }) => c.player_id);
       const uniqueIds = new Set(playerIds);
       expect(uniqueIds.size).toBe(5);
     });
 
-    it("should handle empty contestantRowId field", async () => {
+    it('should handle empty contestantRowId field', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: 0,
@@ -2077,16 +2064,16 @@ describe("Game API Routes", () => {
       // 0 is falsy, should be rejected
       expect(response.statusCode).toBe(400);
       const body = JSON.parse(response.body);
-      expect(body.error).toContain("contestantRowId");
+      expect(body.error).toContain('contestantRowId');
     });
 
-    it("should handle negative contestant ID", async () => {
+    it('should handle negative contestant ID', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
           contestantRowId: -1,
@@ -2098,16 +2085,16 @@ describe("Game API Routes", () => {
       expect(body.success).toBe(false);
     });
 
-    it("should reject string when number expected", async () => {
+    it('should reject string when number expected', async () => {
       const response = await app.inject({
-        method: "POST",
-        url: "/api/game/reveal-contestant",
+        method: 'POST',
+        url: '/api/game/reveal-contestant',
         headers: {
           Authorization: `Bearer ${hostToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         payload: {
-          contestantRowId: "invalid",
+          contestantRowId: 'invalid',
         },
       });
 

@@ -1,4 +1,4 @@
-export type PlayerRole = "host" | "player" | "audience";
+export type PlayerRole = 'host' | 'player' | 'audience';
 
 export interface Player {
   id: number;
@@ -9,6 +9,7 @@ export interface Player {
   photoFilename: string;
   role: PlayerRole;
   active: boolean;
+  weight: number;
   sessionToken: string | null;
   createdAt: string;
   updatedAt: string;
@@ -23,6 +24,7 @@ export interface PlayerRow {
   photo_filename: string;
   role: PlayerRole;
   active: number;
+  weight: number;
   session_token: string | null;
   created_at: string;
   updated_at: string;
@@ -41,6 +43,7 @@ export function rowToPlayer(row: PlayerRow): Player {
     photoFilename: row.photo_filename,
     role: row.role,
     active: Boolean(row.active),
+    weight: row.weight ?? 1.0,
     sessionToken: row.session_token,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

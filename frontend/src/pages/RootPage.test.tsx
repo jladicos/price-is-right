@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "../test/test-utils";
-import userEvent from "@testing-library/user-event";
-import { BrowserRouter, MemoryRouter } from "react-router-dom";
-import RootPage from "./RootPage";
-import { useAuthStore } from "../store/authStore";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor } from '../test/test-utils';
+import userEvent from '@testing-library/user-event';
+import { BrowserRouter, MemoryRouter } from 'react-router-dom';
+import RootPage from './RootPage';
+import { useAuthStore } from '../store/authStore';
 
 // Mock the router navigation
 const mockNavigate = vi.fn();
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -16,9 +16,9 @@ vi.mock("react-router-dom", async () => {
 });
 
 // Mock the auth store
-vi.mock("../store/authStore");
+vi.mock('../store/authStore');
 
-describe("RootPage", () => {
+describe('RootPage', () => {
   const mockLogin = vi.fn();
   const mockClearError = vi.fn();
 
@@ -40,22 +40,20 @@ describe("RootPage", () => {
     });
   });
 
-  describe("Rendering", () => {
-    it("should render login form", () => {
+  describe('Rendering', () => {
+    it('should render login form', () => {
       render(
         <BrowserRouter>
           <RootPage />
         </BrowserRouter>,
       );
 
-      expect(screen.getByText("Price Is Right Game")).toBeInTheDocument();
+      expect(screen.getByText('Price Is Right Game')).toBeInTheDocument();
       expect(screen.getByLabelText(/access code/i)).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /log in/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
     });
 
-    it("should render access code input with correct attributes", () => {
+    it('should render access code input with correct attributes', () => {
       render(
         <BrowserRouter>
           <RootPage />
@@ -63,24 +61,24 @@ describe("RootPage", () => {
       );
 
       const input = screen.getByLabelText(/access code/i);
-      expect(input).toHaveAttribute("type", "text");
-      expect(input).toHaveAttribute("maxLength", "6");
+      expect(input).toHaveAttribute('type', 'text');
+      expect(input).toHaveAttribute('maxLength', '6');
     });
 
-    it("should have submit button disabled when code is empty", () => {
+    it('should have submit button disabled when code is empty', () => {
       render(
         <BrowserRouter>
           <RootPage />
         </BrowserRouter>,
       );
 
-      const button = screen.getByRole("button", { name: /log in/i });
+      const button = screen.getByRole('button', { name: /log in/i });
       expect(button).toBeDisabled();
     });
   });
 
-  describe("User Input", () => {
-    it("should enable submit button when code is entered", async () => {
+  describe('User Input', () => {
+    it('should enable submit button when code is entered', async () => {
       const user = userEvent.setup();
 
       render(
@@ -90,14 +88,14 @@ describe("RootPage", () => {
       );
 
       const input = screen.getByLabelText(/access code/i);
-      const button = screen.getByRole("button", { name: /log in/i });
+      const button = screen.getByRole('button', { name: /log in/i });
 
-      await user.type(input, "TEST01");
+      await user.type(input, 'TEST01');
 
       expect(button).not.toBeDisabled();
     });
 
-    it("should convert input to uppercase", async () => {
+    it('should convert input to uppercase', async () => {
       const user = userEvent.setup();
 
       render(
@@ -108,21 +106,21 @@ describe("RootPage", () => {
 
       const input = screen.getByLabelText(/access code/i) as HTMLInputElement;
 
-      await user.type(input, "test01");
+      await user.type(input, 'test01');
 
       // Input should show uppercase due to CSS text-transform
-      expect(input.value).toBe("test01"); // Actual value is lowercase
+      expect(input.value).toBe('test01'); // Actual value is lowercase
       // But it will be normalized to uppercase on submit
     });
 
-    it("should clear error when user starts typing", async () => {
+    it('should clear error when user starts typing', async () => {
       const user = userEvent.setup();
 
       vi.mocked(useAuthStore).mockReturnValue({
         sessionToken: null,
         currentPlayer: null,
         loading: false,
-        error: "Invalid access code",
+        error: 'Invalid access code',
         login: mockLogin,
         logout: vi.fn(),
         validateSession: vi.fn(),
@@ -138,14 +136,14 @@ describe("RootPage", () => {
 
       const input = screen.getByLabelText(/access code/i);
 
-      await user.type(input, "T");
+      await user.type(input, 'T');
 
       expect(mockClearError).toHaveBeenCalled();
     });
   });
 
-  describe("Form Submission", () => {
-    it("should call login with normalized access code on submit", async () => {
+  describe('Form Submission', () => {
+    it('should call login with normalized access code on submit', async () => {
       const user = userEvent.setup();
       mockLogin.mockResolvedValue(undefined);
 
@@ -156,18 +154,18 @@ describe("RootPage", () => {
       );
 
       const input = screen.getByLabelText(/access code/i);
-      const button = screen.getByRole("button", { name: /log in/i });
+      const button = screen.getByRole('button', { name: /log in/i });
 
       // Input has maxLength=6, so we can only type 6 characters
-      await user.type(input, "test01");
+      await user.type(input, 'test01');
       await user.click(button);
 
       await waitFor(() => {
-        expect(mockLogin).toHaveBeenCalledWith("TEST01");
+        expect(mockLogin).toHaveBeenCalledWith('TEST01');
       });
     });
 
-    it("should navigate to /welcome on successful login", async () => {
+    it('should navigate to /welcome on successful login', async () => {
       const user = userEvent.setup();
       mockLogin.mockResolvedValue(undefined);
 
@@ -178,17 +176,17 @@ describe("RootPage", () => {
       );
 
       const input = screen.getByLabelText(/access code/i);
-      const button = screen.getByRole("button", { name: /log in/i });
+      const button = screen.getByRole('button', { name: /log in/i });
 
-      await user.type(input, "TEST01");
+      await user.type(input, 'TEST01');
       await user.click(button);
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith("/welcome");
+        expect(mockNavigate).toHaveBeenCalledWith('/welcome');
       });
     });
 
-    it("should show loading state during login", async () => {
+    it('should show loading state during login', async () => {
       // Mock loading state
       vi.mocked(useAuthStore).mockReturnValue({
         sessionToken: null,
@@ -208,11 +206,11 @@ describe("RootPage", () => {
         </BrowserRouter>,
       );
 
-      const button = screen.getByRole("button", { name: /logging in/i });
+      const button = screen.getByRole('button', { name: /logging in/i });
       expect(button).toBeDisabled();
     });
 
-    it("should not submit with empty/whitespace code", async () => {
+    it('should not submit with empty/whitespace code', async () => {
       const user = userEvent.setup();
 
       render(
@@ -222,16 +220,16 @@ describe("RootPage", () => {
       );
 
       const input = screen.getByLabelText(/access code/i);
-      const button = screen.getByRole("button", { name: /log in/i });
+      const button = screen.getByRole('button', { name: /log in/i });
 
-      await user.type(input, "   ");
+      await user.type(input, '   ');
 
       expect(button).toBeDisabled();
     });
 
-    it("should handle login error", async () => {
+    it('should handle login error', async () => {
       const user = userEvent.setup();
-      mockLogin.mockRejectedValue(new Error("Invalid access code"));
+      mockLogin.mockRejectedValue(new Error('Invalid access code'));
 
       render(
         <BrowserRouter>
@@ -240,9 +238,9 @@ describe("RootPage", () => {
       );
 
       const input = screen.getByLabelText(/access code/i);
-      const button = screen.getByRole("button", { name: /log in/i });
+      const button = screen.getByRole('button', { name: /log in/i });
 
-      await user.type(input, "INVALID");
+      await user.type(input, 'INVALID');
       await user.click(button);
 
       await waitFor(() => {
@@ -251,13 +249,13 @@ describe("RootPage", () => {
     });
   });
 
-  describe("Error Display", () => {
-    it("should display error message when error exists", () => {
+  describe('Error Display', () => {
+    it('should display error message when error exists', () => {
       vi.mocked(useAuthStore).mockReturnValue({
         sessionToken: null,
         currentPlayer: null,
         loading: false,
-        error: "Invalid access code",
+        error: 'Invalid access code',
         login: mockLogin,
         logout: vi.fn(),
         validateSession: vi.fn(),
@@ -271,72 +269,72 @@ describe("RootPage", () => {
         </BrowserRouter>,
       );
 
-      expect(screen.getByText("Invalid access code")).toBeInTheDocument();
+      expect(screen.getByText('Invalid access code')).toBeInTheDocument();
     });
 
-    it("should not display error when error is null", () => {
+    it('should not display error when error is null', () => {
       render(
         <BrowserRouter>
           <RootPage />
         </BrowserRouter>,
       );
 
-      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
   });
 
-  describe("URL Parameter Handling", () => {
-    it("should auto-fill and login with ?code= parameter", async () => {
+  describe('URL Parameter Handling', () => {
+    it('should auto-fill and login with ?code= parameter', async () => {
       mockLogin.mockResolvedValue(undefined);
 
       render(
-        <MemoryRouter initialEntries={["/?code=TEST01"]}>
+        <MemoryRouter initialEntries={['/?code=TEST01']}>
           <RootPage />
         </MemoryRouter>,
       );
 
       await waitFor(
         () => {
-          expect(mockLogin).toHaveBeenCalledWith("TEST01");
+          expect(mockLogin).toHaveBeenCalledWith('TEST01');
         },
         { timeout: 3000 },
       );
     });
 
-    it("should normalize code from URL parameter", async () => {
+    it('should normalize code from URL parameter', async () => {
       mockLogin.mockResolvedValue(undefined);
 
       render(
-        <MemoryRouter initialEntries={["/?code=test01"]}>
+        <MemoryRouter initialEntries={['/?code=test01']}>
           <RootPage />
         </MemoryRouter>,
       );
 
       await waitFor(
         () => {
-          expect(mockLogin).toHaveBeenCalledWith("TEST01");
+          expect(mockLogin).toHaveBeenCalledWith('TEST01');
         },
         { timeout: 3000 },
       );
     });
 
-    it("should redirect to /welcome if already authenticated without ?code param", () => {
+    it('should redirect to /welcome if already authenticated without ?code param', () => {
       const mockPlayer = {
         id: 1,
-        firstName: "Test",
-        lastName: "User",
-        accessCode: "TEST01",
-        role: "player" as const,
+        firstName: 'Test',
+        lastName: 'User',
+        accessCode: 'TEST01',
+        role: 'player' as const,
         email: null,
-        photoFilename: "default.jpg",
+        photoFilename: 'default.jpg',
         active: true,
-        sessionToken: "test-token",
-        createdAt: "2025-01-01",
-        updatedAt: "2025-01-01",
+        sessionToken: 'test-token',
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
       };
 
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayer,
         loading: false,
         error: null,
@@ -348,33 +346,33 @@ describe("RootPage", () => {
       });
 
       render(
-        <MemoryRouter initialEntries={["/"]}>
+        <MemoryRouter initialEntries={['/']}>
           <RootPage />
         </MemoryRouter>,
       );
 
-      expect(mockNavigate).toHaveBeenCalledWith("/welcome");
+      expect(mockNavigate).toHaveBeenCalledWith('/welcome');
     });
 
-    it("should show login form if ?code param present even when authenticated", async () => {
+    it('should show login form if ?code param present even when authenticated', async () => {
       mockLogin.mockResolvedValue(undefined);
 
       const mockPlayer = {
         id: 1,
-        firstName: "Test",
-        lastName: "User",
-        accessCode: "TEST01",
-        role: "player" as const,
+        firstName: 'Test',
+        lastName: 'User',
+        accessCode: 'TEST01',
+        role: 'player' as const,
         email: null,
-        photoFilename: "default.jpg",
+        photoFilename: 'default.jpg',
         active: true,
-        sessionToken: "test-token",
-        createdAt: "2025-01-01",
-        updatedAt: "2025-01-01",
+        sessionToken: 'test-token',
+        createdAt: '2025-01-01',
+        updatedAt: '2025-01-01',
       };
 
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayer,
         loading: false,
         error: null,
@@ -386,22 +384,22 @@ describe("RootPage", () => {
       });
 
       render(
-        <MemoryRouter initialEntries={["/?code=TEST02"]}>
+        <MemoryRouter initialEntries={['/?code=TEST02']}>
           <RootPage />
         </MemoryRouter>,
       );
 
       await waitFor(
         () => {
-          expect(mockLogin).toHaveBeenCalledWith("TEST02");
+          expect(mockLogin).toHaveBeenCalledWith('TEST02');
         },
         { timeout: 3000 },
       );
     });
   });
 
-  describe("Accessibility", () => {
-    it("should have required attribute on access code input", () => {
+  describe('Accessibility', () => {
+    it('should have required attribute on access code input', () => {
       render(
         <BrowserRouter>
           <RootPage />
@@ -412,7 +410,7 @@ describe("RootPage", () => {
       expect(input).toBeRequired();
     });
 
-    it("should have proper label association", () => {
+    it('should have proper label association', () => {
       render(
         <BrowserRouter>
           <RootPage />
@@ -420,7 +418,7 @@ describe("RootPage", () => {
       );
 
       const input = screen.getByLabelText(/access code/i);
-      expect(input).toHaveAttribute("id");
+      expect(input).toHaveAttribute('id');
     });
   });
 });

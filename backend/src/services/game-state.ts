@@ -1,10 +1,10 @@
-import { getDatabase } from "../db/connection.js";
+import { getDatabase } from '../db/connection.js';
 import {
   getGameWorkflow,
   resetGame,
   updateGameWorkflow,
   type GameWorkflow,
-} from "../db/game-workflow.js";
+} from '../db/game-workflow.js';
 import {
   addContestantToRow,
   getContestantsRow,
@@ -17,13 +17,18 @@ import {
   getContestantById,
   updateContestantStatus,
   type ContestantWithPlayer,
-} from "../db/contestants.js";
-import { searchPlayers, getPlayerById, updatePlayer } from "../db/players.js";
+} from '../db/contestants.js';
+import { searchPlayers, getPlayerById, updatePlayer } from '../db/players.js';
+import { getCurrentBids, getCurrentBidderPosition, type BidWithPlayer } from './bidding.js';
+import { selectWeightedRandom, selectWeightedRandomMultiple } from '../utils/weighted-selection.js';
 
 export interface GameState {
   workflow: GameWorkflow;
   contestantsRow: ContestantWithPlayer[];
   eligibleAudienceCount: number;
+  // Bidding phase state (populated when phase_type === 'bidding')
+  currentBids?: BidWithPlayer[];
+  currentBidderPosition?: number | null;
 }
 
 /**
@@ -38,6 +43,7 @@ export function startNewGame(): GameWorkflow {
 /**
  * Get current complete game state
  * Includes workflow, contestants for current segment, and eligible audience count
+ * If in bidding phase, also includes current bids and bidder position
  */
 export function getCurrentState(): GameState {
   const workflow = getGameWorkflow();
@@ -50,39 +56,46 @@ export function getCurrentState(): GameState {
   // Count eligible audience members
   const db = getDatabase();
   const eligibleResult = searchPlayers(db, {
-    role: "audience",
+    role: 'audience',
     active: true,
   });
 
-  return {
+  const state: GameState = {
     workflow,
     contestantsRow,
     eligibleAudienceCount: eligibleResult.total,
   };
+
+  // If in bidding phase, include bidding-specific state
+  if (workflow.phase_type === 'bidding') {
+    const segment = workflow.current_segment;
+    const roundNumber = workflow.current_segment_index + 1;
+
+    // Get current bids for this round
+    state.currentBids = getCurrentBids(segment, roundNumber);
+
+    // Get current bidder position
+    state.currentBidderPosition = getCurrentBidderPosition(segment);
+  }
+
+  return state;
 }
 
 /**
  * Begin contestant selection phase for a segment
  * Updates phase_type to 'contestant_selection'
  */
-export function beginContestantSelection(
-  segment: "section_1" | "section_2",
-): GameWorkflow {
+export function beginContestantSelection(segment: 'section_1' | 'section_2'): GameWorkflow {
   const workflow = getGameWorkflow();
 
   // Validate game is in correct state
-  if (
-    workflow.phase_type !== "not_started" &&
-    workflow.phase_type !== "wheel"
-  ) {
-    throw new Error(
-      `Cannot begin contestant selection from phase '${workflow.phase_type}'`,
-    );
+  if (workflow.phase_type !== 'not_started' && workflow.phase_type !== 'wheel') {
+    throw new Error(`Cannot begin contestant selection from phase '${workflow.phase_type}'`);
   }
 
   return updateGameWorkflow({
     current_segment: segment,
-    phase_type: "contestant_selection",
+    phase_type: 'contestant_selection',
     phase_metadata: null,
   });
 }
@@ -91,58 +104,51 @@ export function beginContestantSelection(
  * Select next random contestant from eligible audience members
  * Returns the selected contestant (in pending_reveal state)
  */
-export function selectNextContestant(
-  segment: "section_1" | "section_2",
-): ContestantWithPlayer {
+export function selectNextContestant(segment: 'section_1' | 'section_2'): ContestantWithPlayer {
   const db = getDatabase();
 
   // Find next empty position
   const position = findNextEmptyPosition(segment);
   if (position === null) {
-    throw new Error("All contestant positions are filled");
+    throw new Error('All contestant positions are filled');
   }
 
   // Get eligible audience members (role='audience', active=true)
   const eligibleResult = searchPlayers(db, {
-    role: "audience",
+    role: 'audience',
     active: true,
   });
 
   if (eligibleResult.total === 0) {
-    throw new Error("No eligible audience members available");
+    throw new Error('No eligible audience members available');
   }
 
-  // Filter out players already selected in this segment
-  const activeContestants = getActiveContestants(segment);
-  const alreadySelectedIds = new Set(activeContestants.map((c) => c.player_id));
-  const availablePlayers = eligibleResult.players.filter(
-    (p) => !alreadySelectedIds.has(p.id),
-  );
+  // Filter out players already in contestant's row (any segment, any status)
+  // This ensures no player appears twice in contestant's row
+  const allContestants = getAllActiveContestants();
+  const alreadySelectedIds = new Set(allContestants.map((c) => c.player_id));
+  const availablePlayers = eligibleResult.players.filter((p) => !alreadySelectedIds.has(p.id));
 
   if (availablePlayers.length === 0) {
-    throw new Error(
-      "No eligible audience members available (all already selected)",
-    );
+    throw new Error('No eligible audience members available (all already selected)');
   }
 
-  // Pick a random player from available pool
-  const randomIndex = Math.floor(Math.random() * availablePlayers.length);
-  const selectedPlayer = availablePlayers[randomIndex];
+  // Use weighted random selection
+  const selectedPlayer = selectWeightedRandom(availablePlayers);
+
+  if (!selectedPlayer) {
+    throw new Error('Failed to select a contestant (weighted selection returned null)');
+  }
 
   // Add to contestants_row with status='pending_reveal'
-  const contestant = addContestantToRow(
-    selectedPlayer.id,
-    position,
-    segment,
-    "pending_reveal",
-  );
+  const contestant = addContestantToRow(selectedPlayer.id, position, segment, 'pending_reveal');
 
   // Return contestant with player info
   const contestants = getContestantsRow(segment);
   const contestantWithPlayer = contestants.find((c) => c.id === contestant.id);
 
   if (!contestantWithPlayer) {
-    throw new Error("Failed to retrieve contestant after creation");
+    throw new Error('Failed to retrieve contestant after creation');
   }
 
   return contestantWithPlayer;
@@ -153,9 +159,7 @@ export function selectNextContestant(
  * Updates status to 'active', sets revealed_at timestamp, and changes player role to 'player'
  * This is a transaction that updates both contestants_row and players tables
  */
-export function revealContestant(
-  contestantRowId: number,
-): ContestantWithPlayer {
+export function revealContestant(contestantRowId: number): ContestantWithPlayer {
   const db = getDatabase();
 
   // Get contestant to check it exists and get player_id
@@ -170,7 +174,7 @@ export function revealContestant(
     dbRevealContestant(contestantRowId);
 
     // Update player role from 'audience' to 'player'
-    updatePlayer(db, contestant.player_id, { role: "player" });
+    updatePlayer(db, contestant.player_id, { role: 'player' });
   })();
 
   // Return updated contestant with player info
@@ -178,7 +182,7 @@ export function revealContestant(
   const updatedContestant = contestants.find((c) => c.id === contestantRowId);
 
   if (!updatedContestant) {
-    throw new Error("Failed to retrieve contestant after reveal");
+    throw new Error('Failed to retrieve contestant after reveal');
   }
 
   return updatedContestant;
@@ -192,13 +196,13 @@ export function revealContestant(
  */
 export function manualSelectContestant(
   playerId: number,
-  segment: "section_1" | "section_2",
+  segment: 'section_1' | 'section_2',
   position: number,
 ): ContestantWithPlayer {
   const db = getDatabase();
 
   // Validate segment
-  if (segment !== "section_1" && segment !== "section_2") {
+  if (segment !== 'section_1' && segment !== 'section_2') {
     throw new Error(`Invalid segment: ${segment}`);
   }
 
@@ -217,23 +221,32 @@ export function manualSelectContestant(
     throw new Error(`Position must be between 1 and 5`);
   }
 
+  // Check if this player is already in contestant's row (at any position)
+  const allContestants = getAllActiveContestants();
+  const alreadyInRow = allContestants.find((c) => c.player_id === playerId);
+
+  // If player is already in the row at a different position, prevent duplicate
+  if (alreadyInRow && alreadyInRow.position !== position) {
+    throw new Error(
+      `Player ${player.firstName} ${player.lastName} is already in contestant's row at position ${alreadyInRow.position}`,
+    );
+  }
+
   // Check if position is already occupied
   const existingContestants = getContestantsRow(segment);
   const occupiedPosition = existingContestants.find(
-    (c) =>
-      c.position === position &&
-      (c.status === "active" || c.status === "pending_reveal"),
+    (c) => c.position === position && (c.status === 'active' || c.status === 'pending_reveal'),
   );
 
   // If position is occupied, mark the old contestant as replaced first
   if (occupiedPosition) {
-    updateContestantStatus(occupiedPosition.id, "replaced");
+    updateContestantStatus(occupiedPosition.id, 'replaced');
   }
 
   // Always set to pending_reveal for manual selections
   // This ensures the host can reveal every contestant with dramatic timing,
   // regardless of whether they were audience or a player from a previous round
-  const status = "pending_reveal";
+  const status = 'pending_reveal';
 
   // Add to contestants_row
   const contestant = addContestantToRow(playerId, position, segment, status);
@@ -243,7 +256,7 @@ export function manualSelectContestant(
   const contestantWithPlayer = contestants.find((c) => c.id === contestant.id);
 
   if (!contestantWithPlayer) {
-    throw new Error("Failed to retrieve contestant after manual selection");
+    throw new Error('Failed to retrieve contestant after manual selection');
   }
 
   return contestantWithPlayer;
@@ -269,6 +282,12 @@ export function replaceContestant(
   let selectedPlayerId: number;
   let newStatus: string;
 
+  // Get all current contestants to prevent duplicates
+  const allContestants = getAllActiveContestants();
+  const alreadySelectedIds = new Set(
+    allContestants.filter((c) => c.id !== contestantRowId).map((c) => c.player_id),
+  );
+
   if (newPlayerId !== undefined) {
     // Manual selection
     const player = getPlayerById(db, newPlayerId);
@@ -280,43 +299,54 @@ export function replaceContestant(
       throw new Error(`Player ${newPlayerId} is not active`);
     }
 
+    // Check if player is already in contestant's row at a different position
+    if (alreadySelectedIds.has(newPlayerId)) {
+      throw new Error(
+        `Player ${player.firstName} ${player.lastName} is already in contestant's row at another position`,
+      );
+    }
+
     selectedPlayerId = newPlayerId;
     // Same logic as manualSelectContestant: existing players and hosts are immediately active
-    newStatus =
-      player.role === "player" || player.role === "host"
-        ? "active"
-        : "pending_reveal";
+    newStatus = player.role === 'player' || player.role === 'host' ? 'active' : 'pending_reveal';
   } else {
     // Random selection from eligible audience
     const eligibleResult = searchPlayers(db, {
-      role: "audience",
+      role: 'audience',
       active: true,
     });
 
     if (eligibleResult.total === 0) {
-      throw new Error("No eligible audience members available");
+      throw new Error('No eligible audience members available');
     }
 
-    const randomIndex = Math.floor(
-      Math.random() * eligibleResult.players.length,
-    );
-    selectedPlayerId = eligibleResult.players[randomIndex].id;
-    newStatus = "pending_reveal";
+    // Filter out players already in contestant's row
+    const availablePlayers = eligibleResult.players.filter((p) => !alreadySelectedIds.has(p.id));
+
+    if (availablePlayers.length === 0) {
+      throw new Error('No eligible audience members available (all already selected)');
+    }
+
+    // Use weighted random selection
+    const selectedPlayer = selectWeightedRandom(availablePlayers);
+
+    if (!selectedPlayer) {
+      throw new Error('Failed to select a contestant (weighted selection returned null)');
+    }
+
+    selectedPlayerId = selectedPlayer.id;
+    newStatus = 'pending_reveal';
   }
 
   // Replace contestant
-  const result = dbReplaceContestant(
-    contestantRowId,
-    selectedPlayerId,
-    newStatus,
-  );
+  const result = dbReplaceContestant(contestantRowId, selectedPlayerId, newStatus);
 
   // Return new contestant with player info
   const contestants = getContestantsRow(oldContestant.game_segment);
   const newContestant = contestants.find((c) => c.id === result.new.id);
 
   if (!newContestant) {
-    throw new Error("Failed to retrieve contestant after replacement");
+    throw new Error('Failed to retrieve contestant after replacement');
   }
 
   return newContestant;
@@ -327,42 +357,48 @@ export function replaceContestant(
  * Replaces all 5 contestants with new random selections from eligible audience
  * All new contestants start with status='pending_reveal'
  */
-export function refreshContestantsRow(
-  segment: "section_1" | "section_2",
-): ContestantWithPlayer[] {
+export function refreshContestantsRow(segment: 'section_1' | 'section_2'): ContestantWithPlayer[] {
   const db = getDatabase();
 
   // Get eligible audience members
   const eligibleResult = searchPlayers(db, {
-    role: "audience",
+    role: 'audience',
     active: true,
   });
 
   if (eligibleResult.total < 5) {
-    throw new Error(
-      `Not enough eligible audience members (need 5, have ${eligibleResult.total})`,
-    );
+    throw new Error(`Not enough eligible audience members (need 5, have ${eligibleResult.total})`);
   }
 
   // Use transaction to ensure atomic replacement
   return db.transaction(() => {
-    // Clear existing contestants (marks them as 'replaced')
+    // Clear existing contestants for this segment (marks them as 'replaced')
     clearContestantsRow(segment);
 
-    // Select 5 random players (without replacement)
-    const shuffled = [...eligibleResult.players].sort(
-      () => Math.random() - 0.5,
-    );
-    const selectedPlayers = shuffled.slice(0, 5);
+    // Get ALL contestants still in the row (other segments, winners, etc.)
+    // to ensure we don't select anyone who's already there
+    const allContestants = getAllActiveContestants();
+    const alreadySelectedIds = new Set(allContestants.map((c) => c.player_id));
+
+    // Filter out players already in contestant's row
+    const availablePlayers = eligibleResult.players.filter((p) => !alreadySelectedIds.has(p.id));
+
+    if (availablePlayers.length < 5) {
+      throw new Error(
+        `Not enough available audience members (need 5, have ${availablePlayers.length} after excluding current contestants)`,
+      );
+    }
+
+    // Select 5 random players using weighted selection (without replacement)
+    const selectedPlayers = selectWeightedRandomMultiple(availablePlayers, 5);
+
+    if (selectedPlayers.length < 5) {
+      throw new Error(`Failed to select 5 contestants (only selected ${selectedPlayers.length})`);
+    }
 
     // Add new contestants to positions 1-5
     for (let i = 0; i < 5; i++) {
-      addContestantToRow(
-        selectedPlayers[i].id,
-        i + 1,
-        segment,
-        "pending_reveal",
-      );
+      addContestantToRow(selectedPlayers[i].id, i + 1, segment, 'pending_reveal');
     }
 
     // Return only active contestants (excludes the replaced ones)
@@ -377,12 +413,12 @@ export function refreshContestantsRow(
 export function advancePhase(nextPhase: string): GameWorkflow {
   // Basic validation - can be enhanced with state machine logic
   const validPhases = [
-    "not_started",
-    "contestant_selection",
-    "bidding",
-    "mini_game",
-    "wheel",
-    "showcase",
+    'not_started',
+    'contestant_selection',
+    'bidding',
+    'mini_game',
+    'wheel',
+    'showcase',
   ];
 
   if (!validPhases.includes(nextPhase)) {

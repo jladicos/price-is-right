@@ -32,7 +32,7 @@
  * - Tested extensively (see export-import.test.ts)
  */
 
-import type Database from "better-sqlite3";
+import type Database from 'better-sqlite3';
 
 export interface DatabaseExport {
   version: string;
@@ -54,6 +54,57 @@ export interface DatabaseExport {
     value: string;
     updatedAt: string;
   }>;
+  gameWorkflow: Array<{
+    id: number;
+    currentSegment: string;
+    currentSegmentIndex: number;
+    phaseType: string;
+    phaseMetadata: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  contestantsRow: Array<{
+    id: number;
+    playerId: number;
+    position: number;
+    gameSegment: string;
+    status: string;
+    addedAt: string;
+    revealedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  bids: Array<{
+    id: number;
+    playerId: number;
+    productId: string;
+    roundNumber: number;
+    gameSegment: string;
+    bidAmount: number;
+    isLocked: number;
+    isWinner: number;
+    retryNumber: number;
+    createdAt: string;
+  }>;
+  wheelSpins: Array<{
+    id: number;
+    playerId: number;
+    gameSegment: string;
+    spinNumber: number;
+    result: number;
+    spinoffNumber: number;
+    createdAt: string;
+  }>;
+  showcaseBids: Array<{
+    id: number;
+    playerId: number;
+    productId: string;
+    bidAmount: number;
+    passed: number;
+    isWinner: number;
+    retryNumber: number;
+    createdAt: string;
+  }>;
 }
 
 /**
@@ -69,7 +120,7 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
        FROM players
        ORDER BY id`,
     )
-    .all() as DatabaseExport["players"];
+    .all() as DatabaseExport['players'];
 
   // Export game state
   const gameState = db
@@ -78,13 +129,70 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
        FROM game_state
        ORDER BY key`,
     )
-    .all() as DatabaseExport["gameState"];
+    .all() as DatabaseExport['gameState'];
+
+  // Export game workflow
+  const gameWorkflow = db
+    .prepare(
+      `SELECT id, current_segment AS currentSegment, current_segment_index AS currentSegmentIndex,
+              phase_type AS phaseType, phase_metadata AS phaseMetadata,
+              created_at AS createdAt, updated_at AS updatedAt
+       FROM game_workflow`,
+    )
+    .all() as DatabaseExport['gameWorkflow'];
+
+  // Export contestants row
+  const contestantsRow = db
+    .prepare(
+      `SELECT id, player_id AS playerId, position, game_segment AS gameSegment,
+              status, added_at AS addedAt, revealed_at AS revealedAt,
+              created_at AS createdAt, updated_at AS updatedAt
+       FROM contestants_row
+       ORDER BY id`,
+    )
+    .all() as DatabaseExport['contestantsRow'];
+
+  // Export bids
+  const bids = db
+    .prepare(
+      `SELECT id, player_id AS playerId, product_id AS productId, round_number AS roundNumber,
+              game_segment AS gameSegment, bid_amount AS bidAmount, is_locked AS isLocked,
+              is_winner AS isWinner, retry_number AS retryNumber, created_at AS createdAt
+       FROM bids
+       ORDER BY id`,
+    )
+    .all() as DatabaseExport['bids'];
+
+  // Export wheel spins
+  const wheelSpins = db
+    .prepare(
+      `SELECT id, player_id AS playerId, game_segment AS gameSegment, spin_number AS spinNumber,
+              result, spinoff_number AS spinoffNumber, created_at AS createdAt
+       FROM wheel_spins
+       ORDER BY id`,
+    )
+    .all() as DatabaseExport['wheelSpins'];
+
+  // Export showcase bids
+  const showcaseBids = db
+    .prepare(
+      `SELECT id, player_id AS playerId, product_id AS productId, bid_amount AS bidAmount,
+              passed, is_winner AS isWinner, retry_number AS retryNumber, created_at AS createdAt
+       FROM showcase_bids
+       ORDER BY id`,
+    )
+    .all() as DatabaseExport['showcaseBids'];
 
   return {
-    version: "1.0",
+    version: '1.0',
     exportedAt: new Date().toISOString(),
     players,
     gameState,
+    gameWorkflow,
+    contestantsRow,
+    bids,
+    wheelSpins,
+    showcaseBids,
   };
 }
 
@@ -92,24 +200,37 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
  * Import database from JSON format
  * WARNING: This will DELETE all existing data!
  */
-export function importDatabase(
-  db: Database.Database,
-  data: DatabaseExport,
-): void {
+export function importDatabase(db: Database.Database, data: DatabaseExport): void {
   // Validate data structure
-  if (!data.version || !data.players || !data.gameState) {
-    throw new Error("Invalid export file format");
+  if (
+    !data.version ||
+    !data.players ||
+    !data.gameState ||
+    !data.gameWorkflow ||
+    !data.contestantsRow ||
+    !data.bids ||
+    !data.wheelSpins ||
+    !data.showcaseBids
+  ) {
+    throw new Error('Invalid export file format');
   }
 
-  if (data.version !== "1.0") {
+  if (data.version !== '1.0') {
     throw new Error(`Unsupported export version: ${data.version}`);
   }
 
   // Use transaction for atomicity
   const transaction = db.transaction(() => {
-    // Clear existing data
-    db.prepare("DELETE FROM players").run();
-    db.prepare("DELETE FROM game_state").run();
+    // Clear existing data (order matters due to foreign keys)
+    // Delete child tables first
+    db.prepare('DELETE FROM showcase_bids').run();
+    db.prepare('DELETE FROM wheel_spins').run();
+    db.prepare('DELETE FROM bids').run();
+    db.prepare('DELETE FROM contestants_row').run();
+    db.prepare('DELETE FROM game_workflow').run();
+    // Then parent tables
+    db.prepare('DELETE FROM players').run();
+    db.prepare('DELETE FROM game_state').run();
 
     // Import players
     const insertPlayer = db.prepare(`
@@ -147,16 +268,154 @@ export function importDatabase(
       insertGameState.run(state.key, state.value, state.updatedAt);
     }
 
-    // Reset SQLite autoincrement sequence for players
-    const maxPlayerId = db
-      .prepare("SELECT MAX(id) as maxId FROM players")
-      .get() as {
+    // Import game workflow
+    const insertGameWorkflow = db.prepare(`
+      INSERT INTO game_workflow (
+        id, current_segment, current_segment_index, phase_type,
+        phase_metadata, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const workflow of data.gameWorkflow) {
+      insertGameWorkflow.run(
+        workflow.id,
+        workflow.currentSegment,
+        workflow.currentSegmentIndex,
+        workflow.phaseType,
+        workflow.phaseMetadata,
+        workflow.createdAt,
+        workflow.updatedAt,
+      );
+    }
+
+    // Import contestants row
+    const insertContestant = db.prepare(`
+      INSERT INTO contestants_row (
+        id, player_id, position, game_segment, status,
+        added_at, revealed_at, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const contestant of data.contestantsRow) {
+      insertContestant.run(
+        contestant.id,
+        contestant.playerId,
+        contestant.position,
+        contestant.gameSegment,
+        contestant.status,
+        contestant.addedAt,
+        contestant.revealedAt,
+        contestant.createdAt,
+        contestant.updatedAt,
+      );
+    }
+
+    // Import bids
+    const insertBid = db.prepare(`
+      INSERT INTO bids (
+        id, player_id, product_id, round_number, game_segment,
+        bid_amount, is_locked, is_winner, retry_number, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const bid of data.bids) {
+      insertBid.run(
+        bid.id,
+        bid.playerId,
+        bid.productId,
+        bid.roundNumber,
+        bid.gameSegment,
+        bid.bidAmount,
+        bid.isLocked,
+        bid.isWinner,
+        bid.retryNumber,
+        bid.createdAt,
+      );
+    }
+
+    // Import wheel spins
+    const insertWheelSpin = db.prepare(`
+      INSERT INTO wheel_spins (
+        id, player_id, game_segment, spin_number,
+        result, spinoff_number, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const spin of data.wheelSpins) {
+      insertWheelSpin.run(
+        spin.id,
+        spin.playerId,
+        spin.gameSegment,
+        spin.spinNumber,
+        spin.result,
+        spin.spinoffNumber,
+        spin.createdAt,
+      );
+    }
+
+    // Import showcase bids
+    const insertShowcaseBid = db.prepare(`
+      INSERT INTO showcase_bids (
+        id, player_id, product_id, bid_amount,
+        passed, is_winner, retry_number, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const showcaseBid of data.showcaseBids) {
+      insertShowcaseBid.run(
+        showcaseBid.id,
+        showcaseBid.playerId,
+        showcaseBid.productId,
+        showcaseBid.bidAmount,
+        showcaseBid.passed,
+        showcaseBid.isWinner,
+        showcaseBid.retryNumber,
+        showcaseBid.createdAt,
+      );
+    }
+
+    // Reset SQLite autoincrement sequences
+    const maxPlayerId = db.prepare('SELECT MAX(id) as maxId FROM players').get() as {
       maxId: number | null;
     };
     if (maxPlayerId.maxId !== null) {
-      db.prepare(
-        `UPDATE sqlite_sequence SET seq = ? WHERE name = 'players'`,
-      ).run(maxPlayerId.maxId);
+      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'players'`).run(
+        maxPlayerId.maxId,
+      );
+    }
+
+    const maxContestantId = db.prepare('SELECT MAX(id) as maxId FROM contestants_row').get() as {
+      maxId: number | null;
+    };
+    if (maxContestantId.maxId !== null) {
+      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'contestants_row'`).run(
+        maxContestantId.maxId,
+      );
+    }
+
+    const maxBidId = db.prepare('SELECT MAX(id) as maxId FROM bids').get() as {
+      maxId: number | null;
+    };
+    if (maxBidId.maxId !== null) {
+      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'bids'`).run(maxBidId.maxId);
+    }
+
+    const maxWheelSpinId = db.prepare('SELECT MAX(id) as maxId FROM wheel_spins').get() as {
+      maxId: number | null;
+    };
+    if (maxWheelSpinId.maxId !== null) {
+      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'wheel_spins'`).run(
+        maxWheelSpinId.maxId,
+      );
+    }
+
+    const maxShowcaseBidId = db.prepare('SELECT MAX(id) as maxId FROM showcase_bids').get() as {
+      maxId: number | null;
+    };
+    if (maxShowcaseBidId.maxId !== null) {
+      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'showcase_bids'`).run(
+        maxShowcaseBidId.maxId,
+      );
     }
   });
 

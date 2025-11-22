@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from "react";
-import { useGameStore } from "../store/gameStore";
+import { useEffect, useRef, useCallback } from 'react';
+import { useGameStore } from '../store/gameStore';
 
 interface UseGameStateOptions {
   /**

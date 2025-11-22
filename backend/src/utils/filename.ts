@@ -6,10 +6,10 @@ export function sanitizeFilename(name: string): string {
   return name
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, "-") // Replace spaces with hyphens
-    .replace(/[^a-z0-9-]/g, "") // Remove non-alphanumeric characters (except hyphens)
-    .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
-    .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/[^a-z0-9-]/g, '') // Remove non-alphanumeric characters (except hyphens)
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
 }
 
 /**
@@ -25,7 +25,7 @@ export function generatePlayerPhotoFilename(
   const sanitized = sanitizeFilename(fullName);
 
   // Ensure extension starts with a dot
-  const ext = extension.startsWith(".") ? extension : `.${extension}`;
+  const ext = extension.startsWith('.') ? extension : `.${extension}`;
 
   return `${sanitized}${ext}`;
 }
@@ -43,21 +43,21 @@ export function getFileExtension(filename: string, mimetype?: string): string {
   // Fallback to mimetype
   if (mimetype) {
     const mimeMap: Record<string, string> = {
-      "image/jpeg": "jpg",
-      "image/jpg": "jpg",
-      "image/png": "png",
-      "image/gif": "gif",
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
     };
-    return mimeMap[mimetype.toLowerCase()] || "jpg";
+    return mimeMap[mimetype.toLowerCase()] || 'jpg';
   }
 
-  return "jpg"; // Default
+  return 'jpg'; // Default
 }
 
 /**
  * Validate that a file is an allowed image type
  */
 export function isValidImageType(mimetype: string): boolean {
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
   return allowedTypes.includes(mimetype.toLowerCase());
 }
