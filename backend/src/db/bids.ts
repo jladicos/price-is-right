@@ -1,4 +1,4 @@
-import { getDatabase } from './connection.js';
+import { getDatabase } from "./connection.js";
 
 export interface Bid {
   id: number;
@@ -38,10 +38,19 @@ export function createBid(
     VALUES (?, ?, ?, ?, ?, ?)
   `);
 
-  const result = stmt.run(playerId, productId, roundNumber, segment, bidAmount, retryNumber);
+  const result = stmt.run(
+    playerId,
+    productId,
+    roundNumber,
+    segment,
+    bidAmount,
+    retryNumber,
+  );
 
   // Fetch and return the created bid
-  const bid = db.prepare('SELECT * FROM bids WHERE id = ?').get(result.lastInsertRowid) as Bid;
+  const bid = db
+    .prepare("SELECT * FROM bids WHERE id = ?")
+    .get(result.lastInsertRowid) as Bid;
 
   return bid;
 }
@@ -51,7 +60,10 @@ export function createBid(
  * Returns most recent bids (highest retry_number) for the round
  * Includes player info
  */
-export function getBidsForRound(segment: string, roundNumber: number): BidWithPlayer[] {
+export function getBidsForRound(
+  segment: string,
+  roundNumber: number,
+): BidWithPlayer[] {
   const db = getDatabase();
 
   // Get current retry number for this round
@@ -99,7 +111,9 @@ export function getBidsForRound(segment: string, roundNumber: number): BidWithPl
 export function getBidById(bidId: number): Bid | undefined {
   const db = getDatabase();
 
-  const bid = db.prepare('SELECT * FROM bids WHERE id = ?').get(bidId) as Bid | undefined;
+  const bid = db.prepare("SELECT * FROM bids WHERE id = ?").get(bidId) as
+    | Bid
+    | undefined;
 
   return bid;
 }
@@ -122,35 +136,35 @@ export function updateBid(
   const values: (number | string)[] = [];
 
   if (updates.bid_amount !== undefined) {
-    fields.push('bid_amount = ?');
+    fields.push("bid_amount = ?");
     values.push(updates.bid_amount);
   }
 
   if (updates.is_locked !== undefined) {
-    fields.push('is_locked = ?');
+    fields.push("is_locked = ?");
     values.push(updates.is_locked);
   }
 
   if (updates.is_winner !== undefined) {
-    fields.push('is_winner = ?');
+    fields.push("is_winner = ?");
     values.push(updates.is_winner);
   }
 
   if (fields.length === 0) {
-    throw new Error('No fields to update');
+    throw new Error("No fields to update");
   }
 
   values.push(bidId);
 
   const stmt = db.prepare(`
     UPDATE bids
-    SET ${fields.join(', ')}
+    SET ${fields.join(", ")}
     WHERE id = ?
   `);
 
   stmt.run(...values);
 
-  const bid = db.prepare('SELECT * FROM bids WHERE id = ?').get(bidId) as Bid;
+  const bid = db.prepare("SELECT * FROM bids WHERE id = ?").get(bidId) as Bid;
 
   return bid;
 }
@@ -170,7 +184,7 @@ export function unlockBid(bidId: number): Bid {
 
   stmt.run(bidId);
 
-  const bid = db.prepare('SELECT * FROM bids WHERE id = ?').get(bidId) as Bid;
+  const bid = db.prepare("SELECT * FROM bids WHERE id = ?").get(bidId) as Bid;
 
   return bid;
 }
@@ -190,7 +204,7 @@ export function markWinner(bidId: number): Bid {
 
   stmt.run(bidId);
 
-  const bid = db.prepare('SELECT * FROM bids WHERE id = ?').get(bidId) as Bid;
+  const bid = db.prepare("SELECT * FROM bids WHERE id = ?").get(bidId) as Bid;
 
   return bid;
 }
@@ -248,7 +262,10 @@ export function checkDuplicateBid(
  * Get the current retry number for a round
  * Returns the highest retry_number, or 0 if no bids exist yet
  */
-export function getCurrentRetryNumber(segment: string, roundNumber: number): number {
+export function getCurrentRetryNumber(
+  segment: string,
+  roundNumber: number,
+): number {
   const db = getDatabase();
 
   const result = db

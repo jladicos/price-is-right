@@ -2,7 +2,8 @@
  * Centralized utility for constructing image URLs
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001';
+const BASE_URL =
+  import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3001";
 
 /**
  * Get the URL for a player photo

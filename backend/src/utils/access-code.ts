@@ -1,13 +1,13 @@
-import Database from 'better-sqlite3';
+import Database from "better-sqlite3";
 
-const CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 const CODE_LENGTH = 6;
 
 /**
  * Generates a random 6-character uppercase alphanumeric access code
  */
 export function generateAccessCode(): string {
-  let code = '';
+  let code = "";
   for (let i = 0; i < CODE_LENGTH; i++) {
     const randomIndex = Math.floor(Math.random() * CHARACTERS.length);
     code += CHARACTERS[randomIndex];
@@ -28,7 +28,7 @@ export function generateUniqueAccessCode(db: Database.Database): string {
     attempts++;
 
     const existing = db
-      .prepare('SELECT id FROM players WHERE access_code = ?')
+      .prepare("SELECT id FROM players WHERE access_code = ?")
       .get(code.toUpperCase());
 
     if (!existing) {
@@ -36,14 +36,14 @@ export function generateUniqueAccessCode(db: Database.Database): string {
     }
   }
 
-  throw new Error('Failed to generate unique access code after 100 attempts');
+  throw new Error("Failed to generate unique access code after 100 attempts");
 }
 
 /**
  * Validates an access code format (6 alphanumeric characters)
  */
 export function isValidAccessCodeFormat(code: unknown): boolean {
-  if (typeof code !== 'string') {
+  if (typeof code !== "string") {
     return false;
   }
 

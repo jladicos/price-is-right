@@ -1,5 +1,13 @@
-import { useState, useEffect } from 'react';
-import { Button, Input, VStack, Text, Box, HStack, Stack } from '@chakra-ui/react';
+import { useState, useEffect } from "react";
+import {
+  Button,
+  Input,
+  VStack,
+  Text,
+  Box,
+  HStack,
+  Stack,
+} from "@chakra-ui/react";
 import {
   DialogRoot,
   DialogContent,
@@ -8,10 +16,10 @@ import {
   DialogBody,
   DialogFooter,
   DialogCloseTrigger,
-} from './ui/dialog';
-import type { ContestantWithPlayer } from '../store/gameStore';
-import { apiRequest } from '../utils/api';
-import { showToast } from '../utils/toast';
+} from "./ui/dialog";
+import type { ContestantWithPlayer } from "../store/gameStore";
+import { apiRequest } from "../utils/api";
+import { showToast } from "../utils/toast";
 
 interface Player {
   id: number;
@@ -27,7 +35,10 @@ interface ReplaceContestantModalProps {
   onClose: () => void;
   contestant: ContestantWithPlayer | null;
   onReplaceRandom: (contestantRowId: number) => Promise<void>;
-  onReplaceManual: (contestantRowId: number, newPlayerId: number) => Promise<void>;
+  onReplaceManual: (
+    contestantRowId: number,
+    newPlayerId: number,
+  ) => Promise<void>;
 }
 
 export function ReplaceContestantModal({
@@ -37,31 +48,34 @@ export function ReplaceContestantModal({
   onReplaceRandom,
   onReplaceManual,
 }: ReplaceContestantModalProps) {
-  const [replacementType, setReplacementType] = useState<'random' | 'manual'>('random');
+  const [replacementType, setReplacementType] = useState<"random" | "manual">(
+    "random",
+  );
   const [players, setPlayers] = useState<Player[]>([]);
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch active players when switching to manual mode
   useEffect(() => {
-    if (!isOpen || replacementType !== 'manual') return;
+    if (!isOpen || replacementType !== "manual") return;
 
     const fetchPlayers = async () => {
       setIsLoading(true);
       try {
         const response = await apiRequest<{ players: Player[]; total: number }>(
-          '/players?active=true',
+          "/players?active=true",
         );
         setPlayers(response.players);
         setFilteredPlayers(response.players);
       } catch (err) {
         showToast({
-          title: 'Error',
-          description: err instanceof Error ? err.message : 'Failed to load players',
-          type: 'error',
+          title: "Error",
+          description:
+            err instanceof Error ? err.message : "Failed to load players",
+          type: "error",
         });
       } finally {
         setIsLoading(false);
@@ -90,16 +104,17 @@ export function ReplaceContestantModal({
   const handleConfirm = async () => {
     if (!contestant) return;
 
-    if (replacementType === 'random') {
+    if (replacementType === "random") {
       setIsSubmitting(true);
       try {
         await onReplaceRandom(contestant.id);
         handleClose();
       } catch (err) {
         showToast({
-          title: 'Error',
-          description: err instanceof Error ? err.message : 'Failed to replace contestant',
-          type: 'error',
+          title: "Error",
+          description:
+            err instanceof Error ? err.message : "Failed to replace contestant",
+          type: "error",
         });
       } finally {
         setIsSubmitting(false);
@@ -108,9 +123,9 @@ export function ReplaceContestantModal({
       // Manual replacement
       if (!selectedPlayerId) {
         showToast({
-          title: 'No Player Selected',
-          description: 'Please select a player from the list',
-          type: 'warning',
+          title: "No Player Selected",
+          description: "Please select a player from the list",
+          type: "warning",
         });
         return;
       }
@@ -121,9 +136,10 @@ export function ReplaceContestantModal({
         handleClose();
       } catch (err) {
         showToast({
-          title: 'Error',
-          description: err instanceof Error ? err.message : 'Failed to replace contestant',
-          type: 'error',
+          title: "Error",
+          description:
+            err instanceof Error ? err.message : "Failed to replace contestant",
+          type: "error",
         });
       } finally {
         setIsSubmitting(false);
@@ -132,8 +148,8 @@ export function ReplaceContestantModal({
   };
 
   const handleClose = () => {
-    setReplacementType('random');
-    setSearchTerm('');
+    setReplacementType("random");
+    setSearchTerm("");
     setSelectedPlayerId(null);
     setPlayers([]);
     setFilteredPlayers([]);
@@ -143,7 +159,11 @@ export function ReplaceContestantModal({
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId);
 
   return (
-    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && handleClose()} size="lg">
+    <DialogRoot
+      open={isOpen}
+      onOpenChange={(e) => !e.open && handleClose()}
+      size="lg"
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Replace Contestant</DialogTitle>
@@ -161,7 +181,8 @@ export function ReplaceContestantModal({
                   Current Contestant
                 </Text>
                 <Text fontSize="sm">
-                  <strong>Name:</strong> {contestant.first_name} {contestant.last_name}
+                  <strong>Name:</strong> {contestant.first_name}{" "}
+                  {contestant.last_name}
                 </Text>
                 <Text fontSize="sm">
                   <strong>Position:</strong> {contestant.position}
@@ -176,20 +197,20 @@ export function ReplaceContestantModal({
                 <Text fontWeight="semibold" mb={2}>
                   Replacement Method
                 </Text>
-                <Stack direction={{ base: 'column', md: 'row' }} gap={2}>
+                <Stack direction={{ base: "column", md: "row" }} gap={2}>
                   <Button
                     flex={1}
-                    variant={replacementType === 'random' ? 'solid' : 'outline'}
-                    colorScheme={replacementType === 'random' ? 'blue' : 'gray'}
-                    onClick={() => setReplacementType('random')}
+                    variant={replacementType === "random" ? "solid" : "outline"}
+                    colorScheme={replacementType === "random" ? "blue" : "gray"}
+                    onClick={() => setReplacementType("random")}
                   >
                     Random Selection
                   </Button>
                   <Button
                     flex={1}
-                    variant={replacementType === 'manual' ? 'solid' : 'outline'}
-                    colorScheme={replacementType === 'manual' ? 'blue' : 'gray'}
-                    onClick={() => setReplacementType('manual')}
+                    variant={replacementType === "manual" ? "solid" : "outline"}
+                    colorScheme={replacementType === "manual" ? "blue" : "gray"}
+                    onClick={() => setReplacementType("manual")}
                   >
                     Manual Selection
                   </Button>
@@ -197,17 +218,17 @@ export function ReplaceContestantModal({
               </Box>
 
               {/* Random Replacement Info */}
-              {replacementType === 'random' && (
+              {replacementType === "random" && (
                 <Box p={4} bg="blue.50" borderRadius="md">
                   <Text fontSize="sm">
-                    A random player from the eligible audience pool will be selected to replace this
-                    contestant.
+                    A random player from the eligible audience pool will be
+                    selected to replace this contestant.
                   </Text>
                 </Box>
               )}
 
               {/* Manual Replacement Controls */}
-              {replacementType === 'manual' && (
+              {replacementType === "manual" && (
                 <>
                   {/* Search Box */}
                   <Box>
@@ -249,11 +270,19 @@ export function ReplaceContestantModal({
                               key={player.id}
                               p={3}
                               border="2px solid"
-                              borderColor={selectedPlayerId === player.id ? 'blue.500' : 'gray.200'}
+                              borderColor={
+                                selectedPlayerId === player.id
+                                  ? "blue.500"
+                                  : "gray.200"
+                              }
                               borderRadius="md"
                               cursor="pointer"
-                              bg={selectedPlayerId === player.id ? 'blue.50' : 'white'}
-                              _hover={{ bg: 'gray.50' }}
+                              bg={
+                                selectedPlayerId === player.id
+                                  ? "blue.50"
+                                  : "white"
+                              }
+                              _hover={{ bg: "gray.50" }}
                               onClick={() => setSelectedPlayerId(player.id)}
                             >
                               <HStack justify="space-between">
@@ -261,7 +290,11 @@ export function ReplaceContestantModal({
                                   <Text fontWeight="bold">
                                     {player.firstName} {player.lastName}
                                   </Text>
-                                  <Text fontSize="sm" color="gray.600" textTransform="capitalize">
+                                  <Text
+                                    fontSize="sm"
+                                    color="gray.600"
+                                    textTransform="capitalize"
+                                  >
                                     Role: {player.role}
                                   </Text>
                                 </VStack>
@@ -280,7 +313,7 @@ export function ReplaceContestantModal({
                         Replacement Preview
                       </Text>
                       <Text fontSize="sm">
-                        <strong>New Player:</strong> {selectedPlayer.firstName}{' '}
+                        <strong>New Player:</strong> {selectedPlayer.firstName}{" "}
                         {selectedPlayer.lastName}
                       </Text>
                       <Text fontSize="sm">
@@ -295,7 +328,11 @@ export function ReplaceContestantModal({
         </DialogBody>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button
@@ -303,10 +340,14 @@ export function ReplaceContestantModal({
             onClick={handleConfirm}
             loading={isSubmitting}
             disabled={
-              !contestant || isLoading || (replacementType === 'manual' && !selectedPlayerId)
+              !contestant ||
+              isLoading ||
+              (replacementType === "manual" && !selectedPlayerId)
             }
           >
-            {replacementType === 'random' ? 'Replace Random' : 'Replace with Selected'}
+            {replacementType === "random"
+              ? "Replace Random"
+              : "Replace with Selected"}
           </Button>
         </DialogFooter>
       </DialogContent>

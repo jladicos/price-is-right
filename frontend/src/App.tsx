@@ -1,11 +1,11 @@
-import { Routes, Route } from 'react-router-dom';
-import RootPage from './pages/RootPage';
-import WelcomePage from './pages/WelcomePage';
-import AdminPage from './pages/AdminPage';
-import HostControlPage from './pages/HostControlPage';
-import GameViewPage from './pages/GameViewPage';
-import ProtectedRoute from './components/ProtectedRoute';
-import { Toaster } from './components/ui/toaster';
+import { Routes, Route } from "react-router-dom";
+import RootPage from "./pages/RootPage";
+import WelcomePage from "./pages/WelcomePage";
+import AdminPage from "./pages/AdminPage";
+import HostControlPage from "./pages/HostControlPage";
+import GameViewPage from "./pages/GameViewPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { Toaster } from "./components/ui/toaster";
 
 function App() {
   return (

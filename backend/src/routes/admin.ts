@@ -1,22 +1,26 @@
-import type { FastifyPluginAsync } from 'fastify';
-import { getDatabase } from '../db/connection.js';
-import { exportDatabase, importDatabase, type DatabaseExport } from '../db/export-import.js';
-import { authenticateRequest } from '../middleware/auth.js';
-import { requireHost } from '../middleware/requireHost.js';
+import type { FastifyPluginAsync } from "fastify";
+import { getDatabase } from "../db/connection.js";
+import {
+  exportDatabase,
+  importDatabase,
+  type DatabaseExport,
+} from "../db/export-import.js";
+import { authenticateRequest } from "../middleware/auth.js";
+import { requireHost } from "../middleware/requireHost.js";
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
   // Export database
   fastify.get(
-    '/admin/export',
+    "/admin/export",
     { preHandler: [authenticateRequest, requireHost] },
     async (_request, reply) => {
       const db = getDatabase();
       const exportData = exportDatabase(db);
 
       // Set headers for file download
-      const filename = `price-is-right-backup-${new Date().toISOString().split('T')[0]}.json`;
-      reply.header('Content-Type', 'application/json');
-      reply.header('Content-Disposition', `attachment; filename="${filename}"`);
+      const filename = `price-is-right-backup-${new Date().toISOString().split("T")[0]}.json`;
+      reply.header("Content-Type", "application/json");
+      reply.header("Content-Disposition", `attachment; filename="${filename}"`);
 
       return exportData;
     },
@@ -24,7 +28,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
   // Import database
   fastify.post(
-    '/admin/import',
+    "/admin/import",
     { preHandler: [authenticateRequest, requireHost] },
     async (request, reply) => {
       const db = getDatabase();
@@ -32,9 +36,9 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       // Validate request body
       const data = request.body as DatabaseExport;
 
-      if (!data || typeof data !== 'object') {
+      if (!data || typeof data !== "object") {
         return reply.status(400).send({
-          error: 'Invalid request body',
+          error: "Invalid request body",
         });
       }
 
@@ -60,7 +64,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
         // Restore session tokens for players that still exist
         const restoreStmt = db.prepare(
-          'UPDATE players SET session_token = ? WHERE access_code = ?',
+          "UPDATE players SET session_token = ? WHERE access_code = ?",
         );
         let sessionsRestored = 0;
 
@@ -73,7 +77,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
         return {
           success: true,
-          message: 'Database imported successfully',
+          message: "Database imported successfully",
           playersImported: data.players.length,
           gameStateImported: data.gameState.length,
           gameWorkflowImported: data.gameWorkflow.length,

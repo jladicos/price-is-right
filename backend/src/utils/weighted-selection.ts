@@ -19,7 +19,9 @@ export interface WeightedItem {
  * @param items Array of items with weight property
  * @returns Selected item or null if no valid items
  */
-export function selectWeightedRandom<T extends WeightedItem>(items: T[]): T | null {
+export function selectWeightedRandom<T extends WeightedItem>(
+  items: T[],
+): T | null {
   if (items.length === 0) {
     return null;
   }
@@ -96,7 +98,9 @@ export function selectWeightedRandomMultiple<T extends WeightedItem>(
     selected.push(selectedItem.original);
 
     // Remove from remaining
-    const index = remaining.findIndex((item) => item.index === selectedItem!.index);
+    const index = remaining.findIndex(
+      (item) => item.index === selectedItem!.index,
+    );
     if (index !== -1) {
       remaining.splice(index, 1);
     }

@@ -1,19 +1,19 @@
-import type { Database } from 'better-sqlite3';
+import type { Database } from "better-sqlite3";
 
 /**
  * Get game enabled status
  */
 export function getGameEnabled(db: Database): boolean {
-  const row = db.prepare("SELECT value FROM game_state WHERE key = 'game_enabled'").get() as
-    | { value: string }
-    | undefined;
+  const row = db
+    .prepare("SELECT value FROM game_state WHERE key = 'game_enabled'")
+    .get() as { value: string } | undefined;
 
   if (!row) {
     // Default to enabled if not set
     return true;
   }
 
-  return row.value === 'true';
+  return row.value === "true";
 }
 
 /**
@@ -28,5 +28,5 @@ export function setGameEnabled(db: Database, enabled: boolean): void {
       updated_at = datetime('now')
   `);
 
-  stmt.run(enabled ? 'true' : 'false');
+  stmt.run(enabled ? "true" : "false");
 }

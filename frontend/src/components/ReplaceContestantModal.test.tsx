@@ -1,20 +1,20 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '../test/test-utils';
-import userEvent from '@testing-library/user-event';
-import { ReplaceContestantModal } from './ReplaceContestantModal';
-import type { ContestantWithPlayer } from '../store/gameStore';
-import * as apiModule from '../utils/api';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { render, screen, waitFor } from "../test/test-utils";
+import userEvent from "@testing-library/user-event";
+import { ReplaceContestantModal } from "./ReplaceContestantModal";
+import type { ContestantWithPlayer } from "../store/gameStore";
+import * as apiModule from "../utils/api";
 
 // Mock API and toast
-vi.mock('../utils/api', () => ({
+vi.mock("../utils/api", () => ({
   apiRequest: vi.fn(),
 }));
 
-vi.mock('../utils/toast', () => ({
+vi.mock("../utils/toast", () => ({
   showToast: vi.fn(),
 }));
 
-describe('ReplaceContestantModal', () => {
+describe("ReplaceContestantModal", () => {
   const mockOnClose = vi.fn();
   const mockOnReplaceRandom = vi.fn();
   const mockOnReplaceManual = vi.fn();
@@ -23,41 +23,41 @@ describe('ReplaceContestantModal', () => {
     id: 1,
     player_id: 10,
     position: 2,
-    game_segment: 'section_1',
-    status: 'active',
-    added_at: '2025-11-20T12:00:00Z',
-    revealed_at: '2025-11-20T12:01:00Z',
-    created_at: '2025-11-20T12:00:00Z',
-    updated_at: '2025-11-20T12:01:00Z',
-    first_name: 'John',
-    last_name: 'Doe',
-    photo_filename: 'john.jpg',
-    role: 'audience',
+    game_segment: "section_1",
+    status: "active",
+    added_at: "2025-11-20T12:00:00Z",
+    revealed_at: "2025-11-20T12:01:00Z",
+    created_at: "2025-11-20T12:00:00Z",
+    updated_at: "2025-11-20T12:01:00Z",
+    first_name: "John",
+    last_name: "Doe",
+    photo_filename: "john.jpg",
+    role: "audience",
   };
 
   const mockPlayers = [
     {
       id: 1,
-      firstName: 'Alice',
-      lastName: 'Anderson',
-      photoFilename: 'alice.jpg',
-      role: 'audience',
+      firstName: "Alice",
+      lastName: "Anderson",
+      photoFilename: "alice.jpg",
+      role: "audience",
       active: true,
     },
     {
       id: 2,
-      firstName: 'Bob',
-      lastName: 'Baker',
-      photoFilename: 'bob.jpg',
-      role: 'player',
+      firstName: "Bob",
+      lastName: "Baker",
+      photoFilename: "bob.jpg",
+      role: "player",
       active: true,
     },
     {
       id: 3,
-      firstName: 'Charlie',
-      lastName: 'Clark',
-      photoFilename: 'charlie.jpg',
-      role: 'audience',
+      firstName: "Charlie",
+      lastName: "Clark",
+      photoFilename: "charlie.jpg",
+      role: "audience",
       active: true,
     },
   ];
@@ -72,8 +72,8 @@ describe('ReplaceContestantModal', () => {
     });
   });
 
-  describe('Rendering', () => {
-    it('should not render when closed', () => {
+  describe("Rendering", () => {
+    it("should not render when closed", () => {
       render(
         <ReplaceContestantModal
           isOpen={false}
@@ -84,10 +84,10 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      expect(screen.queryByText('Replace Contestant')).not.toBeInTheDocument();
+      expect(screen.queryByText("Replace Contestant")).not.toBeInTheDocument();
     });
 
-    it('should render with loading state when contestant is null', () => {
+    it("should render with loading state when contestant is null", () => {
       render(
         <ReplaceContestantModal
           isOpen={true}
@@ -99,12 +99,12 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Modal should still render with title
-      expect(screen.getByText('Replace Contestant')).toBeInTheDocument();
+      expect(screen.getByText("Replace Contestant")).toBeInTheDocument();
       // Should show loading message
-      expect(screen.getByText('Loading...')).toBeInTheDocument();
+      expect(screen.getByText("Loading...")).toBeInTheDocument();
     });
 
-    it('should render modal when open with contestant', async () => {
+    it("should render modal when open with contestant", async () => {
       render(
         <ReplaceContestantModal
           isOpen={true}
@@ -115,12 +115,12 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      expect(screen.getByText('Replace Contestant')).toBeInTheDocument();
-      expect(screen.getByText('Current Contestant')).toBeInTheDocument();
-      expect(screen.getByText('Replacement Method')).toBeInTheDocument();
+      expect(screen.getByText("Replace Contestant")).toBeInTheDocument();
+      expect(screen.getByText("Current Contestant")).toBeInTheDocument();
+      expect(screen.getByText("Replacement Method")).toBeInTheDocument();
     });
 
-    it('should display current contestant information', async () => {
+    it("should display current contestant information", async () => {
       render(
         <ReplaceContestantModal
           isOpen={true}
@@ -139,7 +139,7 @@ describe('ReplaceContestantModal', () => {
       expect(screen.getByText(/active/)).toBeInTheDocument();
     });
 
-    it('should default to random replacement mode', async () => {
+    it("should default to random replacement mode", async () => {
       render(
         <ReplaceContestantModal
           isOpen={true}
@@ -150,15 +150,15 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const randomButton = screen.getByRole('button', {
+      const randomButton = screen.getByRole("button", {
         name: /Random Selection/i,
       });
-      expect(randomButton).toHaveClass('chakra-button');
+      expect(randomButton).toHaveClass("chakra-button");
     });
   });
 
-  describe('Replacement Mode Selection', () => {
-    it('should allow switching to manual mode', async () => {
+  describe("Replacement Mode Selection", () => {
+    it("should allow switching to manual mode", async () => {
       const user = userEvent.setup();
 
       render(
@@ -171,17 +171,17 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Search Players')).toBeInTheDocument();
+        expect(screen.getByText("Search Players")).toBeInTheDocument();
       });
     });
 
-    it('should fetch players when switching to manual mode', async () => {
+    it("should fetch players when switching to manual mode", async () => {
       const user = userEvent.setup();
 
       render(
@@ -194,17 +194,19 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(apiModule.apiRequest).toHaveBeenCalledWith('/players?active=true');
+        expect(apiModule.apiRequest).toHaveBeenCalledWith(
+          "/players?active=true",
+        );
       });
     });
 
-    it('should show players list in manual mode', async () => {
+    it("should show players list in manual mode", async () => {
       const user = userEvent.setup();
 
       render(
@@ -217,19 +219,19 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
-        expect(screen.getByText('Bob Baker')).toBeInTheDocument();
-        expect(screen.getByText('Charlie Clark')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
+        expect(screen.getByText("Bob Baker")).toBeInTheDocument();
+        expect(screen.getByText("Charlie Clark")).toBeInTheDocument();
       });
     });
 
-    it('should switch back to random mode', async () => {
+    it("should switch back to random mode", async () => {
       const user = userEvent.setup();
 
       render(
@@ -243,29 +245,29 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
       // Switch back to random
-      const randomButton = screen.getByRole('button', {
+      const randomButton = screen.getByRole("button", {
         name: /Random Selection/i,
       });
       await user.click(randomButton);
 
       await waitFor(() => {
-        expect(screen.queryByText('Alice Anderson')).not.toBeInTheDocument();
+        expect(screen.queryByText("Alice Anderson")).not.toBeInTheDocument();
       });
     });
   });
 
-  describe('Random Replacement', () => {
-    it('should show random replacement description', async () => {
+  describe("Random Replacement", () => {
+    it("should show random replacement description", async () => {
       render(
         <ReplaceContestantModal
           isOpen={true}
@@ -281,7 +283,7 @@ describe('ReplaceContestantModal', () => {
       ).toBeInTheDocument();
     });
 
-    it('should call onReplaceRandom when confirmed in random mode', async () => {
+    it("should call onReplaceRandom when confirmed in random mode", async () => {
       const user = userEvent.setup();
 
       render(
@@ -294,7 +296,7 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const confirmButton = screen.getByRole('button', {
+      const confirmButton = screen.getByRole("button", {
         name: /Replace Random/i,
       });
       await user.click(confirmButton);
@@ -302,7 +304,7 @@ describe('ReplaceContestantModal', () => {
       expect(mockOnReplaceRandom).toHaveBeenCalledWith(1);
     });
 
-    it('should close modal after successful random replacement', async () => {
+    it("should close modal after successful random replacement", async () => {
       const user = userEvent.setup();
 
       render(
@@ -315,7 +317,7 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const confirmButton = screen.getByRole('button', {
+      const confirmButton = screen.getByRole("button", {
         name: /Replace Random/i,
       });
       await user.click(confirmButton);
@@ -325,7 +327,7 @@ describe('ReplaceContestantModal', () => {
       });
     });
 
-    it('should show loading state during random replacement', async () => {
+    it("should show loading state during random replacement", async () => {
       const user = userEvent.setup();
       let resolveReplace: () => void;
       const replacePromise = new Promise<void>((resolve) => {
@@ -343,7 +345,7 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const confirmButton = screen.getByRole('button', {
+      const confirmButton = screen.getByRole("button", {
         name: /Replace Random/i,
       });
       await user.click(confirmButton);
@@ -358,8 +360,8 @@ describe('ReplaceContestantModal', () => {
     });
   });
 
-  describe('Manual Replacement', () => {
-    it('should allow selecting a player in manual mode', async () => {
+  describe("Manual Replacement", () => {
+    it("should allow selecting a player in manual mode", async () => {
       const user = userEvent.setup();
 
       render(
@@ -373,26 +375,26 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual mode
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
       // Select a player
-      const aliceCard = screen.getByText('Alice Anderson').closest('div')!;
+      const aliceCard = screen.getByText("Alice Anderson").closest("div")!;
       await user.click(aliceCard);
 
       // Should show preview
       await waitFor(() => {
-        expect(screen.getByText('Replacement Preview')).toBeInTheDocument();
+        expect(screen.getByText("Replacement Preview")).toBeInTheDocument();
       });
     });
 
-    it('should show replacement preview with correct details', async () => {
+    it("should show replacement preview with correct details", async () => {
       const user = userEvent.setup();
 
       render(
@@ -406,26 +408,26 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual and select player
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
-      const aliceCard = screen.getByText('Alice Anderson').closest('div')!;
+      const aliceCard = screen.getByText("Alice Anderson").closest("div")!;
       await user.click(aliceCard);
 
       await waitFor(() => {
-        const preview = screen.getByText('Replacement Preview').closest('div')!;
-        expect(preview).toHaveTextContent('New Player: Alice Anderson');
-        expect(preview).toHaveTextContent('Position: 2');
+        const preview = screen.getByText("Replacement Preview").closest("div")!;
+        expect(preview).toHaveTextContent("New Player: Alice Anderson");
+        expect(preview).toHaveTextContent("Position: 2");
       });
     });
 
-    it('should filter players by search term', async () => {
+    it("should filter players by search term", async () => {
       const user = userEvent.setup();
 
       render(
@@ -439,27 +441,27 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual mode
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
       // Search for bob
-      const searchInput = screen.getByPlaceholderText('Search by name...');
-      await user.type(searchInput, 'bob');
+      const searchInput = screen.getByPlaceholderText("Search by name...");
+      await user.type(searchInput, "bob");
 
       await waitFor(() => {
-        expect(screen.getByText('Bob Baker')).toBeInTheDocument();
-        expect(screen.queryByText('Alice Anderson')).not.toBeInTheDocument();
-        expect(screen.queryByText('Charlie Clark')).not.toBeInTheDocument();
+        expect(screen.getByText("Bob Baker")).toBeInTheDocument();
+        expect(screen.queryByText("Alice Anderson")).not.toBeInTheDocument();
+        expect(screen.queryByText("Charlie Clark")).not.toBeInTheDocument();
       });
     });
 
-    it('should call onReplaceManual with correct parameters', async () => {
+    it("should call onReplaceManual with correct parameters", async () => {
       const user = userEvent.setup();
 
       render(
@@ -473,20 +475,20 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual and select player
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
-      const aliceCard = screen.getByText('Alice Anderson').closest('div')!;
+      const aliceCard = screen.getByText("Alice Anderson").closest("div")!;
       await user.click(aliceCard);
 
       // Confirm replacement
-      const confirmButton = screen.getByRole('button', {
+      const confirmButton = screen.getByRole("button", {
         name: /Replace with Selected/i,
       });
       await user.click(confirmButton);
@@ -494,7 +496,7 @@ describe('ReplaceContestantModal', () => {
       expect(mockOnReplaceManual).toHaveBeenCalledWith(1, 1);
     });
 
-    it('should disable confirm button when no player selected in manual mode', async () => {
+    it("should disable confirm button when no player selected in manual mode", async () => {
       const user = userEvent.setup();
 
       render(
@@ -508,22 +510,22 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual mode
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
-      const confirmButton = screen.getByRole('button', {
+      const confirmButton = screen.getByRole("button", {
         name: /Replace with Selected/i,
       });
       expect(confirmButton).toBeDisabled();
     });
 
-    it('should enable confirm button when player selected', async () => {
+    it("should enable confirm button when player selected", async () => {
       const user = userEvent.setup();
 
       render(
@@ -537,21 +539,21 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual and select player
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
-      const confirmButton = screen.getByRole('button', {
+      const confirmButton = screen.getByRole("button", {
         name: /Replace with Selected/i,
       });
       expect(confirmButton).toBeDisabled();
 
-      const aliceCard = screen.getByText('Alice Anderson').closest('div')!;
+      const aliceCard = screen.getByText("Alice Anderson").closest("div")!;
       await user.click(aliceCard);
 
       await waitFor(() => {
@@ -559,7 +561,7 @@ describe('ReplaceContestantModal', () => {
       });
     });
 
-    it('should close modal after successful manual replacement', async () => {
+    it("should close modal after successful manual replacement", async () => {
       const user = userEvent.setup();
 
       render(
@@ -573,19 +575,19 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual and select player
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
-      const aliceCard = screen.getByText('Alice Anderson').closest('div')!;
+      const aliceCard = screen.getByText("Alice Anderson").closest("div")!;
       await user.click(aliceCard);
 
-      const confirmButton = screen.getByRole('button', {
+      const confirmButton = screen.getByRole("button", {
         name: /Replace with Selected/i,
       });
       await user.click(confirmButton);
@@ -595,7 +597,7 @@ describe('ReplaceContestantModal', () => {
       });
     });
 
-    it('should show loading state while fetching players', async () => {
+    it("should show loading state while fetching players", async () => {
       const user = userEvent.setup();
       let resolveApi: (value: unknown) => void;
       const apiPromise = new Promise((resolve) => {
@@ -614,23 +616,23 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual mode
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Loading players...')).toBeInTheDocument();
+        expect(screen.getByText("Loading players...")).toBeInTheDocument();
       });
 
       resolveApi!({ players: mockPlayers, total: 3 });
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
     });
 
-    it('should show no players found when search has no results', async () => {
+    it("should show no players found when search has no results", async () => {
       const user = userEvent.setup();
 
       render(
@@ -644,26 +646,26 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual mode
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText('Search by name...');
-      await user.type(searchInput, 'nonexistent');
+      const searchInput = screen.getByPlaceholderText("Search by name...");
+      await user.type(searchInput, "nonexistent");
 
       await waitFor(() => {
-        expect(screen.getByText('No players found')).toBeInTheDocument();
+        expect(screen.getByText("No players found")).toBeInTheDocument();
       });
     });
   });
 
-  describe('Cancel and Close', () => {
-    it('should call onClose when cancel button clicked', async () => {
+  describe("Cancel and Close", () => {
+    it("should call onClose when cancel button clicked", async () => {
       const user = userEvent.setup();
 
       render(
@@ -676,13 +678,13 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const cancelButton = screen.getByRole('button', { name: /Cancel/i });
+      const cancelButton = screen.getByRole("button", { name: /Cancel/i });
       await user.click(cancelButton);
 
       expect(mockOnClose).toHaveBeenCalled();
     });
 
-    it('should reset to random mode when modal closes', async () => {
+    it("should reset to random mode when modal closes", async () => {
       const user = userEvent.setup();
       const { unmount } = render(
         <ReplaceContestantModal
@@ -695,13 +697,13 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual mode
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
       // Close and reopen
@@ -724,11 +726,13 @@ describe('ReplaceContestantModal', () => {
     });
   });
 
-  describe('Error Handling', () => {
-    it('should show error toast when player fetch fails', async () => {
+  describe("Error Handling", () => {
+    it("should show error toast when player fetch fails", async () => {
       const user = userEvent.setup();
-      const showToast = await import('../utils/toast');
-      vi.mocked(apiModule.apiRequest).mockRejectedValue(new Error('Network error'));
+      const showToast = await import("../utils/toast");
+      vi.mocked(apiModule.apiRequest).mockRejectedValue(
+        new Error("Network error"),
+      );
 
       render(
         <ReplaceContestantModal
@@ -741,24 +745,26 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual mode to trigger fetch
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
         expect(showToast.showToast).toHaveBeenCalledWith({
-          title: 'Error',
-          description: 'Network error',
-          type: 'error',
+          title: "Error",
+          description: "Network error",
+          type: "error",
         });
       });
     });
 
-    it('should show error toast when random replacement fails', async () => {
+    it("should show error toast when random replacement fails", async () => {
       const user = userEvent.setup();
-      const showToast = await import('../utils/toast');
-      mockOnReplaceRandom.mockRejectedValue(new Error('Failed to replace contestant'));
+      const showToast = await import("../utils/toast");
+      mockOnReplaceRandom.mockRejectedValue(
+        new Error("Failed to replace contestant"),
+      );
 
       render(
         <ReplaceContestantModal
@@ -770,16 +776,16 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const confirmButton = screen.getByRole('button', {
+      const confirmButton = screen.getByRole("button", {
         name: /Replace Random/i,
       });
       await user.click(confirmButton);
 
       await waitFor(() => {
         expect(showToast.showToast).toHaveBeenCalledWith({
-          title: 'Error',
-          description: 'Failed to replace contestant',
-          type: 'error',
+          title: "Error",
+          description: "Failed to replace contestant",
+          type: "error",
         });
       });
 
@@ -787,10 +793,12 @@ describe('ReplaceContestantModal', () => {
       expect(mockOnClose).not.toHaveBeenCalled();
     });
 
-    it('should show error toast when manual replacement fails', async () => {
+    it("should show error toast when manual replacement fails", async () => {
       const user = userEvent.setup();
-      const showToast = await import('../utils/toast');
-      mockOnReplaceManual.mockRejectedValue(new Error('Failed to replace contestant'));
+      const showToast = await import("../utils/toast");
+      mockOnReplaceManual.mockRejectedValue(
+        new Error("Failed to replace contestant"),
+      );
 
       render(
         <ReplaceContestantModal
@@ -803,28 +811,28 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual and select player
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
-      const aliceCard = screen.getByText('Alice Anderson').closest('div')!;
+      const aliceCard = screen.getByText("Alice Anderson").closest("div")!;
       await user.click(aliceCard);
 
-      const confirmButton = screen.getByRole('button', {
+      const confirmButton = screen.getByRole("button", {
         name: /Replace with Selected/i,
       });
       await user.click(confirmButton);
 
       await waitFor(() => {
         expect(showToast.showToast).toHaveBeenCalledWith({
-          title: 'Error',
-          description: 'Failed to replace contestant',
-          type: 'error',
+          title: "Error",
+          description: "Failed to replace contestant",
+          type: "error",
         });
       });
 
@@ -833,8 +841,8 @@ describe('ReplaceContestantModal', () => {
     });
   });
 
-  describe('Additional Edge Cases', () => {
-    it('should reset state when switching between modes', async () => {
+  describe("Additional Edge Cases", () => {
+    it("should reset state when switching between modes", async () => {
       const user = userEvent.setup();
 
       render(
@@ -848,17 +856,17 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Switch to manual and select a player
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
       // Switch back to random
-      const randomButton = screen.getByRole('button', {
+      const randomButton = screen.getByRole("button", {
         name: /Random Selection/i,
       });
       await user.click(randomButton);
@@ -869,7 +877,7 @@ describe('ReplaceContestantModal', () => {
       ).toBeInTheDocument();
     });
 
-    it('should handle empty players array in manual mode', async () => {
+    it("should handle empty players array in manual mode", async () => {
       const user = userEvent.setup();
       vi.mocked(apiModule.apiRequest).mockResolvedValue({
         players: [],
@@ -886,17 +894,17 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('No players found')).toBeInTheDocument();
+        expect(screen.getByText("No players found")).toBeInTheDocument();
       });
     });
 
-    it('should not fetch players until switching to manual mode', () => {
+    it("should not fetch players until switching to manual mode", () => {
       render(
         <ReplaceContestantModal
           isOpen={true}
@@ -911,7 +919,7 @@ describe('ReplaceContestantModal', () => {
       expect(apiModule.apiRequest).not.toHaveBeenCalled();
     });
 
-    it('should handle rapid mode switching without duplicate API calls', async () => {
+    it("should handle rapid mode switching without duplicate API calls", async () => {
       const user = userEvent.setup();
 
       render(
@@ -924,10 +932,10 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
-      const randomButton = screen.getByRole('button', {
+      const randomButton = screen.getByRole("button", {
         name: /Random Selection/i,
       });
 
@@ -942,7 +950,7 @@ describe('ReplaceContestantModal', () => {
       });
     });
 
-    it('should show correct button text for each mode', async () => {
+    it("should show correct button text for each mode", async () => {
       const user = userEvent.setup();
 
       render(
@@ -956,20 +964,24 @@ describe('ReplaceContestantModal', () => {
       );
 
       // Random mode button text
-      expect(screen.getByRole('button', { name: /Replace Random/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Replace Random/i }),
+      ).toBeInTheDocument();
 
       // Switch to manual
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Replace with Selected/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: /Replace with Selected/i }),
+        ).toBeInTheDocument();
       });
     });
 
-    it('should handle search filter with zero results in manual mode', async () => {
+    it("should handle search filter with zero results in manual mode", async () => {
       const user = userEvent.setup();
 
       render(
@@ -982,24 +994,24 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText('Search by name...');
-      await user.type(searchInput, 'nonexistent player name');
+      const searchInput = screen.getByPlaceholderText("Search by name...");
+      await user.type(searchInput, "nonexistent player name");
 
       await waitFor(() => {
-        expect(screen.getByText('No players found')).toBeInTheDocument();
+        expect(screen.getByText("No players found")).toBeInTheDocument();
       });
     });
 
-    it('should display correct contestant position in preview', async () => {
+    it("should display correct contestant position in preview", async () => {
       const user = userEvent.setup();
 
       render(
@@ -1012,26 +1024,26 @@ describe('ReplaceContestantModal', () => {
         />,
       );
 
-      const manualButton = screen.getByRole('button', {
+      const manualButton = screen.getByRole("button", {
         name: /Manual Selection/i,
       });
       await user.click(manualButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+        expect(screen.getByText("Alice Anderson")).toBeInTheDocument();
       });
 
-      const aliceCard = screen.getByText('Alice Anderson').closest('div')!;
+      const aliceCard = screen.getByText("Alice Anderson").closest("div")!;
       await user.click(aliceCard);
 
       await waitFor(() => {
-        const preview = screen.getByText('Replacement Preview').closest('div')!;
+        const preview = screen.getByText("Replacement Preview").closest("div")!;
         // Should show the contestant's position (2), not the new player's ID
-        expect(preview).toHaveTextContent('Position: 2');
+        expect(preview).toHaveTextContent("Position: 2");
       });
     });
 
-    it('should handle contestant with different position', async () => {
+    it("should handle contestant with different position", async () => {
       const differentPositionContestant: typeof mockContestant = {
         ...mockContestant,
         position: 4,

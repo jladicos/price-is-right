@@ -1,6 +1,6 @@
-import { HStack } from '@chakra-ui/react';
-import { PodiumDisplay } from './PodiumDisplay';
-import type { ContestantWithPlayer, BidWithPlayer } from '../store/gameStore';
+import { HStack } from "@chakra-ui/react";
+import { PodiumDisplay } from "./PodiumDisplay";
+import type { ContestantWithPlayer, BidWithPlayer } from "../store/gameStore";
 
 interface PodiumsRowProps {
   contestants: ContestantWithPlayer[];
@@ -17,7 +17,10 @@ interface PodiumsRowProps {
   onUnlockBid?: (bidId: number) => void;
   onRevealContestant?: (contestantRowId: number) => void;
   onReplaceContestantRandom?: (contestantRowId: number) => void;
-  onReplaceContestantManual?: (contestantRowId: number, position: number) => void;
+  onReplaceContestantManual?: (
+    contestantRowId: number,
+    position: number,
+  ) => void;
 }
 
 export function PodiumsRow({
@@ -41,7 +44,9 @@ export function PodiumsRow({
   const positions = [1, 2, 3, 4, 5];
 
   // Helper to find contestant by position
-  const getContestantByPosition = (position: number): ContestantWithPlayer | null => {
+  const getContestantByPosition = (
+    position: number,
+  ): ContestantWithPlayer | null => {
     return contestants.find((c) => c.position === position) || null;
   };
 
@@ -55,15 +60,24 @@ export function PodiumsRow({
   // Find the leftmost pending contestant (lowest position number)
   const getNextPendingPosition = (): number | null => {
     const pendingContestants = contestants
-      .filter((c) => c.status === 'pending_reveal')
+      .filter((c) => c.status === "pending_reveal")
       .sort((a, b) => a.position - b.position);
-    return pendingContestants.length > 0 ? pendingContestants[0].position : null;
+    return pendingContestants.length > 0
+      ? pendingContestants[0].position
+      : null;
   };
 
   const nextPendingPosition = getNextPendingPosition();
 
   return (
-    <HStack gap={6} justify="center" wrap="nowrap" align="start" data-testid="podiums-row" py={4}>
+    <HStack
+      gap={6}
+      justify="center"
+      wrap="nowrap"
+      align="start"
+      data-testid="podiums-row"
+      py={4}
+    >
       {positions.map((position) => {
         const contestant = getContestantByPosition(position);
         const bid = getBidByPosition(position);

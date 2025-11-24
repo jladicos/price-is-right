@@ -1,7 +1,12 @@
-import { useState } from 'react';
-import { DialogRoot, DialogContent, DialogBody, DialogCloseTrigger } from './ui/dialog';
-import { Box, Image, Text, VStack, HStack, Button } from '@chakra-ui/react';
-import { getProductImageUrls } from '../utils/imageUrls';
+import { useState } from "react";
+import {
+  DialogRoot,
+  DialogContent,
+  DialogBody,
+  DialogCloseTrigger,
+} from "./ui/dialog";
+import { Box, Image, Text, VStack, HStack, Button } from "@chakra-ui/react";
+import { getProductImageUrls } from "../utils/imageUrls";
 
 export interface Product {
   name: string;
@@ -17,7 +22,13 @@ interface ProductModalProps {
   role: string; // 'host', 'player', or 'audience'
 }
 
-export function ProductModal({ product, productId, isOpen, onClose, role }: ProductModalProps) {
+export function ProductModal({
+  product,
+  productId,
+  isOpen,
+  onClose,
+  role,
+}: ProductModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   if (!product || !productId) {
@@ -27,15 +38,19 @@ export function ProductModal({ product, productId, isOpen, onClose, role }: Prod
   const imageUrls = getProductImageUrls(product.images);
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : imageUrls.length - 1));
+    setCurrentImageIndex((prev) =>
+      prev > 0 ? prev - 1 : imageUrls.length - 1,
+    );
   };
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev < imageUrls.length - 1 ? prev + 1 : 0));
+    setCurrentImageIndex((prev) =>
+      prev < imageUrls.length - 1 ? prev + 1 : 0,
+    );
   };
 
   const handleClose = () => {
-    if (role === 'host' && onClose) {
+    if (role === "host" && onClose) {
       onClose();
       setCurrentImageIndex(0); // Reset to first image
     }
@@ -45,7 +60,7 @@ export function ProductModal({ product, productId, isOpen, onClose, role }: Prod
     <DialogRoot
       open={isOpen}
       onOpenChange={(e) => {
-        if (!e.open && role === 'host' && onClose) {
+        if (!e.open && role === "host" && onClose) {
           handleClose();
         }
       }}
@@ -53,7 +68,7 @@ export function ProductModal({ product, productId, isOpen, onClose, role }: Prod
     >
       <DialogContent data-testid="product-modal">
         {/* Only show close button for host */}
-        {role === 'host' && <DialogCloseTrigger />}
+        {role === "host" && <DialogCloseTrigger />}
 
         <DialogBody p={6}>
           <VStack gap={4} align="stretch">
@@ -72,7 +87,10 @@ export function ProductModal({ product, productId, isOpen, onClose, role }: Prod
             </Text>
 
             {/* Image Display */}
-            <Box position="relative" data-testid="product-modal-image-container">
+            <Box
+              position="relative"
+              data-testid="product-modal-image-container"
+            >
               {/* Main Image */}
               <Box
                 width="100%"
@@ -159,13 +177,15 @@ export function ProductModal({ product, productId, isOpen, onClose, role }: Prod
                     borderRadius="md"
                     overflow="hidden"
                     border="3px solid"
-                    borderColor={index === currentImageIndex ? 'blue.500' : 'gray.300'}
+                    borderColor={
+                      index === currentImageIndex ? "blue.500" : "gray.300"
+                    }
                     cursor="pointer"
                     onClick={() => setCurrentImageIndex(index)}
                     transition="all 0.2s"
                     _hover={{
-                      borderColor: 'blue.400',
-                      transform: 'scale(1.05)',
+                      borderColor: "blue.400",
+                      transform: "scale(1.05)",
                     }}
                     data-testid={`product-thumbnail-${index}`}
                   >

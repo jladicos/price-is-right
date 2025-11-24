@@ -1,4 +1,4 @@
-import { getDatabase } from './connection.js';
+import { getDatabase } from "./connection.js";
 
 export interface Contestant {
   id: number;
@@ -39,7 +39,7 @@ export function addContestantToRow(
 
   // Fetch and return the created contestant
   const contestant = db
-    .prepare('SELECT * FROM contestants_row WHERE id = ?')
+    .prepare("SELECT * FROM contestants_row WHERE id = ?")
     .get(result.lastInsertRowid) as Contestant;
 
   return contestant;
@@ -147,7 +147,7 @@ export function revealContestant(contestantId: number): Contestant {
   stmt.run(contestantId);
 
   const contestant = db
-    .prepare('SELECT * FROM contestants_row WHERE id = ?')
+    .prepare("SELECT * FROM contestants_row WHERE id = ?")
     .get(contestantId) as Contestant;
 
   return contestant;
@@ -156,7 +156,10 @@ export function revealContestant(contestantId: number): Contestant {
 /**
  * Update a contestant's status
  */
-export function updateContestantStatus(contestantId: number, status: string): Contestant {
+export function updateContestantStatus(
+  contestantId: number,
+  status: string,
+): Contestant {
   const db = getDatabase();
 
   const stmt = db.prepare(`
@@ -169,7 +172,7 @@ export function updateContestantStatus(contestantId: number, status: string): Co
   stmt.run(status, contestantId);
 
   const contestant = db
-    .prepare('SELECT * FROM contestants_row WHERE id = ?')
+    .prepare("SELECT * FROM contestants_row WHERE id = ?")
     .get(contestantId) as Contestant;
 
   return contestant;
@@ -189,7 +192,7 @@ export function replaceContestant(
 
   // Get the old contestant to preserve position and segment
   const oldContestant = db
-    .prepare('SELECT * FROM contestants_row WHERE id = ?')
+    .prepare("SELECT * FROM contestants_row WHERE id = ?")
     .get(oldContestantId) as Contestant;
 
   if (!oldContestant) {
@@ -216,15 +219,20 @@ export function replaceContestant(
       VALUES (?, ?, ?, ?)
     `,
       )
-      .run(newPlayerId, oldContestant.position, oldContestant.game_segment, newStatus);
+      .run(
+        newPlayerId,
+        oldContestant.position,
+        oldContestant.game_segment,
+        newStatus,
+      );
 
     // Get updated records
     const updatedOld = db
-      .prepare('SELECT * FROM contestants_row WHERE id = ?')
+      .prepare("SELECT * FROM contestants_row WHERE id = ?")
       .get(oldContestantId) as Contestant;
 
     const newContestant = db
-      .prepare('SELECT * FROM contestants_row WHERE id = ?')
+      .prepare("SELECT * FROM contestants_row WHERE id = ?")
       .get(insertResult.lastInsertRowid) as Contestant;
 
     return { old: updatedOld, new: newContestant };
@@ -317,12 +325,14 @@ export function getBiddingOrder(segment: string): number[] {
 /**
  * Get a specific contestant by ID
  */
-export function getContestantById(contestantId: number): Contestant | undefined {
+export function getContestantById(
+  contestantId: number,
+): Contestant | undefined {
   const db = getDatabase();
 
-  const contestant = db.prepare('SELECT * FROM contestants_row WHERE id = ?').get(contestantId) as
-    | Contestant
-    | undefined;
+  const contestant = db
+    .prepare("SELECT * FROM contestants_row WHERE id = ?")
+    .get(contestantId) as Contestant | undefined;
 
   return contestant;
 }

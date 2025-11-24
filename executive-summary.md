@@ -50,8 +50,8 @@ The game should consist of:
 - a second spin the wheel game
   - only for players who won bidding in the second set of bidding game play
 - a final "showcase showdown"
-  - in this case the player with the lowest dollar value from the spinning games goes first
-	- if both players got exactly the same, then the first player to spin the wheel goes first
+  - in this case the player who won the higher-value bidding product goes first
+	- if both won products of equal value (rare), the player who won their bidding round first goes first
   - the game should show the name and photo(s) of a product
   - the first player can either choose to big on that product, or pass to the other player
 	- if the first player passes, then the second player must immediately bid on the product
@@ -389,22 +389,35 @@ During the showcase showdown
 - Backend: 569 tests (21 test files) - Added 76 tests in Phase 5
 - Frontend: 295 tests (14 test files) - Added 138 tests in Phase 5
 
-#### Phase 6: Bidding Rounds (Core Gameplay)
-- [ ] Backend: Bidding logic (sequential, duplicate detection, winner calculation)
-- [ ] Backend: "All over" detection and retry logic
-- [ ] REST API: POST /api/game/submit-bid (player or host action)
-- [ ] REST API: POST /api/game/show-product (host control)
-- [ ] REST API: POST /api/game/reveal-winner (host control)
-- [ ] REST API: POST /api/game/unlock-bid (host override)
-- [ ] Product display system (modal + inset card, host controlled)
-- [ ] TV-style podium UI with digital displays for bids
-- [ ] Player bid input (self-entry when it's their turn)
-- [ ] Host controls (show product, reveal winner, advance phase, enter bids)
-- [ ] Player/audience view: Unified game view with role-based features
-- [ ] Winner announcement and visual indication
-- [ ] Bid clearing and retry logic for "all over" scenario
-- [ ] Unit tests for bidding logic
-- [ ] Integration tests for bid submission flow
+#### Phase 6: Bidding Rounds (Core Gameplay) ✅ COMPLETE
+- [x] Backend: Bidding logic (sequential, duplicate detection, winner calculation) ✅
+- [x] Backend: "All over" detection and retry logic ✅
+- [x] REST API: POST /api/game/submit-bid (player or host action) ✅
+- [x] REST API: POST /api/game/show-product (host control) ✅
+- [x] REST API: POST /api/game/reveal-winner (host control) ✅
+- [x] REST API: POST /api/game/unlock-bid (host override) ✅
+- [x] REST API: POST /api/game/hide-product-modal (close modal, show inset card) ✅
+- [x] REST API: POST /api/game/update-bid (host edits bid amount) ✅
+- [x] REST API: GET /api/game/current-bids (query all bids for current round) ✅
+- [x] Product display system (modal + inset card, host controlled) ✅
+- [x] TV-style podium UI with digital displays for bids ✅
+- [x] Player bid input (self-entry when it's their turn) ✅
+- [x] Host controls (show product, reveal winner, advance phase, enter bids) ✅
+- [x] Player/audience view: Unified GameViewPage with role-based features ✅
+- [x] Winner announcement and visual indication ✅
+- [x] Bid clearing and retry logic for "all over" scenario ✅
+- [x] Unit tests for bidding logic (133 new tests: 46 DB + 43 service + 14 edge cases + 30 integration) ✅
+- [x] Integration tests for bid submission flow ✅
+- [x] Frontend components: PodiumDisplay, PodiumsRow, ProductModal, ProductInsetCard, GameControlStrip ✅
+- [x] Frontend BiddingPhaseView with full bidding experience ✅
+- [x] Game store bidding actions (submitBid, showProduct, hideProductModal, revealWinner, unlockBid) ✅
+- [x] Animations and TV game show aesthetic ✅
+- [x] Weighted player selection for contestant randomization ✅
+- [x] Price format in dollars (not cents) for clarity ✅
+
+**Test Status**: 778/778 passing (100%) ✅
+- Backend: 717 tests (27 test files) - Added 148 tests in Phase 6
+- Frontend: 61 tests (30+ test files) - Bidding components tested
 
 #### Phase 7: Spin the Wheel & Showcase Showdown
 - [ ] Backend: Wheel spin logic (values $.05 to $1.00 in $.05 increments)

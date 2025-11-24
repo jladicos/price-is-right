@@ -1,8 +1,8 @@
-import type { FastifyInstance } from 'fastify';
-import { login, logout, AuthError } from '../services/auth.js';
-import { getDatabase } from '../db/connection.js';
-import { authenticateRequest } from '../middleware/auth.js';
-import type { Player } from '../types/player.js';
+import type { FastifyInstance } from "fastify";
+import { login, logout, AuthError } from "../services/auth.js";
+import { getDatabase } from "../db/connection.js";
+import { authenticateRequest } from "../middleware/auth.js";
+import type { Player } from "../types/player.js";
 
 // Request/response type definitions
 interface LoginRequest {
@@ -26,13 +26,13 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post<{
     Body: LoginRequest;
     Reply: LoginResponse | { error: string; message: string };
-  }>('/api/auth/login', async (request, reply) => {
+  }>("/api/auth/login", async (request, reply) => {
     const { accessCode } = request.body;
 
-    if (!accessCode || accessCode.trim() === '') {
+    if (!accessCode || accessCode.trim() === "") {
       return reply.status(400).send({
-        error: 'Bad Request',
-        message: 'Access code is required',
+        error: "Bad Request",
+        message: "Access code is required",
       });
     }
 
@@ -44,15 +44,15 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
     } catch (error) {
       if (error instanceof AuthError) {
         return reply.status(error.statusCode).send({
-          error: 'Authentication Failed',
+          error: "Authentication Failed",
           message: error.message,
         });
       }
 
       request.log.error(error);
       return reply.status(500).send({
-        error: 'Internal Server Error',
-        message: 'An unexpected error occurred',
+        error: "Internal Server Error",
+        message: "An unexpected error occurred",
       });
     }
   });
@@ -62,33 +62,33 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
    * Clear session token (requires authentication)
    */
   fastify.post(
-    '/api/auth/logout',
+    "/api/auth/logout",
     {
       preHandler: authenticateRequest,
     },
     async (request, reply) => {
       const authHeader = request.headers.authorization;
-      const sessionToken = authHeader!.split(' ')[1]; // Safe because auth middleware validates this
+      const sessionToken = authHeader!.split(" ")[1]; // Safe because auth middleware validates this
 
       try {
         const db = getDatabase();
         logout(db, sessionToken);
 
         return reply.status(200).send({
-          message: 'Logged out successfully',
+          message: "Logged out successfully",
         });
       } catch (error) {
         if (error instanceof AuthError) {
           return reply.status(error.statusCode).send({
-            error: 'Logout Failed',
+            error: "Logout Failed",
             message: error.message,
           });
         }
 
         request.log.error(error);
         return reply.status(500).send({
-          error: 'Internal Server Error',
-          message: 'An unexpected error occurred',
+          error: "Internal Server Error",
+          message: "An unexpected error occurred",
         });
       }
     },
@@ -99,7 +99,7 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
    * Validate session and get current player info (requires authentication)
    */
   fastify.get<{ Reply: SessionResponse | { error: string; message: string } }>(
-    '/api/auth/session',
+    "/api/auth/session",
     {
       preHandler: authenticateRequest,
     },

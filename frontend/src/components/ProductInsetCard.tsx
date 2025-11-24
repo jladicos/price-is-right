@@ -1,5 +1,5 @@
-import { Box, VStack, Image, Text } from '@chakra-ui/react';
-import { getProductImageUrl } from '../utils/imageUrls';
+import { Box, VStack, Image, Text } from "@chakra-ui/react";
+import { getProductImageUrl } from "../utils/imageUrls";
 
 export interface Product {
   name: string;
@@ -27,7 +27,9 @@ export function ProductInsetCard({
   }
 
   // Use first image from product, with fallback for missing images
-  const firstImageUrl = product.images?.[0] ? getProductImageUrl(product.images[0]) : '';
+  const firstImageUrl = product.images?.[0]
+    ? getProductImageUrl(product.images[0])
+    : "";
 
   return (
     <Box
@@ -80,19 +82,22 @@ export function ProductInsetCard({
         </Box>
 
         {/* Product Price - shown when winner is revealed */}
-        {showPrice && price != null && typeof price === 'number' && isFinite(price) && (
-          <Box bg="green.500" p={4}>
-            <Text
-              fontSize="2xl"
-              fontWeight="bold"
-              textAlign="center"
-              color="white"
-              data-testid="product-inset-price"
-            >
-              {price < 0 ? '-' : ''}${Math.abs(price).toFixed(2)}
-            </Text>
-          </Box>
-        )}
+        {showPrice &&
+          price != null &&
+          typeof price === "number" &&
+          isFinite(price) && (
+            <Box bg="green.500" p={4}>
+              <Text
+                fontSize="2xl"
+                fontWeight="bold"
+                textAlign="center"
+                color="white"
+                data-testid="product-inset-price"
+              >
+                {price < 0 ? "-" : ""}${Math.abs(price).toFixed(2)}
+              </Text>
+            </Box>
+          )}
       </VStack>
     </Box>
   );

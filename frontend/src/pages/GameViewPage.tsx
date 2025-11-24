@@ -1,25 +1,33 @@
-import { useEffect } from 'react';
-import { Container, VStack, Heading, Text, Button, Spinner, Center } from '@chakra-ui/react';
-import { useGameState } from '../hooks/useGameState';
-import { useGameStore } from '../store/gameStore';
-import { useAuthStore } from '../store/authStore';
-import { BiddingPhaseView } from '../components/phases/BiddingPhaseView';
-import { showToast } from '../utils/toast';
+import { useEffect } from "react";
+import {
+  Container,
+  VStack,
+  Heading,
+  Text,
+  Button,
+  Spinner,
+  Center,
+} from "@chakra-ui/react";
+import { useGameState } from "../hooks/useGameState";
+import { useGameStore } from "../store/gameStore";
+import { useAuthStore } from "../store/authStore";
+import { BiddingPhaseView } from "../components/phases/BiddingPhaseView";
+import { showToast } from "../utils/toast";
 
 export default function GameViewPage() {
   const { currentPlayer } = useAuthStore();
   const { gameState, isLoading, error } = useGameState();
   const { startNewGame } = useGameStore();
 
-  const role = currentPlayer?.role || 'audience';
+  const role = currentPlayer?.role || "audience";
 
   // Handle errors
   useEffect(() => {
     if (error) {
       showToast({
-        title: 'Error',
+        title: "Error",
         description: error,
-        type: 'error',
+        type: "error",
       });
     }
   }, [error]);
@@ -39,7 +47,9 @@ export default function GameViewPage() {
       <Container maxW="4xl" centerContent py={10}>
         <VStack gap={6}>
           <Heading>Game Not Available</Heading>
-          <Text>Unable to load game state. Please try refreshing the page.</Text>
+          <Text>
+            Unable to load game state. Please try refreshing the page.
+          </Text>
         </VStack>
       </Container>
     );
@@ -48,12 +58,12 @@ export default function GameViewPage() {
   const phaseType = gameState.workflow.phase_type;
 
   // Handle "not_started" phase
-  if (phaseType === 'not_started') {
+  if (phaseType === "not_started") {
     return (
       <Container maxW="4xl" centerContent py={10}>
         <VStack gap={6}>
           <Heading>Game Not Started</Heading>
-          {role === 'host' ? (
+          {role === "host" ? (
             <>
               <Text>Click the button below to start a new game.</Text>
               <Button
@@ -63,15 +73,19 @@ export default function GameViewPage() {
                   try {
                     await startNewGame();
                     showToast({
-                      title: 'Game Started',
-                      description: '5 contestants have been selected. Reveal them to begin!',
-                      type: 'success',
+                      title: "Game Started",
+                      description:
+                        "5 contestants have been selected. Reveal them to begin!",
+                      type: "success",
                     });
                   } catch (err) {
                     showToast({
-                      title: 'Error',
-                      description: err instanceof Error ? err.message : 'Failed to start game',
-                      type: 'error',
+                      title: "Error",
+                      description:
+                        err instanceof Error
+                          ? err.message
+                          : "Failed to start game",
+                      type: "error",
                     });
                   }
                 }}
@@ -89,27 +103,27 @@ export default function GameViewPage() {
 
   // Route to appropriate phase component
   switch (phaseType) {
-    case 'bidding':
+    case "bidding":
       return <BiddingPhaseView gameState={gameState} />;
 
-    case 'contestant_selection':
+    case "contestant_selection":
       // TODO: Implement ContestantSelectionPhaseView
       return (
         <Container maxW="4xl" centerContent py={10}>
           <VStack gap={6}>
             <Heading>Contestant Selection</Heading>
             <Text>
-              Contestant selection phase in progress. Use{' '}
+              Contestant selection phase in progress. Use{" "}
               <Text as="span" fontWeight="bold">
                 /host/game-control
-              </Text>{' '}
+              </Text>{" "}
               for now.
             </Text>
           </VStack>
         </Container>
       );
 
-    case 'wheel':
+    case "wheel":
       // TODO: Implement WheelPhaseView (Phase 7)
       return (
         <Container maxW="4xl" centerContent py={10}>
@@ -120,7 +134,7 @@ export default function GameViewPage() {
         </Container>
       );
 
-    case 'showcase':
+    case "showcase":
       // TODO: Implement ShowcasePhaseView (Phase 7)
       return (
         <Container maxW="4xl" centerContent py={10}>

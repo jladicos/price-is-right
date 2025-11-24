@@ -1,12 +1,12 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 import type {
   ProductConfig,
   Product,
   GamePhase,
   BiddingPhase,
   MiniGamePhase,
-} from '../types/product.js';
+} from "../types/product.js";
 
 let cachedConfig: ProductConfig | null = null;
 
@@ -19,9 +19,9 @@ function getProductsJsonPath(): string {
   // Check if we're in the backend directory and need to go up one level
   const possiblePaths = [
     // Current directory (when running from project root in Docker)
-    path.join(cwd, 'data', 'products.json'),
+    path.join(cwd, "data", "products.json"),
     // Parent directory (when running from backend directory locally)
-    path.join(cwd, '..', 'data', 'products.json'),
+    path.join(cwd, "..", "data", "products.json"),
   ];
 
   for (const dataPath of possiblePaths) {
@@ -32,19 +32,19 @@ function getProductsJsonPath(): string {
 
   // Try example files
   const examplePaths = [
-    path.join(cwd, 'data', 'products.example.json'),
-    path.join(cwd, '..', 'data', 'products.example.json'),
+    path.join(cwd, "data", "products.example.json"),
+    path.join(cwd, "..", "data", "products.example.json"),
   ];
 
   for (const examplePath of examplePaths) {
     if (fs.existsSync(examplePath)) {
-      console.warn('products.json not found, using products.example.json');
+      console.warn("products.json not found, using products.example.json");
       return examplePath;
     }
   }
 
   throw new Error(
-    'No data/products.json or data/products.example.json file found in current or parent directory',
+    "No data/products.json or data/products.example.json file found in current or parent directory",
   );
 }
 
@@ -54,9 +54,9 @@ function getProductsJsonPath(): string {
 function extractProductIdsFromPhases(phases: GamePhase[]): string[] {
   const ids: string[] = [];
   for (const phase of phases) {
-    if (phase.type === 'bidding' || phase.type === 'mini_game') {
+    if (phase.type === "bidding" || phase.type === "mini_game") {
       ids.push(phase.product_id);
-    } else if (phase.type === 'showcase') {
+    } else if (phase.type === "showcase") {
       ids.push(...phase.products);
     }
   }
@@ -72,17 +72,17 @@ export function loadProductConfig(): ProductConfig {
   }
 
   const jsonPath = getProductsJsonPath();
-  const jsonContent = fs.readFileSync(jsonPath, 'utf-8');
+  const jsonContent = fs.readFileSync(jsonPath, "utf-8");
 
   try {
     const config = JSON.parse(jsonContent) as ProductConfig;
 
     // Validate structure
-    if (!config.products || typeof config.products !== 'object') {
+    if (!config.products || typeof config.products !== "object") {
       throw new Error("products.json must contain a 'products' object");
     }
 
-    if (!config.game_structure || typeof config.game_structure !== 'object') {
+    if (!config.game_structure || typeof config.game_structure !== "object") {
       throw new Error("products.json must contain a 'game_structure' object");
     }
 
@@ -114,16 +114,18 @@ export function loadProductConfig(): ProductConfig {
     // Validate all assigned products exist
     for (const id of allAssignedIds) {
       if (!productIds.includes(id)) {
-        throw new Error(`Game structure references non-existent product: ${id}`);
+        throw new Error(
+          `Game structure references non-existent product: ${id}`,
+        );
       }
     }
 
     // Validate product structure
     for (const [id, product] of Object.entries(config.products)) {
-      if (!product.name || typeof product.name !== 'string') {
+      if (!product.name || typeof product.name !== "string") {
         throw new Error(`Product ${id} missing valid 'name'`);
       }
-      if (typeof product.price !== 'number' || product.price <= 0) {
+      if (typeof product.price !== "number" || product.price <= 0) {
         throw new Error(`Product ${id} missing valid 'price'`);
       }
       if (!Array.isArray(product.images) || product.images.length === 0) {
@@ -152,7 +154,9 @@ export function getProduct(id: string): Product | undefined {
 /**
  * Get game phases for a specific segment
  */
-export function getPhasesForSegment(segment: 'section_1' | 'section_2'): GamePhase[] {
+export function getPhasesForSegment(
+  segment: "section_1" | "section_2",
+): GamePhase[] {
   const config = loadProductConfig();
   return config.game_structure[segment];
 }
@@ -160,9 +164,13 @@ export function getPhasesForSegment(segment: 'section_1' | 'section_2'): GamePha
 /**
  * Get all bidding phases for a segment
  */
-export function getBiddingPhasesForSegment(segment: 'section_1' | 'section_2'): BiddingPhase[] {
+export function getBiddingPhasesForSegment(
+  segment: "section_1" | "section_2",
+): BiddingPhase[] {
   const phases = getPhasesForSegment(segment);
-  return phases.filter((phase): phase is BiddingPhase => phase.type === 'bidding');
+  return phases.filter(
+    (phase): phase is BiddingPhase => phase.type === "bidding",
+  );
 }
 
 /**

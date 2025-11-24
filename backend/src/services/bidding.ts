@@ -9,10 +9,10 @@ import {
   getBidByPlayerForRound,
   updateBid,
   type BidWithPlayer,
-} from '../db/bids.js';
-import { getGameWorkflow } from '../db/game-workflow.js';
-import { getAllActiveContestants, getBiddingOrder } from '../db/contestants.js';
-import { getProduct } from '../utils/products.js';
+} from "../db/bids.js";
+import { getGameWorkflow } from "../db/game-workflow.js";
+import { getAllActiveContestants, getBiddingOrder } from "../db/contestants.js";
+import { getProduct } from "../utils/products.js";
 
 export interface BidSubmission {
   bid: BidWithPlayer;
@@ -41,19 +41,27 @@ export function submitBid(
 ): BidSubmission {
   // Validate bid amount
   if (!Number.isInteger(bidAmount) || bidAmount <= 0) {
-    throw new Error('Bid amount must be a positive integer');
+    throw new Error("Bid amount must be a positive integer");
   }
 
   // Get current retry number
   // Check phase_metadata first (set during "all over" scenario)
   const workflow = getGameWorkflow();
-  const metadata = workflow.phase_metadata ? JSON.parse(workflow.phase_metadata) : {};
-  const retryNumber = metadata.retry_number ?? getCurrentRetryNumber(segment, roundNumber);
+  const metadata = workflow.phase_metadata
+    ? JSON.parse(workflow.phase_metadata)
+    : {};
+  const retryNumber =
+    metadata.retry_number ?? getCurrentRetryNumber(segment, roundNumber);
 
   // Check for duplicate bid
-  const isDuplicate = checkDuplicateBid(segment, roundNumber, retryNumber, bidAmount);
+  const isDuplicate = checkDuplicateBid(
+    segment,
+    roundNumber,
+    retryNumber,
+    bidAmount,
+  );
   if (isDuplicate) {
-    throw new Error('Bid amount already taken. Choose a unique bid.');
+    throw new Error("Bid amount already taken. Choose a unique bid.");
   }
 
   // Check if it's the player's turn
@@ -68,21 +76,28 @@ export function submitBid(
   }
 
   if (currentBidderPos !== playerContestant.position) {
-    throw new Error('Not your turn to bid');
+    throw new Error("Not your turn to bid");
   }
 
   // Get product_id from metadata (already loaded above)
-  const productId = metadata.product_id || 'unknown';
+  const productId = metadata.product_id || "unknown";
 
   // Create the bid
-  const bid = dbCreateBid(playerId, productId, roundNumber, segment, bidAmount, retryNumber);
+  const bid = dbCreateBid(
+    playerId,
+    productId,
+    roundNumber,
+    segment,
+    bidAmount,
+    retryNumber,
+  );
 
   // Get bid with player info
   const bids = getCurrentBids(segment, roundNumber);
   const bidWithPlayer = bids.find((b) => b.id === bid.id);
 
   if (!bidWithPlayer) {
-    throw new Error('Failed to retrieve bid after creation');
+    throw new Error("Failed to retrieve bid after creation");
   }
 
   // Check if all contestants have bid (reuse contestants from above)
@@ -98,7 +113,10 @@ export function submitBid(
  * Get all current bids for a round
  * Includes player information and contestant position
  */
-export function getCurrentBids(segment: string, roundNumber: number): BidWithPlayer[] {
+export function getCurrentBids(
+  segment: string,
+  roundNumber: number,
+): BidWithPlayer[] {
   return dbGetBidsForRound(segment, roundNumber);
 }
 
@@ -126,7 +144,9 @@ export function getCurrentBidderPosition(segment: string): number | null {
   }
 
   // Get set of positions that have already bid
-  const biddedPositions = new Set(bids.map((b) => b.position).filter((p) => p !== null));
+  const biddedPositions = new Set(
+    bids.map((b) => b.position).filter((p) => p !== null),
+  );
 
   // Find first position in order that hasn't bid yet
   for (const position of order) {
@@ -165,7 +185,7 @@ export function calculateWinner(
   const bids = getCurrentBids(segment, roundNumber);
 
   if (bids.length === 0) {
-    throw new Error('No bids submitted for this round');
+    throw new Error("No bids submitted for this round");
   }
 
   // Find highest bid that doesn't exceed price
@@ -207,12 +227,13 @@ export function unlockBid(bidId: number): BidWithPlayer {
   const unlockedBid = dbUnlockBid(bidId);
 
   // Get bid with player info
-  const bid = dbGetBidsForRound(unlockedBid.game_segment, unlockedBid.round_number).find(
-    (b) => b.id === bidId,
-  );
+  const bid = dbGetBidsForRound(
+    unlockedBid.game_segment,
+    unlockedBid.round_number,
+  ).find((b) => b.id === bidId);
 
   if (!bid) {
-    throw new Error('Failed to retrieve unlocked bid');
+    throw new Error("Failed to retrieve unlocked bid");
   }
 
   return bid;
@@ -225,12 +246,13 @@ export function markWinner(bidId: number): BidWithPlayer {
   const winnerBid = dbMarkWinner(bidId);
 
   // Get bid with player info
-  const bid = dbGetBidsForRound(winnerBid.game_segment, winnerBid.round_number).find(
-    (b) => b.id === bidId,
-  );
+  const bid = dbGetBidsForRound(
+    winnerBid.game_segment,
+    winnerBid.round_number,
+  ).find((b) => b.id === bidId);
 
   if (!bid) {
-    throw new Error('Failed to retrieve winner bid');
+    throw new Error("Failed to retrieve winner bid");
   }
 
   return bid;
@@ -269,7 +291,9 @@ export function clearBidsForRetry(segment: string, roundNumber: number): void {
  */
 export function getBiddingOrderForCurrentRow(segment: string): number[] {
   const workflow = getGameWorkflow();
-  const metadata = workflow.phase_metadata ? JSON.parse(workflow.phase_metadata) : {};
+  const metadata = workflow.phase_metadata
+    ? JSON.parse(workflow.phase_metadata)
+    : {};
 
   const isFreshRow = metadata.is_fresh_row === true;
 
@@ -286,7 +310,11 @@ export function getBiddingOrderForCurrentRow(segment: string): number[] {
 /**
  * Check if a player has already bid in the current round
  */
-export function hasPlayerBid(playerId: number, segment: string, roundNumber: number): boolean {
+export function hasPlayerBid(
+  playerId: number,
+  segment: string,
+  roundNumber: number,
+): boolean {
   const bid = getBidByPlayerForRound(playerId, segment, roundNumber);
   return bid !== undefined;
 }
@@ -302,11 +330,13 @@ export function hasPlayerBid(playerId: number, segment: string, roundNumber: num
  */
 export function getCurrentProductPrice(): number {
   const workflow = getGameWorkflow();
-  const metadata = workflow.phase_metadata ? JSON.parse(workflow.phase_metadata) : {};
+  const metadata = workflow.phase_metadata
+    ? JSON.parse(workflow.phase_metadata)
+    : {};
 
   const productId = metadata.product_id;
   if (!productId) {
-    throw new Error('No product_id in phase_metadata');
+    throw new Error("No product_id in phase_metadata");
   }
 
   const product = getProduct(productId);
@@ -320,10 +350,13 @@ export function getCurrentProductPrice(): number {
 /**
  * Update a bid amount (used when host edits a bid)
  */
-export function updateBidAmount(bidId: number, newAmount: number): BidWithPlayer {
+export function updateBidAmount(
+  bidId: number,
+  newAmount: number,
+): BidWithPlayer {
   // Validate new amount
   if (!Number.isInteger(newAmount) || newAmount <= 0) {
-    throw new Error('Bid amount must be a positive integer');
+    throw new Error("Bid amount must be a positive integer");
   }
 
   // Get current game state to determine segment and round
@@ -336,7 +369,7 @@ export function updateBidAmount(bidId: number, newAmount: number): BidWithPlayer
   const originalBid = bids.find((b) => b.id === bidId);
 
   if (!originalBid) {
-    throw new Error('Bid not found');
+    throw new Error("Bid not found");
   }
 
   // Check for duplicate with new amount (excluding this bid)
@@ -349,12 +382,13 @@ export function updateBidAmount(bidId: number, newAmount: number): BidWithPlayer
 
   if (isDuplicate) {
     // Check if the duplicate is this same bid
-    const duplicateBid = dbGetBidsForRound(originalBid.game_segment, originalBid.round_number).find(
-      (b) => b.bid_amount === newAmount,
-    );
+    const duplicateBid = dbGetBidsForRound(
+      originalBid.game_segment,
+      originalBid.round_number,
+    ).find((b) => b.bid_amount === newAmount);
 
     if (duplicateBid && duplicateBid.id !== bidId) {
-      throw new Error('Bid amount already taken. Choose a unique bid.');
+      throw new Error("Bid amount already taken. Choose a unique bid.");
     }
   }
 
@@ -362,12 +396,13 @@ export function updateBidAmount(bidId: number, newAmount: number): BidWithPlayer
   const updated = updateBid(bidId, { bid_amount: newAmount, is_locked: 1 });
 
   // Get bid with player info
-  const bid = dbGetBidsForRound(updated.game_segment, updated.round_number).find(
-    (b) => b.id === bidId,
-  );
+  const bid = dbGetBidsForRound(
+    updated.game_segment,
+    updated.round_number,
+  ).find((b) => b.id === bidId);
 
   if (!bid) {
-    throw new Error('Failed to retrieve updated bid');
+    throw new Error("Failed to retrieve updated bid");
   }
 
   return bid;

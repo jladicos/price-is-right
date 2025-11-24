@@ -1,6 +1,6 @@
-import { FastifyPluginAsync } from 'fastify';
-import { authenticateRequest } from '../middleware/auth.js';
-import { getProduct } from '../utils/products.js';
+import { FastifyPluginAsync } from "fastify";
+import { authenticateRequest } from "../middleware/auth.js";
+import { getProduct } from "../utils/products.js";
 
 const productsRoutes: FastifyPluginAsync = async (fastify) => {
   /**
@@ -13,7 +13,7 @@ const productsRoutes: FastifyPluginAsync = async (fastify) => {
       productId: string;
     };
   }>(
-    '/products/:productId',
+    "/products/:productId",
     {
       preHandler: [authenticateRequest],
     },
@@ -42,7 +42,8 @@ const productsRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to get product',
+          error:
+            error instanceof Error ? error.message : "Failed to get product",
         });
       }
     },

@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 // Type definitions matching backend
 export interface GameWorkflow {
@@ -69,10 +69,17 @@ interface GameStore {
   startNewGame: () => Promise<void>;
   advancePhase: () => Promise<void>;
   revealContestant: (contestantRowId: number) => Promise<void>;
-  manualSelectContestant: (playerId: number, position: number, segment: string) => Promise<void>;
+  manualSelectContestant: (
+    playerId: number,
+    position: number,
+    segment: string,
+  ) => Promise<void>;
   replaceContestantRandom: (contestantRowId: number) => Promise<void>;
-  replaceContestantManual: (contestantRowId: number, newPlayerId: number) => Promise<void>;
-  refreshContestantsRow: (segment: 'section_1' | 'section_2') => Promise<void>;
+  replaceContestantManual: (
+    contestantRowId: number,
+    newPlayerId: number,
+  ) => Promise<void>;
+  refreshContestantsRow: (segment: "section_1" | "section_2") => Promise<void>;
   overridePhase: (
     segment: string,
     segmentIndex: number,
@@ -95,7 +102,8 @@ interface GameStore {
   clearError: () => void;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 // Session token getter callback (set by authStore)
 let getSessionToken: (() => string | null) | null = null;
@@ -114,22 +122,22 @@ async function apiCall<T>(
   options: RequestInit = {},
 ): Promise<{ success: boolean; data?: T; error?: string }> {
   const token = getSessionToken ? getSessionToken() : null;
-  if (!token || token.trim() === '') {
+  if (!token || token.trim() === "") {
     return {
       success: false,
-      error: 'Not authenticated',
+      error: "Not authenticated",
     };
   }
 
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
     ...options.headers,
   };
 
   // Ensure POST/PUT requests have a body (even if empty)
   const method = options.method?.toUpperCase();
-  const needsBody = method === 'POST' || method === 'PUT';
+  const needsBody = method === "POST" || method === "PUT";
   const hasBody = options.body !== undefined;
 
   const fetchOptions: RequestInit = {
@@ -158,7 +166,7 @@ async function apiCall<T>(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Network error',
+      error: error instanceof Error ? error.message : "Network error",
     };
   }
 }
@@ -174,7 +182,7 @@ export const useGameStore = create<GameStore>((set) => ({
   fetchGameState: async () => {
     set({ isLoading: true, error: null });
 
-    const result = await apiCall<{ state: GameState }>('/game/state');
+    const result = await apiCall<{ state: GameState }>("/game/state");
 
     if (result.success && result.data) {
       set({
@@ -184,7 +192,7 @@ export const useGameStore = create<GameStore>((set) => ({
       });
     } else {
       set({
-        error: result.error || 'Failed to fetch game state',
+        error: result.error || "Failed to fetch game state",
         isLoading: false,
       });
     }
@@ -194,8 +202,8 @@ export const useGameStore = create<GameStore>((set) => ({
   startNewGame: async () => {
     set({ isLoading: true, error: null });
 
-    const result = await apiCall<{ state: GameState }>('/game/start', {
-      method: 'POST',
+    const result = await apiCall<{ state: GameState }>("/game/start", {
+      method: "POST",
     });
 
     if (result.success && result.data) {
@@ -205,7 +213,7 @@ export const useGameStore = create<GameStore>((set) => ({
         lastUpdated: Date.now(),
       });
     } else {
-      const errorMessage = result.error || 'Failed to start game';
+      const errorMessage = result.error || "Failed to start game";
       set({
         error: errorMessage,
         isLoading: false,
@@ -218,8 +226,8 @@ export const useGameStore = create<GameStore>((set) => ({
   advancePhase: async () => {
     set({ isLoading: true, error: null });
 
-    const result = await apiCall<{ state: GameState }>('/game/advance', {
-      method: 'POST',
+    const result = await apiCall<{ state: GameState }>("/game/advance", {
+      method: "POST",
     });
 
     if (result.success && result.data) {
@@ -229,7 +237,7 @@ export const useGameStore = create<GameStore>((set) => ({
         lastUpdated: Date.now(),
       });
     } else {
-      const errorMessage = result.error || 'Failed to advance phase';
+      const errorMessage = result.error || "Failed to advance phase";
       set({
         error: errorMessage,
         isLoading: false,
@@ -242,16 +250,19 @@ export const useGameStore = create<GameStore>((set) => ({
   revealContestant: async (contestantRowId: number) => {
     set({ isLoading: true, error: null });
 
-    const result = await apiCall<{ contestant: ContestantWithPlayer }>('/game/reveal-contestant', {
-      method: 'POST',
-      body: JSON.stringify({ contestantRowId }),
-    });
+    const result = await apiCall<{ contestant: ContestantWithPlayer }>(
+      "/game/reveal-contestant",
+      {
+        method: "POST",
+        body: JSON.stringify({ contestantRowId }),
+      },
+    );
 
     if (result.success) {
       // Fetch updated state after revealing
       await useGameStore.getState().fetchGameState();
     } else {
-      const errorMessage = result.error || 'Failed to reveal contestant';
+      const errorMessage = result.error || "Failed to reveal contestant";
       set({
         error: errorMessage,
         isLoading: false,
@@ -265,9 +276,9 @@ export const useGameStore = create<GameStore>((set) => ({
     set({ isLoading: true, error: null });
 
     const result = await apiCall<{ contestant: ContestantWithPlayer }>(
-      '/game/replace-contestant-random',
+      "/game/replace-contestant-random",
       {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ contestantRowId }),
       },
     );
@@ -276,7 +287,7 @@ export const useGameStore = create<GameStore>((set) => ({
       // Fetch updated state after replacement
       await useGameStore.getState().fetchGameState();
     } else {
-      const errorMessage = result.error || 'Failed to replace contestant';
+      const errorMessage = result.error || "Failed to replace contestant";
       set({
         error: errorMessage,
         isLoading: false,
@@ -286,13 +297,17 @@ export const useGameStore = create<GameStore>((set) => ({
   },
 
   // Manually select contestant at specific position
-  manualSelectContestant: async (playerId: number, position: number, segment: string) => {
+  manualSelectContestant: async (
+    playerId: number,
+    position: number,
+    segment: string,
+  ) => {
     set({ isLoading: true, error: null });
 
     const result = await apiCall<{ contestant: ContestantWithPlayer }>(
-      '/game/manual-select-contestant',
+      "/game/manual-select-contestant",
       {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ playerId, position, segment }),
       },
     );
@@ -301,7 +316,8 @@ export const useGameStore = create<GameStore>((set) => ({
       // Fetch updated state after selection
       await useGameStore.getState().fetchGameState();
     } else {
-      const errorMessage = result.error || 'Failed to manually select contestant';
+      const errorMessage =
+        result.error || "Failed to manually select contestant";
       set({
         error: errorMessage,
         isLoading: false,
@@ -311,13 +327,16 @@ export const useGameStore = create<GameStore>((set) => ({
   },
 
   // Replace contestant with manual selection
-  replaceContestantManual: async (contestantRowId: number, newPlayerId: number) => {
+  replaceContestantManual: async (
+    contestantRowId: number,
+    newPlayerId: number,
+  ) => {
     set({ isLoading: true, error: null });
 
     const result = await apiCall<{ contestant: ContestantWithPlayer }>(
-      '/game/replace-contestant-manual',
+      "/game/replace-contestant-manual",
       {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ contestantRowId, newPlayerId }),
       },
     );
@@ -326,7 +345,7 @@ export const useGameStore = create<GameStore>((set) => ({
       // Fetch updated state after replacement
       await useGameStore.getState().fetchGameState();
     } else {
-      const errorMessage = result.error || 'Failed to replace contestant';
+      const errorMessage = result.error || "Failed to replace contestant";
       set({
         error: errorMessage,
         isLoading: false,
@@ -336,13 +355,13 @@ export const useGameStore = create<GameStore>((set) => ({
   },
 
   // Refresh entire contestant's row
-  refreshContestantsRow: async (segment: 'section_1' | 'section_2') => {
+  refreshContestantsRow: async (segment: "section_1" | "section_2") => {
     set({ isLoading: true, error: null });
 
     const result = await apiCall<{ contestants: ContestantWithPlayer[] }>(
-      '/game/refresh-contestants-row',
+      "/game/refresh-contestants-row",
       {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ segment }),
       },
     );
@@ -351,7 +370,7 @@ export const useGameStore = create<GameStore>((set) => ({
       // Fetch updated state after refresh
       await useGameStore.getState().fetchGameState();
     } else {
-      const errorMessage = result.error || 'Failed to refresh contestants row';
+      const errorMessage = result.error || "Failed to refresh contestants row";
       set({
         error: errorMessage,
         isLoading: false,
@@ -369,8 +388,8 @@ export const useGameStore = create<GameStore>((set) => ({
   ) => {
     set({ isLoading: true, error: null });
 
-    const result = await apiCall<{ state: GameState }>('/game/override-phase', {
-      method: 'POST',
+    const result = await apiCall<{ state: GameState }>("/game/override-phase", {
+      method: "POST",
       body: JSON.stringify({
         segment,
         segmentIndex,
@@ -387,7 +406,7 @@ export const useGameStore = create<GameStore>((set) => ({
       });
     } else {
       set({
-        error: result.error || 'Failed to override phase',
+        error: result.error || "Failed to override phase",
         isLoading: false,
       });
     }
@@ -397,7 +416,9 @@ export const useGameStore = create<GameStore>((set) => ({
   submitBid: async (bidAmount: number, playerId?: number) => {
     set({ isLoading: true, error: null });
 
-    const body: { bid_amount: number; player_id?: number } = { bid_amount: bidAmount };
+    const body: { bid_amount: number; player_id?: number } = {
+      bid_amount: bidAmount,
+    };
     if (playerId !== undefined) {
       body.player_id = playerId;
     }
@@ -405,8 +426,8 @@ export const useGameStore = create<GameStore>((set) => ({
     const result = await apiCall<{
       bid: BidWithPlayer;
       allBidsSubmitted: boolean;
-    }>('/game/submit-bid', {
-      method: 'POST',
+    }>("/game/submit-bid", {
+      method: "POST",
       body: JSON.stringify(body),
     });
 
@@ -414,7 +435,7 @@ export const useGameStore = create<GameStore>((set) => ({
       // Fetch updated state after bid submission
       await useGameStore.getState().fetchGameState();
     } else {
-      const errorMessage = result.error || 'Failed to submit bid';
+      const errorMessage = result.error || "Failed to submit bid";
       set({
         error: errorMessage,
         isLoading: false,
@@ -427,14 +448,14 @@ export const useGameStore = create<GameStore>((set) => ({
   showProduct: async () => {
     set({ isLoading: true, error: null });
 
-    const result = await apiCall('/game/show-product', {
-      method: 'POST',
+    const result = await apiCall("/game/show-product", {
+      method: "POST",
     });
 
     if (result.success) {
       set({ isLoading: false });
     } else {
-      const errorMessage = result.error || 'Failed to show product';
+      const errorMessage = result.error || "Failed to show product";
       set({
         error: errorMessage,
         isLoading: false,
@@ -447,14 +468,14 @@ export const useGameStore = create<GameStore>((set) => ({
   hideProductModal: async () => {
     set({ isLoading: true, error: null });
 
-    const result = await apiCall('/game/hide-product-modal', {
-      method: 'POST',
+    const result = await apiCall("/game/hide-product-modal", {
+      method: "POST",
     });
 
     if (result.success) {
       set({ isLoading: false });
     } else {
-      const errorMessage = result.error || 'Failed to hide product modal';
+      const errorMessage = result.error || "Failed to hide product modal";
       set({
         error: errorMessage,
         isLoading: false,
@@ -472,8 +493,8 @@ export const useGameStore = create<GameStore>((set) => ({
       allBids?: BidWithPlayer[];
       allOver?: boolean;
       newRetryNumber?: number;
-    }>('/game/reveal-winner', {
-      method: 'POST',
+    }>("/game/reveal-winner", {
+      method: "POST",
     });
 
     if (result.success && result.data) {
@@ -486,7 +507,7 @@ export const useGameStore = create<GameStore>((set) => ({
         newRetryNumber: result.data.newRetryNumber,
       };
     } else {
-      const errorMessage = result.error || 'Failed to reveal winner';
+      const errorMessage = result.error || "Failed to reveal winner";
       set({
         error: errorMessage,
         isLoading: false,
@@ -499,8 +520,8 @@ export const useGameStore = create<GameStore>((set) => ({
   unlockBid: async (bidId: number) => {
     set({ isLoading: true, error: null });
 
-    const result = await apiCall<{ bid: BidWithPlayer }>('/game/unlock-bid', {
-      method: 'POST',
+    const result = await apiCall<{ bid: BidWithPlayer }>("/game/unlock-bid", {
+      method: "POST",
       body: JSON.stringify({ bid_id: bidId }),
     });
 
@@ -508,7 +529,7 @@ export const useGameStore = create<GameStore>((set) => ({
       // Fetch updated state after unlocking
       await useGameStore.getState().fetchGameState();
     } else {
-      const errorMessage = result.error || 'Failed to unlock bid';
+      const errorMessage = result.error || "Failed to unlock bid";
       set({
         error: errorMessage,
         isLoading: false,
@@ -521,8 +542,8 @@ export const useGameStore = create<GameStore>((set) => ({
   updateBidAmount: async (bidId: number, newAmount: number) => {
     set({ isLoading: true, error: null });
 
-    const result = await apiCall<{ bid: BidWithPlayer }>('/game/update-bid', {
-      method: 'POST',
+    const result = await apiCall<{ bid: BidWithPlayer }>("/game/update-bid", {
+      method: "POST",
       body: JSON.stringify({ bid_id: bidId, bid_amount: newAmount }),
     });
 
@@ -530,7 +551,7 @@ export const useGameStore = create<GameStore>((set) => ({
       // Fetch updated state after updating
       await useGameStore.getState().fetchGameState();
     } else {
-      const errorMessage = result.error || 'Failed to update bid amount';
+      const errorMessage = result.error || "Failed to update bid amount";
       set({
         error: errorMessage,
         isLoading: false,

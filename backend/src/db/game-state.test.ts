@@ -1,36 +1,36 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import Database from 'better-sqlite3';
-import { getGameEnabled, setGameEnabled } from './game-state.js';
-import { runMigrations } from './migrator.js';
+import { describe, it, expect, beforeEach } from "vitest";
+import Database from "better-sqlite3";
+import { getGameEnabled, setGameEnabled } from "./game-state.js";
+import { runMigrations } from "./migrator.js";
 
-describe('Game State Functions', () => {
+describe("Game State Functions", () => {
   let db: Database.Database;
 
   beforeEach(() => {
     // Create in-memory database for each test
-    db = new Database(':memory:');
+    db = new Database(":memory:");
     runMigrations(db);
   });
 
-  describe('getGameEnabled', () => {
-    it('should return true by default (from migration)', () => {
+  describe("getGameEnabled", () => {
+    it("should return true by default (from migration)", () => {
       const enabled = getGameEnabled(db);
       expect(enabled).toBe(true);
     });
 
-    it('should return false when game is disabled', () => {
+    it("should return false when game is disabled", () => {
       setGameEnabled(db, false);
       const enabled = getGameEnabled(db);
       expect(enabled).toBe(false);
     });
 
-    it('should return true when game is enabled', () => {
+    it("should return true when game is enabled", () => {
       setGameEnabled(db, true);
       const enabled = getGameEnabled(db);
       expect(enabled).toBe(true);
     });
 
-    it('should handle missing game_enabled key gracefully', () => {
+    it("should handle missing game_enabled key gracefully", () => {
       // Delete the game_enabled key
       db.prepare("DELETE FROM game_state WHERE key = 'game_enabled'").run();
 
@@ -40,30 +40,30 @@ describe('Game State Functions', () => {
     });
   });
 
-  describe('setGameEnabled', () => {
-    it('should set game to disabled', () => {
+  describe("setGameEnabled", () => {
+    it("should set game to disabled", () => {
       setGameEnabled(db, false);
 
-      const row = db.prepare("SELECT value FROM game_state WHERE key = 'game_enabled'").get() as
-        | { value: string }
-        | undefined;
+      const row = db
+        .prepare("SELECT value FROM game_state WHERE key = 'game_enabled'")
+        .get() as { value: string } | undefined;
 
       expect(row).toBeDefined();
-      expect(row?.value).toBe('false');
+      expect(row?.value).toBe("false");
     });
 
-    it('should set game to enabled', () => {
+    it("should set game to enabled", () => {
       setGameEnabled(db, true);
 
-      const row = db.prepare("SELECT value FROM game_state WHERE key = 'game_enabled'").get() as
-        | { value: string }
-        | undefined;
+      const row = db
+        .prepare("SELECT value FROM game_state WHERE key = 'game_enabled'")
+        .get() as { value: string } | undefined;
 
       expect(row).toBeDefined();
-      expect(row?.value).toBe('true');
+      expect(row?.value).toBe("true");
     });
 
-    it('should toggle game state multiple times', () => {
+    it("should toggle game state multiple times", () => {
       // Start: true (from migration)
       expect(getGameEnabled(db)).toBe(true);
 
@@ -80,7 +80,7 @@ describe('Game State Functions', () => {
       expect(getGameEnabled(db)).toBe(false);
     });
 
-    it('should update updated_at timestamp on each change', (done) => {
+    it("should update updated_at timestamp on each change", (done) => {
       // Set initial value
       setGameEnabled(db, false);
       const row1 = db
@@ -92,7 +92,9 @@ describe('Game State Functions', () => {
         // Update again
         setGameEnabled(db, true);
         const row2 = db
-          .prepare("SELECT updated_at FROM game_state WHERE key = 'game_enabled'")
+          .prepare(
+            "SELECT updated_at FROM game_state WHERE key = 'game_enabled'",
+          )
           .get() as { updated_at: string };
 
         // Timestamps should be different
@@ -101,11 +103,15 @@ describe('Game State Functions', () => {
       }, 1100);
     });
 
-    it('should use upsert logic (INSERT or UPDATE)', () => {
+    it("should use upsert logic (INSERT or UPDATE)", () => {
       // First call should INSERT
       setGameEnabled(db, false);
       const count1 = (
-        db.prepare("SELECT COUNT(*) as count FROM game_state WHERE key = 'game_enabled'").get() as {
+        db
+          .prepare(
+            "SELECT COUNT(*) as count FROM game_state WHERE key = 'game_enabled'",
+          )
+          .get() as {
           count: number;
         }
       ).count;
@@ -114,7 +120,11 @@ describe('Game State Functions', () => {
       // Second call should UPDATE (not insert a duplicate)
       setGameEnabled(db, true);
       const count2 = (
-        db.prepare("SELECT COUNT(*) as count FROM game_state WHERE key = 'game_enabled'").get() as {
+        db
+          .prepare(
+            "SELECT COUNT(*) as count FROM game_state WHERE key = 'game_enabled'",
+          )
+          .get() as {
           count: number;
         }
       ).count;
@@ -122,8 +132,8 @@ describe('Game State Functions', () => {
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle rapid state changes', () => {
+  describe("Edge Cases", () => {
+    it("should handle rapid state changes", () => {
       for (let i = 0; i < 100; i++) {
         setGameEnabled(db, i % 2 === 0);
       }
@@ -132,7 +142,7 @@ describe('Game State Functions', () => {
       expect(getGameEnabled(db)).toBe(false);
     });
 
-    it('should handle boolean conversion correctly', () => {
+    it("should handle boolean conversion correctly", () => {
       // Set to false
       setGameEnabled(db, false);
       expect(getGameEnabled(db)).toBe(false);
@@ -142,7 +152,7 @@ describe('Game State Functions', () => {
       expect(getGameEnabled(db)).toBe(true);
     });
 
-    it('should persist state across reads', () => {
+    it("should persist state across reads", () => {
       setGameEnabled(db, false);
 
       // Read multiple times

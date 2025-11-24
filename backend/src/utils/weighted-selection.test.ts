@@ -1,25 +1,28 @@
-import { describe, it, expect } from 'vitest';
-import { selectWeightedRandom, selectWeightedRandomMultiple } from './weighted-selection';
+import { describe, it, expect } from "vitest";
+import {
+  selectWeightedRandom,
+  selectWeightedRandomMultiple,
+} from "./weighted-selection";
 
 interface TestItem {
   id: number;
   weight: number;
 }
 
-describe('Weighted Selection', () => {
-  describe('selectWeightedRandom', () => {
-    it('should return null for empty array', () => {
+describe("Weighted Selection", () => {
+  describe("selectWeightedRandom", () => {
+    it("should return null for empty array", () => {
       const result = selectWeightedRandom([]);
       expect(result).toBeNull();
     });
 
-    it('should select single item', () => {
+    it("should select single item", () => {
       const items: TestItem[] = [{ id: 1, weight: 1.0 }];
       const result = selectWeightedRandom(items);
       expect(result).toEqual({ id: 1, weight: 1.0 });
     });
 
-    it('should select from primary tier (weight > 0)', () => {
+    it("should select from primary tier (weight > 0)", () => {
       const items: TestItem[] = [
         { id: 1, weight: 1.0 },
         { id: 2, weight: 0.5 },
@@ -35,7 +38,7 @@ describe('Weighted Selection', () => {
       }
     });
 
-    it('should fall back to weight=0 items when no primary tier', () => {
+    it("should fall back to weight=0 items when no primary tier", () => {
       const items: TestItem[] = [
         { id: 1, weight: 0 },
         { id: 2, weight: 0 },
@@ -47,7 +50,7 @@ describe('Weighted Selection', () => {
       expect([1, 2, 3]).toContain(result!.id);
     });
 
-    it('should handle all items having same weight', () => {
+    it("should handle all items having same weight", () => {
       const items: TestItem[] = [
         { id: 1, weight: 1.0 },
         { id: 2, weight: 1.0 },
@@ -69,7 +72,7 @@ describe('Weighted Selection', () => {
       expect(selectedIds.has(3)).toBe(true);
     });
 
-    it('should respect weight probabilities (higher weight = more likely)', () => {
+    it("should respect weight probabilities (higher weight = more likely)", () => {
       const items: TestItem[] = [
         { id: 1, weight: 0.1 }, // 10% of total
         { id: 2, weight: 0.9 }, // 90% of total
@@ -91,7 +94,7 @@ describe('Weighted Selection', () => {
       expect(counts[1]).toBeLessThan(250);
     });
 
-    it('should handle very small weights', () => {
+    it("should handle very small weights", () => {
       const items: TestItem[] = [
         { id: 1, weight: 0.01 },
         { id: 2, weight: 0.01 },
@@ -110,7 +113,7 @@ describe('Weighted Selection', () => {
       expect(counts[3]).toBeGreaterThan(900);
     });
 
-    it('should handle missing/null/undefined weights by treating as 1.0', () => {
+    it("should handle missing/null/undefined weights by treating as 1.0", () => {
       const items = [
         { id: 1, weight: 1.0 },
         { id: 2, weight: undefined as any },
@@ -126,19 +129,19 @@ describe('Weighted Selection', () => {
     });
   });
 
-  describe('selectWeightedRandomMultiple', () => {
-    it('should return empty array for empty input', () => {
+  describe("selectWeightedRandomMultiple", () => {
+    it("should return empty array for empty input", () => {
       const result = selectWeightedRandomMultiple([], 5);
       expect(result).toEqual([]);
     });
 
-    it('should return empty array when count is 0', () => {
+    it("should return empty array when count is 0", () => {
       const items: TestItem[] = [{ id: 1, weight: 1.0 }];
       const result = selectWeightedRandomMultiple(items, 0);
       expect(result).toEqual([]);
     });
 
-    it('should select multiple unique items', () => {
+    it("should select multiple unique items", () => {
       const items: TestItem[] = [
         { id: 1, weight: 1.0 },
         { id: 2, weight: 1.0 },
@@ -162,7 +165,7 @@ describe('Weighted Selection', () => {
       });
     });
 
-    it('should handle selecting fewer items than available', () => {
+    it("should handle selecting fewer items than available", () => {
       const items: TestItem[] = [
         { id: 1, weight: 1.0 },
         { id: 2, weight: 1.0 },
@@ -177,7 +180,7 @@ describe('Weighted Selection', () => {
       expect(uniqueIds.size).toBe(2);
     });
 
-    it('should return all items when requesting more than available', () => {
+    it("should return all items when requesting more than available", () => {
       const items: TestItem[] = [
         { id: 1, weight: 1.0 },
         { id: 2, weight: 1.0 },
@@ -187,7 +190,7 @@ describe('Weighted Selection', () => {
       expect(result).toHaveLength(2); // Can only select 2
     });
 
-    it('should select without replacement (no duplicates)', () => {
+    it("should select without replacement (no duplicates)", () => {
       const items: TestItem[] = Array.from({ length: 10 }, (_, i) => ({
         id: i + 1,
         weight: 1.0,
@@ -201,7 +204,7 @@ describe('Weighted Selection', () => {
       expect(uniqueIds.size).toBe(10); // All unique
     });
 
-    it('should prioritize primary tier over backup tier', () => {
+    it("should prioritize primary tier over backup tier", () => {
       const items: TestItem[] = [
         { id: 1, weight: 1.0 },
         { id: 2, weight: 0.5 },
@@ -219,7 +222,7 @@ describe('Weighted Selection', () => {
       expect(ids).toContain(2);
     });
 
-    it('should use backup tier when primary tier exhausted', () => {
+    it("should use backup tier when primary tier exhausted", () => {
       const items: TestItem[] = [
         { id: 1, weight: 1.0 },
         { id: 2, weight: 0.5 },

@@ -32,7 +32,7 @@
  * - Tested extensively (see export-import.test.ts)
  */
 
-import type Database from 'better-sqlite3';
+import type Database from "better-sqlite3";
 
 export interface DatabaseExport {
   version: string;
@@ -120,7 +120,7 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
        FROM players
        ORDER BY id`,
     )
-    .all() as DatabaseExport['players'];
+    .all() as DatabaseExport["players"];
 
   // Export game state
   const gameState = db
@@ -129,7 +129,7 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
        FROM game_state
        ORDER BY key`,
     )
-    .all() as DatabaseExport['gameState'];
+    .all() as DatabaseExport["gameState"];
 
   // Export game workflow
   const gameWorkflow = db
@@ -139,7 +139,7 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
               created_at AS createdAt, updated_at AS updatedAt
        FROM game_workflow`,
     )
-    .all() as DatabaseExport['gameWorkflow'];
+    .all() as DatabaseExport["gameWorkflow"];
 
   // Export contestants row
   const contestantsRow = db
@@ -150,7 +150,7 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
        FROM contestants_row
        ORDER BY id`,
     )
-    .all() as DatabaseExport['contestantsRow'];
+    .all() as DatabaseExport["contestantsRow"];
 
   // Export bids
   const bids = db
@@ -161,7 +161,7 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
        FROM bids
        ORDER BY id`,
     )
-    .all() as DatabaseExport['bids'];
+    .all() as DatabaseExport["bids"];
 
   // Export wheel spins
   const wheelSpins = db
@@ -171,7 +171,7 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
        FROM wheel_spins
        ORDER BY id`,
     )
-    .all() as DatabaseExport['wheelSpins'];
+    .all() as DatabaseExport["wheelSpins"];
 
   // Export showcase bids
   const showcaseBids = db
@@ -181,10 +181,10 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
        FROM showcase_bids
        ORDER BY id`,
     )
-    .all() as DatabaseExport['showcaseBids'];
+    .all() as DatabaseExport["showcaseBids"];
 
   return {
-    version: '1.0',
+    version: "1.0",
     exportedAt: new Date().toISOString(),
     players,
     gameState,
@@ -200,7 +200,10 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
  * Import database from JSON format
  * WARNING: This will DELETE all existing data!
  */
-export function importDatabase(db: Database.Database, data: DatabaseExport): void {
+export function importDatabase(
+  db: Database.Database,
+  data: DatabaseExport,
+): void {
   // Validate data structure
   if (
     !data.version ||
@@ -212,10 +215,10 @@ export function importDatabase(db: Database.Database, data: DatabaseExport): voi
     !data.wheelSpins ||
     !data.showcaseBids
   ) {
-    throw new Error('Invalid export file format');
+    throw new Error("Invalid export file format");
   }
 
-  if (data.version !== '1.0') {
+  if (data.version !== "1.0") {
     throw new Error(`Unsupported export version: ${data.version}`);
   }
 
@@ -223,14 +226,14 @@ export function importDatabase(db: Database.Database, data: DatabaseExport): voi
   const transaction = db.transaction(() => {
     // Clear existing data (order matters due to foreign keys)
     // Delete child tables first
-    db.prepare('DELETE FROM showcase_bids').run();
-    db.prepare('DELETE FROM wheel_spins').run();
-    db.prepare('DELETE FROM bids').run();
-    db.prepare('DELETE FROM contestants_row').run();
-    db.prepare('DELETE FROM game_workflow').run();
+    db.prepare("DELETE FROM showcase_bids").run();
+    db.prepare("DELETE FROM wheel_spins").run();
+    db.prepare("DELETE FROM bids").run();
+    db.prepare("DELETE FROM contestants_row").run();
+    db.prepare("DELETE FROM game_workflow").run();
     // Then parent tables
-    db.prepare('DELETE FROM players').run();
-    db.prepare('DELETE FROM game_state').run();
+    db.prepare("DELETE FROM players").run();
+    db.prepare("DELETE FROM game_state").run();
 
     // Import players
     const insertPlayer = db.prepare(`
@@ -375,47 +378,57 @@ export function importDatabase(db: Database.Database, data: DatabaseExport): voi
     }
 
     // Reset SQLite autoincrement sequences
-    const maxPlayerId = db.prepare('SELECT MAX(id) as maxId FROM players').get() as {
+    const maxPlayerId = db
+      .prepare("SELECT MAX(id) as maxId FROM players")
+      .get() as {
       maxId: number | null;
     };
     if (maxPlayerId.maxId !== null) {
-      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'players'`).run(
-        maxPlayerId.maxId,
-      );
+      db.prepare(
+        `UPDATE sqlite_sequence SET seq = ? WHERE name = 'players'`,
+      ).run(maxPlayerId.maxId);
     }
 
-    const maxContestantId = db.prepare('SELECT MAX(id) as maxId FROM contestants_row').get() as {
+    const maxContestantId = db
+      .prepare("SELECT MAX(id) as maxId FROM contestants_row")
+      .get() as {
       maxId: number | null;
     };
     if (maxContestantId.maxId !== null) {
-      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'contestants_row'`).run(
-        maxContestantId.maxId,
-      );
+      db.prepare(
+        `UPDATE sqlite_sequence SET seq = ? WHERE name = 'contestants_row'`,
+      ).run(maxContestantId.maxId);
     }
 
-    const maxBidId = db.prepare('SELECT MAX(id) as maxId FROM bids').get() as {
+    const maxBidId = db.prepare("SELECT MAX(id) as maxId FROM bids").get() as {
       maxId: number | null;
     };
     if (maxBidId.maxId !== null) {
-      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'bids'`).run(maxBidId.maxId);
+      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'bids'`).run(
+        maxBidId.maxId,
+      );
     }
 
-    const maxWheelSpinId = db.prepare('SELECT MAX(id) as maxId FROM wheel_spins').get() as {
+    const maxWheelSpinId = db
+      .prepare("SELECT MAX(id) as maxId FROM wheel_spins")
+      .get() as {
       maxId: number | null;
     };
     if (maxWheelSpinId.maxId !== null) {
-      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'wheel_spins'`).run(
-        maxWheelSpinId.maxId,
-      );
+      db.prepare(
+        `UPDATE sqlite_sequence SET seq = ? WHERE name = 'wheel_spins'`,
+      ).run(maxWheelSpinId.maxId);
     }
 
-    const maxShowcaseBidId = db.prepare('SELECT MAX(id) as maxId FROM showcase_bids').get() as {
+    const maxShowcaseBidId = db
+      .prepare("SELECT MAX(id) as maxId FROM showcase_bids")
+      .get() as {
       maxId: number | null;
     };
     if (maxShowcaseBidId.maxId !== null) {
-      db.prepare(`UPDATE sqlite_sequence SET seq = ? WHERE name = 'showcase_bids'`).run(
-        maxShowcaseBidId.maxId,
-      );
+      db.prepare(
+        `UPDATE sqlite_sequence SET seq = ? WHERE name = 'showcase_bids'`,
+      ).run(maxShowcaseBidId.maxId);
     }
   });
 

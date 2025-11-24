@@ -1,12 +1,12 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync } from "fastify";
 
 const healthRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/health', async () => {
+  fastify.get("/health", async () => {
     return {
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      database: 'connected',
+      environment: process.env.NODE_ENV || "development",
+      database: "connected",
     };
   });
 };

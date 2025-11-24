@@ -1,4 +1,4 @@
-import { Button, Text, VStack, HStack, Input, Code } from '@chakra-ui/react';
+import { Button, Text, VStack, HStack, Input, Code } from "@chakra-ui/react";
 import {
   DialogRoot,
   DialogContent,
@@ -6,9 +6,9 @@ import {
   DialogBody,
   DialogFooter,
   DialogCloseTrigger,
-} from './ui/dialog';
-import type { Player } from '../../../backend/src/types/player';
-import { showToast } from '../utils/toast';
+} from "./ui/dialog";
+import type { Player } from "../../../backend/src/types/player";
+import { showToast } from "../utils/toast";
 
 interface ViewCodeModalProps {
   isOpen: boolean;
@@ -22,16 +22,16 @@ export function ViewCodeModal({ isOpen, onClose, player }: ViewCodeModalProps) {
   const handleCopyCode = () => {
     navigator.clipboard.writeText(player.accessCode);
     showToast({
-      title: 'Access code copied',
-      type: 'success',
+      title: "Access code copied",
+      type: "success",
     });
   };
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(gameUrl);
     showToast({
-      title: 'URL copied',
-      type: 'success',
+      title: "URL copied",
+      type: "success",
     });
   };
 

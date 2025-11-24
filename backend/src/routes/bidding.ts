@@ -1,6 +1,6 @@
-import { FastifyPluginAsync } from 'fastify';
-import { authenticateRequest } from '../middleware/auth.js';
-import { requireHost } from '../middleware/requireHost.js';
+import { FastifyPluginAsync } from "fastify";
+import { authenticateRequest } from "../middleware/auth.js";
+import { requireHost } from "../middleware/requireHost.js";
 import {
   submitBid as serviceSubmitBid,
   getCurrentBids,
@@ -9,9 +9,9 @@ import {
   clearBidsForRetry,
   getCurrentProductPrice,
   updateBidAmount,
-} from '../services/bidding.js';
-import { updateGameWorkflow, getGameWorkflow } from '../db/game-workflow.js';
-import { updateContestantStatus } from '../db/contestants.js';
+} from "../services/bidding.js";
+import { updateGameWorkflow, getGameWorkflow } from "../db/game-workflow.js";
+import { updateContestantStatus } from "../db/contestants.js";
 
 const biddingRoutes: FastifyPluginAsync = async (fastify) => {
   /**
@@ -26,7 +26,7 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
       player_id?: number;
     };
   }>(
-    '/game/submit-bid',
+    "/game/submit-bid",
     {
       preHandler: [authenticateRequest],
     },
@@ -38,27 +38,31 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
         if (!currentPlayer) {
           return reply.status(401).send({
             success: false,
-            error: 'Not authenticated',
+            error: "Not authenticated",
           });
         }
 
         // Validate bid_amount
-        if (typeof bid_amount !== 'number' || !Number.isInteger(bid_amount) || bid_amount <= 0) {
+        if (
+          typeof bid_amount !== "number" ||
+          !Number.isInteger(bid_amount) ||
+          bid_amount <= 0
+        ) {
           return reply.status(400).send({
             success: false,
-            error: 'bid_amount must be a positive integer',
+            error: "bid_amount must be a positive integer",
           });
         }
 
         // Determine which player is bidding
         let biddingPlayerId: number;
 
-        if (currentPlayer.role === 'host') {
+        if (currentPlayer.role === "host") {
           // Host can submit for any player (player_id required)
           if (!player_id) {
             return reply.status(400).send({
               success: false,
-              error: 'player_id required when host submits bid',
+              error: "player_id required when host submits bid",
             });
           }
           biddingPlayerId = player_id;
@@ -67,7 +71,7 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
           if (player_id && player_id !== currentPlayer.id) {
             return reply.status(403).send({
               success: false,
-              error: 'Cannot submit bid for another player',
+              error: "Cannot submit bid for another player",
             });
           }
           biddingPlayerId = currentPlayer.id;
@@ -94,7 +98,8 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(400).send({
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to submit bid',
+          error:
+            error instanceof Error ? error.message : "Failed to submit bid",
         });
       }
     },
@@ -106,14 +111,16 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
    * Host only
    */
   fastify.post(
-    '/game/show-product',
+    "/game/show-product",
     {
       preHandler: [authenticateRequest, requireHost],
     },
     async (request, reply) => {
       try {
         const workflow = getGameWorkflow();
-        const metadata = workflow.phase_metadata ? JSON.parse(workflow.phase_metadata) : {};
+        const metadata = workflow.phase_metadata
+          ? JSON.parse(workflow.phase_metadata)
+          : {};
 
         // Set product modal visible
         metadata.product_modal_visible = true;
@@ -132,7 +139,8 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to show product',
+          error:
+            error instanceof Error ? error.message : "Failed to show product",
         });
       }
     },
@@ -144,14 +152,16 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
    * Host only
    */
   fastify.post(
-    '/game/hide-product-modal',
+    "/game/hide-product-modal",
     {
       preHandler: [authenticateRequest, requireHost],
     },
     async (request, reply) => {
       try {
         const workflow = getGameWorkflow();
-        const metadata = workflow.phase_metadata ? JSON.parse(workflow.phase_metadata) : {};
+        const metadata = workflow.phase_metadata
+          ? JSON.parse(workflow.phase_metadata)
+          : {};
 
         // Hide modal, show inset card
         metadata.product_modal_visible = false;
@@ -168,7 +178,10 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to hide product modal',
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to hide product modal",
         });
       }
     },
@@ -180,7 +193,7 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
    * Host only
    */
   fastify.post(
-    '/game/reveal-winner',
+    "/game/reveal-winner",
     {
       preHandler: [authenticateRequest, requireHost],
     },
@@ -196,11 +209,13 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
         // Calculate winner
         const result = calculateWinner(segment, roundNumber, productPrice);
 
-        if ('allOver' in result) {
+        if ("allOver" in result) {
           // All over scenario - clear bids for retry
           clearBidsForRetry(segment, roundNumber);
 
-          const metadata = workflow.phase_metadata ? JSON.parse(workflow.phase_metadata) : {};
+          const metadata = workflow.phase_metadata
+            ? JSON.parse(workflow.phase_metadata)
+            : {};
 
           metadata.all_over_triggered = true;
           metadata.retry_number = result.newRetryNumber;
@@ -222,21 +237,25 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
           const winnerBid = allBids.find((b) => b.id === winner.id);
           if (winnerBid) {
             // Use the imported function from bidding service
-            const { markWinner } = await import('../services/bidding.js');
+            const { markWinner } = await import("../services/bidding.js");
             markWinner(winnerBid.id);
           }
 
           // Update contestant status to 'won'
-          const contestants = await import('../db/contestants.js');
+          const contestants = await import("../db/contestants.js");
           const activeContestants = contestants.getAllActiveContestants();
-          const winnerContestant = activeContestants.find((c) => c.player_id === winner.player_id);
+          const winnerContestant = activeContestants.find(
+            (c) => c.player_id === winner.player_id,
+          );
 
           if (winnerContestant) {
-            updateContestantStatus(winnerContestant.id, 'won');
+            updateContestantStatus(winnerContestant.id, "won");
           }
 
           // Update phase metadata with winner info and show price
-          const metadata = workflow.phase_metadata ? JSON.parse(workflow.phase_metadata) : {};
+          const metadata = workflow.phase_metadata
+            ? JSON.parse(workflow.phase_metadata)
+            : {};
 
           metadata.winner_info = {
             player_id: winner.player_id,
@@ -269,7 +288,8 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to reveal winner',
+          error:
+            error instanceof Error ? error.message : "Failed to reveal winner",
         });
       }
     },
@@ -285,7 +305,7 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
       bid_id: number;
     };
   }>(
-    '/game/unlock-bid',
+    "/game/unlock-bid",
     {
       preHandler: [authenticateRequest, requireHost],
     },
@@ -293,10 +313,10 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
       try {
         const { bid_id } = request.body;
 
-        if (typeof bid_id !== 'number') {
+        if (typeof bid_id !== "number") {
           return reply.status(400).send({
             success: false,
-            error: 'bid_id must be a number',
+            error: "bid_id must be a number",
           });
         }
 
@@ -310,7 +330,8 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(400).send({
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to unlock bid',
+          error:
+            error instanceof Error ? error.message : "Failed to unlock bid",
         });
       }
     },
@@ -327,7 +348,7 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
       bid_amount: number;
     };
   }>(
-    '/game/update-bid',
+    "/game/update-bid",
     {
       preHandler: [authenticateRequest, requireHost],
     },
@@ -335,17 +356,21 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
       try {
         const { bid_id, bid_amount } = request.body;
 
-        if (typeof bid_id !== 'number') {
+        if (typeof bid_id !== "number") {
           return reply.status(400).send({
             success: false,
-            error: 'bid_id must be a number',
+            error: "bid_id must be a number",
           });
         }
 
-        if (typeof bid_amount !== 'number' || !Number.isInteger(bid_amount) || bid_amount <= 0) {
+        if (
+          typeof bid_amount !== "number" ||
+          !Number.isInteger(bid_amount) ||
+          bid_amount <= 0
+        ) {
           return reply.status(400).send({
             success: false,
-            error: 'bid_amount must be a positive integer',
+            error: "bid_amount must be a positive integer",
           });
         }
 
@@ -359,7 +384,8 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(400).send({
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to update bid',
+          error:
+            error instanceof Error ? error.message : "Failed to update bid",
         });
       }
     },
@@ -371,7 +397,7 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
    * Available to all authenticated users
    */
   fastify.get(
-    '/game/current-bids',
+    "/game/current-bids",
     {
       preHandler: [authenticateRequest],
     },
@@ -390,7 +416,10 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
         request.log.error(error);
         return reply.status(500).send({
           success: false,
-          error: error instanceof Error ? error.message : 'Failed to get current bids',
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to get current bids",
         });
       }
     },

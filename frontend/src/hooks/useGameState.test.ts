@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { useGameState } from './useGameState';
-import { useGameStore } from '../store/gameStore';
-import type { GameState } from '../store/gameStore';
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { renderHook } from "@testing-library/react";
+import { useGameState } from "./useGameState";
+import { useGameStore } from "../store/gameStore";
+import type { GameState } from "../store/gameStore";
 
 // Mock timers
 vi.useFakeTimers();
@@ -10,18 +10,18 @@ vi.useFakeTimers();
 const mockGameState: GameState = {
   workflow: {
     id: 1,
-    current_segment: 'section_1',
+    current_segment: "section_1",
     current_segment_index: 0,
-    phase_type: 'bidding',
+    phase_type: "bidding",
     phase_metadata: '{"type":"bidding","product_id":"car-001"}',
-    created_at: '2025-11-20T12:00:00Z',
-    updated_at: '2025-11-20T12:00:00Z',
+    created_at: "2025-11-20T12:00:00Z",
+    updated_at: "2025-11-20T12:00:00Z",
   },
   contestantsRow: [],
   eligibleAudienceCount: 50,
 };
 
-describe('useGameState', () => {
+describe("useGameState", () => {
   let mockFetchGameState: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
@@ -44,13 +44,13 @@ describe('useGameState', () => {
     vi.clearAllTimers();
   });
 
-  it('should fetch game state on mount', () => {
+  it("should fetch game state on mount", () => {
     renderHook(() => useGameState());
 
     expect(mockFetchGameState).toHaveBeenCalledTimes(1);
   });
 
-  it('should poll game state at specified interval', async () => {
+  it("should poll game state at specified interval", async () => {
     renderHook(() => useGameState({ pollInterval: 2000 }));
 
     expect(mockFetchGameState).toHaveBeenCalledTimes(1);
@@ -64,7 +64,7 @@ describe('useGameState', () => {
     expect(mockFetchGameState).toHaveBeenCalledTimes(3);
   });
 
-  it('should use custom poll interval', async () => {
+  it("should use custom poll interval", async () => {
     renderHook(() => useGameState({ pollInterval: 5000 }));
 
     expect(mockFetchGameState).toHaveBeenCalledTimes(1);
@@ -78,7 +78,7 @@ describe('useGameState', () => {
     expect(mockFetchGameState).toHaveBeenCalledTimes(2);
   });
 
-  it('should stop polling when unmounted', async () => {
+  it("should stop polling when unmounted", async () => {
     const { unmount } = renderHook(() => useGameState({ pollInterval: 2000 }));
 
     expect(mockFetchGameState).toHaveBeenCalledTimes(1);
@@ -92,7 +92,7 @@ describe('useGameState', () => {
     expect(mockFetchGameState).toHaveBeenCalledTimes(1);
   });
 
-  it('should not poll when disabled', () => {
+  it("should not poll when disabled", () => {
     renderHook(() => useGameState({ enabled: false }));
 
     expect(mockFetchGameState).not.toHaveBeenCalled();
@@ -102,7 +102,7 @@ describe('useGameState', () => {
     expect(mockFetchGameState).not.toHaveBeenCalled();
   });
 
-  it('should return game state from store', () => {
+  it("should return game state from store", () => {
     useGameStore.setState({ gameState: mockGameState });
 
     const { result } = renderHook(() => useGameState({ enabled: false }));
@@ -110,7 +110,7 @@ describe('useGameState', () => {
     expect(result.current.gameState).toEqual(mockGameState);
   });
 
-  it('should return loading state from store', () => {
+  it("should return loading state from store", () => {
     useGameStore.setState({ isLoading: true });
 
     const { result } = renderHook(() => useGameState({ enabled: false }));
@@ -118,28 +118,28 @@ describe('useGameState', () => {
     expect(result.current.isLoading).toBe(true);
   });
 
-  it('should return error from store', () => {
-    useGameStore.setState({ error: 'Test error' });
+  it("should return error from store", () => {
+    useGameStore.setState({ error: "Test error" });
 
     const { result } = renderHook(() => useGameState({ enabled: false }));
 
-    expect(result.current.error).toBe('Test error');
+    expect(result.current.error).toBe("Test error");
   });
 
-  it('should provide refresh function', () => {
+  it("should provide refresh function", () => {
     const { result } = renderHook(() => useGameState({ enabled: false }));
 
-    expect(typeof result.current.refresh).toBe('function');
+    expect(typeof result.current.refresh).toBe("function");
 
     result.current.refresh();
 
     expect(mockFetchGameState).toHaveBeenCalledTimes(1);
   });
 
-  it('should provide clearError function', () => {
+  it("should provide clearError function", () => {
     const mockClearError = vi.fn();
     useGameStore.setState({
-      error: 'Test error',
+      error: "Test error",
       clearError: mockClearError,
     });
 
@@ -150,10 +150,13 @@ describe('useGameState', () => {
     expect(mockClearError).toHaveBeenCalledTimes(1);
   });
 
-  it('should restart polling when interval changes', async () => {
-    const { rerender } = renderHook(({ interval }) => useGameState({ pollInterval: interval }), {
-      initialProps: { interval: 2000 },
-    });
+  it("should restart polling when interval changes", async () => {
+    const { rerender } = renderHook(
+      ({ interval }) => useGameState({ pollInterval: interval }),
+      {
+        initialProps: { interval: 2000 },
+      },
+    );
 
     expect(mockFetchGameState).toHaveBeenCalledTimes(1);
 
@@ -172,7 +175,7 @@ describe('useGameState', () => {
     expect(mockFetchGameState).toHaveBeenCalledTimes(3);
   });
 
-  it('should handle enabled toggle', async () => {
+  it("should handle enabled toggle", async () => {
     const { rerender } = renderHook(
       ({ enabled }) => useGameState({ enabled, pollInterval: 2000 }),
       {
@@ -199,7 +202,7 @@ describe('useGameState', () => {
     expect(mockFetchGameState).toHaveBeenCalledTimes(3);
   });
 
-  it('should use default poll interval of 2 seconds', async () => {
+  it("should use default poll interval of 2 seconds", async () => {
     renderHook(() => useGameState());
 
     expect(mockFetchGameState).toHaveBeenCalledTimes(1);
@@ -208,9 +211,9 @@ describe('useGameState', () => {
     expect(mockFetchGameState).toHaveBeenCalledTimes(2);
   });
 
-  describe('Edge Cases and Error Handling', () => {
-    it('should continue polling even if fetchGameState fails', async () => {
-      mockFetchGameState.mockRejectedValue(new Error('Network error'));
+  describe("Edge Cases and Error Handling", () => {
+    it("should continue polling even if fetchGameState fails", async () => {
+      mockFetchGameState.mockRejectedValue(new Error("Network error"));
 
       renderHook(() => useGameState({ pollInterval: 2000 }));
 
@@ -224,16 +227,22 @@ describe('useGameState', () => {
       expect(mockFetchGameState).toHaveBeenCalledTimes(3);
     });
 
-    it('should handle multiple mount/unmount cycles without memory leaks', async () => {
-      const { unmount: unmount1 } = renderHook(() => useGameState({ pollInterval: 2000 }));
+    it("should handle multiple mount/unmount cycles without memory leaks", async () => {
+      const { unmount: unmount1 } = renderHook(() =>
+        useGameState({ pollInterval: 2000 }),
+      );
       expect(mockFetchGameState).toHaveBeenCalledTimes(1);
       unmount1();
 
-      const { unmount: unmount2 } = renderHook(() => useGameState({ pollInterval: 2000 }));
+      const { unmount: unmount2 } = renderHook(() =>
+        useGameState({ pollInterval: 2000 }),
+      );
       expect(mockFetchGameState).toHaveBeenCalledTimes(2);
       unmount2();
 
-      const { unmount: unmount3 } = renderHook(() => useGameState({ pollInterval: 2000 }));
+      const { unmount: unmount3 } = renderHook(() =>
+        useGameState({ pollInterval: 2000 }),
+      );
       expect(mockFetchGameState).toHaveBeenCalledTimes(3);
       unmount3();
 
@@ -242,8 +251,10 @@ describe('useGameState', () => {
       expect(mockFetchGameState).toHaveBeenCalledTimes(3);
     });
 
-    it('should not fetch after unmount even if timers are running', async () => {
-      const { unmount } = renderHook(() => useGameState({ pollInterval: 1000 }));
+    it("should not fetch after unmount even if timers are running", async () => {
+      const { unmount } = renderHook(() =>
+        useGameState({ pollInterval: 1000 }),
+      );
 
       expect(mockFetchGameState).toHaveBeenCalledTimes(1);
 
@@ -259,7 +270,7 @@ describe('useGameState', () => {
       expect(mockFetchGameState).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle very fast poll intervals', async () => {
+    it("should handle very fast poll intervals", async () => {
       renderHook(() => useGameState({ pollInterval: 100 }));
 
       expect(mockFetchGameState).toHaveBeenCalledTimes(1);
@@ -271,8 +282,10 @@ describe('useGameState', () => {
       expect(mockFetchGameState).toHaveBeenCalledTimes(3);
     });
 
-    it('should handle concurrent rerenders without duplicate intervals', async () => {
-      const { rerender } = renderHook(() => useGameState({ pollInterval: 2000 }));
+    it("should handle concurrent rerenders without duplicate intervals", async () => {
+      const { rerender } = renderHook(() =>
+        useGameState({ pollInterval: 2000 }),
+      );
 
       expect(mockFetchGameState).toHaveBeenCalledTimes(1);
 
@@ -289,7 +302,7 @@ describe('useGameState', () => {
       expect(mockFetchGameState).toHaveBeenCalledTimes(2);
     });
 
-    it('should properly clean up old interval when changing from enabled to disabled', async () => {
+    it("should properly clean up old interval when changing from enabled to disabled", async () => {
       const { rerender } = renderHook(
         ({ enabled }) => useGameState({ enabled, pollInterval: 1000 }),
         {
@@ -311,7 +324,7 @@ describe('useGameState', () => {
       expect(mockFetchGameState).toHaveBeenCalledTimes(2);
     });
 
-    it('should handle rapid enable/disable toggling', async () => {
+    it("should handle rapid enable/disable toggling", async () => {
       const { rerender } = renderHook(
         ({ enabled }) => useGameState({ enabled, pollInterval: 2000 }),
         {
@@ -335,7 +348,7 @@ describe('useGameState', () => {
       expect(mockFetchGameState).toHaveBeenCalledTimes(4);
     });
 
-    it('should call refresh function and trigger immediate fetch', () => {
+    it("should call refresh function and trigger immediate fetch", () => {
       const { result } = renderHook(() => useGameState({ enabled: false }));
 
       expect(mockFetchGameState).not.toHaveBeenCalled();
@@ -348,11 +361,11 @@ describe('useGameState', () => {
       expect(mockFetchGameState).toHaveBeenCalledTimes(3);
     });
 
-    it('should expose all store values correctly', () => {
+    it("should expose all store values correctly", () => {
       useGameStore.setState({
         gameState: mockGameState,
         isLoading: true,
-        error: 'Test error',
+        error: "Test error",
         lastUpdated: 12345,
       });
 
@@ -360,15 +373,18 @@ describe('useGameState', () => {
 
       expect(result.current.gameState).toEqual(mockGameState);
       expect(result.current.isLoading).toBe(true);
-      expect(result.current.error).toBe('Test error');
-      expect(typeof result.current.refresh).toBe('function');
-      expect(typeof result.current.clearError).toBe('function');
+      expect(result.current.error).toBe("Test error");
+      expect(typeof result.current.refresh).toBe("function");
+      expect(typeof result.current.clearError).toBe("function");
     });
 
-    it('should handle interval change mid-poll cycle', async () => {
-      const { rerender } = renderHook(({ interval }) => useGameState({ pollInterval: interval }), {
-        initialProps: { interval: 5000 },
-      });
+    it("should handle interval change mid-poll cycle", async () => {
+      const { rerender } = renderHook(
+        ({ interval }) => useGameState({ pollInterval: interval }),
+        {
+          initialProps: { interval: 5000 },
+        },
+      );
 
       expect(mockFetchGameState).toHaveBeenCalledTimes(1);
 
@@ -385,7 +401,7 @@ describe('useGameState', () => {
       expect(mockFetchGameState).toHaveBeenCalledTimes(3);
     });
 
-    it('should not start polling on mount if enabled is false', async () => {
+    it("should not start polling on mount if enabled is false", async () => {
       renderHook(() => useGameState({ enabled: false, pollInterval: 1000 }));
 
       expect(mockFetchGameState).not.toHaveBeenCalled();

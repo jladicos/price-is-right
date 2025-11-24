@@ -1,5 +1,13 @@
-import { useState, useEffect } from 'react';
-import { Button, Input, VStack, Text, Box, HStack, Stack } from '@chakra-ui/react';
+import { useState, useEffect } from "react";
+import {
+  Button,
+  Input,
+  VStack,
+  Text,
+  Box,
+  HStack,
+  Stack,
+} from "@chakra-ui/react";
 import {
   DialogRoot,
   DialogContent,
@@ -8,10 +16,10 @@ import {
   DialogBody,
   DialogFooter,
   DialogCloseTrigger,
-} from './ui/dialog';
-import { NativeSelectRoot, NativeSelectField } from './ui/native-select';
-import { apiRequest } from '../utils/api';
-import { showToast } from '../utils/toast';
+} from "./ui/dialog";
+import { NativeSelectRoot, NativeSelectField } from "./ui/native-select";
+import { apiRequest } from "../utils/api";
+import { showToast } from "../utils/toast";
 
 interface Player {
   id: number;
@@ -25,7 +33,11 @@ interface Player {
 interface ManualSelectContestantModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (playerId: number, position: number, segment: string) => Promise<void>;
+  onConfirm: (
+    playerId: number,
+    position: number,
+    segment: string,
+  ) => Promise<void>;
   currentSegment?: string;
   initialPosition?: number;
 }
@@ -34,12 +46,12 @@ export function ManualSelectContestantModal({
   isOpen,
   onClose,
   onConfirm,
-  currentSegment = 'section_1',
+  currentSegment = "section_1",
   initialPosition = 1,
 }: ManualSelectContestantModalProps) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [position, setPosition] = useState<number>(1);
   const [segment, setSegment] = useState<string>(currentSegment);
@@ -54,15 +66,16 @@ export function ManualSelectContestantModal({
       setIsLoading(true);
       try {
         const response = await apiRequest<{ players: Player[]; total: number }>(
-          '/players?active=true',
+          "/players?active=true",
         );
         setPlayers(response.players);
         setFilteredPlayers(response.players);
       } catch (err) {
         showToast({
-          title: 'Error',
-          description: err instanceof Error ? err.message : 'Failed to load players',
-          type: 'error',
+          title: "Error",
+          description:
+            err instanceof Error ? err.message : "Failed to load players",
+          type: "error",
         });
       } finally {
         setIsLoading(false);
@@ -103,9 +116,9 @@ export function ManualSelectContestantModal({
   const handleConfirm = async () => {
     if (!selectedPlayerId) {
       showToast({
-        title: 'No Player Selected',
-        description: 'Please select a player from the list',
-        type: 'warning',
+        title: "No Player Selected",
+        description: "Please select a player from the list",
+        type: "warning",
       });
       return;
     }
@@ -116,9 +129,10 @@ export function ManualSelectContestantModal({
       handleClose();
     } catch (err) {
       showToast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'Failed to select contestant',
-        type: 'error',
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to select contestant",
+        type: "error",
       });
     } finally {
       setIsSubmitting(false);
@@ -126,7 +140,7 @@ export function ManualSelectContestantModal({
   };
 
   const handleClose = () => {
-    setSearchTerm('');
+    setSearchTerm("");
     setSelectedPlayerId(null);
     setPosition(1);
     setSegment(currentSegment);
@@ -136,7 +150,11 @@ export function ManualSelectContestantModal({
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId);
 
   return (
-    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && handleClose()} size="lg">
+    <DialogRoot
+      open={isOpen}
+      onOpenChange={(e) => !e.open && handleClose()}
+      size="lg"
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Manually Select Contestant</DialogTitle>
@@ -146,7 +164,7 @@ export function ManualSelectContestantModal({
         <DialogBody>
           <VStack gap={4} align="stretch">
             {/* Position and Segment Selectors */}
-            <Stack direction={{ base: 'column', md: 'row' }} gap={4}>
+            <Stack direction={{ base: "column", md: "row" }} gap={4}>
               <Box flex={1}>
                 <Text fontWeight="semibold" mb={2}>
                   Position
@@ -170,7 +188,10 @@ export function ManualSelectContestantModal({
                   Segment
                 </Text>
                 <NativeSelectRoot>
-                  <NativeSelectField value={segment} onChange={(e) => setSegment(e.target.value)}>
+                  <NativeSelectField
+                    value={segment}
+                    onChange={(e) => setSegment(e.target.value)}
+                  >
                     <option value="section_1">Section 1</option>
                     <option value="section_2">Section 2</option>
                   </NativeSelectField>
@@ -218,11 +239,17 @@ export function ManualSelectContestantModal({
                         key={player.id}
                         p={3}
                         border="2px solid"
-                        borderColor={selectedPlayerId === player.id ? 'blue.500' : 'gray.200'}
+                        borderColor={
+                          selectedPlayerId === player.id
+                            ? "blue.500"
+                            : "gray.200"
+                        }
                         borderRadius="md"
                         cursor="pointer"
-                        bg={selectedPlayerId === player.id ? 'blue.50' : 'white'}
-                        _hover={{ bg: 'gray.50' }}
+                        bg={
+                          selectedPlayerId === player.id ? "blue.50" : "white"
+                        }
+                        _hover={{ bg: "gray.50" }}
                         onClick={() => setSelectedPlayerId(player.id)}
                       >
                         <HStack justify="space-between">
@@ -230,7 +257,11 @@ export function ManualSelectContestantModal({
                             <Text fontWeight="bold">
                               {player.firstName} {player.lastName}
                             </Text>
-                            <Text fontSize="sm" color="gray.600" textTransform="capitalize">
+                            <Text
+                              fontSize="sm"
+                              color="gray.600"
+                              textTransform="capitalize"
+                            >
                               Role: {player.role}
                             </Text>
                           </VStack>
@@ -249,7 +280,8 @@ export function ManualSelectContestantModal({
                   Selection Preview
                 </Text>
                 <Text fontSize="sm">
-                  <strong>Player:</strong> {selectedPlayer.firstName} {selectedPlayer.lastName}
+                  <strong>Player:</strong> {selectedPlayer.firstName}{" "}
+                  {selectedPlayer.lastName}
                 </Text>
                 <Text fontSize="sm">
                   <strong>Position:</strong> {position}
@@ -263,7 +295,11 @@ export function ManualSelectContestantModal({
         </DialogBody>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button

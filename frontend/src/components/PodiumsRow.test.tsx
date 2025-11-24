@@ -1,44 +1,48 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '../test/test-utils';
-import { PodiumsRow } from './PodiumsRow';
-import type { ContestantWithPlayer, BidWithPlayer } from '../store/gameStore';
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "../test/test-utils";
+import userEvent from "@testing-library/user-event";
+import { PodiumsRow } from "./PodiumsRow";
+import type { ContestantWithPlayer, BidWithPlayer } from "../store/gameStore";
 
-describe('PodiumsRow', () => {
-  const createMockContestant = (position: number, status = 'active'): ContestantWithPlayer => ({
+describe("PodiumsRow", () => {
+  const createMockContestant = (
+    position: number,
+    status = "active",
+  ): ContestantWithPlayer => ({
     id: position,
     player_id: position + 100,
     position,
-    game_segment: 'section_1',
+    game_segment: "section_1",
     status,
     added_at: `2024-01-01T00:0${position}:00Z`,
-    revealed_at: status === 'active' ? `2024-01-01T00:0${position}:30Z` : null,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
+    revealed_at: status === "active" ? `2024-01-01T00:0${position}:30Z` : null,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
     first_name: `Player${position}`,
-    last_name: 'Test',
+    last_name: "Test",
     photo_filename: `player${position}.jpg`,
-    role: 'player',
+    role: "player",
   });
 
   const createMockBid = (position: number, amount: number): BidWithPlayer => ({
     id: position,
     player_id: position + 100,
-    product_id: 'test-product',
+    product_id: "test-product",
     round_number: 1,
-    game_segment: 'section_1',
+    game_segment: "section_1",
     bid_amount: amount,
     is_locked: 1,
     is_winner: 0,
     retry_number: 0,
     created_at: `2024-01-01T00:1${position}:00Z`,
     first_name: `Player${position}`,
-    last_name: 'Test',
+    last_name: "Test",
     photo_filename: `player${position}.jpg`,
     position,
   });
 
-  describe('Rendering', () => {
-    it('should render 5 podium positions', () => {
+  describe("Rendering", () => {
+    it("should render 5 podium positions", () => {
       render(
         <PodiumsRow
           contestants={[]}
@@ -49,7 +53,7 @@ describe('PodiumsRow', () => {
         />,
       );
 
-      expect(screen.getByTestId('podiums-row')).toBeInTheDocument();
+      expect(screen.getByTestId("podiums-row")).toBeInTheDocument();
 
       // All 5 positions should be rendered (empty in this case)
       for (let i = 1; i <= 5; i++) {
@@ -57,7 +61,7 @@ describe('PodiumsRow', () => {
       }
     });
 
-    it('should render contestants at their positions', () => {
+    it("should render contestants at their positions", () => {
       const contestants = [
         createMockContestant(1),
         createMockContestant(2),
@@ -75,29 +79,29 @@ describe('PodiumsRow', () => {
       );
 
       // Positions 1-3 should show contestants
-      expect(screen.getByTestId('podium-1')).toBeInTheDocument();
-      expect(screen.getByTestId('podium-2')).toBeInTheDocument();
-      expect(screen.getByTestId('podium-3')).toBeInTheDocument();
+      expect(screen.getByTestId("podium-1")).toBeInTheDocument();
+      expect(screen.getByTestId("podium-2")).toBeInTheDocument();
+      expect(screen.getByTestId("podium-3")).toBeInTheDocument();
 
       // Positions 4-5 should be empty
-      expect(screen.getByTestId('podium-4-empty')).toBeInTheDocument();
-      expect(screen.getByTestId('podium-5-empty')).toBeInTheDocument();
+      expect(screen.getByTestId("podium-4-empty")).toBeInTheDocument();
+      expect(screen.getByTestId("podium-5-empty")).toBeInTheDocument();
 
       // Check contestant names are displayed
-      expect(screen.getByText('Player1')).toBeInTheDocument();
-      expect(screen.getByText('Player2')).toBeInTheDocument();
-      expect(screen.getByText('Player3')).toBeInTheDocument();
+      expect(screen.getByText("Player1")).toBeInTheDocument();
+      expect(screen.getByText("Player2")).toBeInTheDocument();
+      expect(screen.getByText("Player3")).toBeInTheDocument();
     });
   });
 
-  describe('Contestant Reveal Order', () => {
-    it('should show reveal button on leftmost pending contestant', () => {
+  describe("Contestant Reveal Order", () => {
+    it("should show reveal button on leftmost pending contestant", () => {
       const contestants = [
-        createMockContestant(1, 'active'),
-        createMockContestant(2, 'pending_reveal'),
-        createMockContestant(3, 'pending_reveal'),
-        createMockContestant(4, 'pending_reveal'),
-        createMockContestant(5, 'pending_reveal'),
+        createMockContestant(1, "active"),
+        createMockContestant(2, "pending_reveal"),
+        createMockContestant(3, "pending_reveal"),
+        createMockContestant(4, "pending_reveal"),
+        createMockContestant(5, "pending_reveal"),
       ];
 
       const onRevealContestant = vi.fn();
@@ -114,20 +118,28 @@ describe('PodiumsRow', () => {
       );
 
       // Only position 2 (leftmost pending) should have reveal button
-      expect(screen.queryByTestId('reveal-contestant-1')).not.toBeInTheDocument();
-      expect(screen.getByTestId('reveal-contestant-2')).toBeInTheDocument();
-      expect(screen.queryByTestId('reveal-contestant-3')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('reveal-contestant-4')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('reveal-contestant-5')).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("reveal-contestant-1"),
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("reveal-contestant-2")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("reveal-contestant-3"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("reveal-contestant-4"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("reveal-contestant-5"),
+      ).not.toBeInTheDocument();
     });
 
-    it('should move reveal button to next pending after revealing', () => {
+    it("should move reveal button to next pending after revealing", () => {
       const contestants = [
-        createMockContestant(1, 'active'),
-        createMockContestant(2, 'active'),
-        createMockContestant(3, 'active'),
-        createMockContestant(4, 'pending_reveal'),
-        createMockContestant(5, 'pending_reveal'),
+        createMockContestant(1, "active"),
+        createMockContestant(2, "active"),
+        createMockContestant(3, "active"),
+        createMockContestant(4, "pending_reveal"),
+        createMockContestant(5, "pending_reveal"),
       ];
 
       const onRevealContestant = vi.fn();
@@ -144,17 +156,19 @@ describe('PodiumsRow', () => {
       );
 
       // Position 4 (leftmost pending) should have reveal button
-      expect(screen.getByTestId('reveal-contestant-4')).toBeInTheDocument();
-      expect(screen.queryByTestId('reveal-contestant-5')).not.toBeInTheDocument();
+      expect(screen.getByTestId("reveal-contestant-4")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("reveal-contestant-5"),
+      ).not.toBeInTheDocument();
     });
 
-    it('should not show any reveal button when all revealed', () => {
+    it("should not show any reveal button when all revealed", () => {
       const contestants = [
-        createMockContestant(1, 'active'),
-        createMockContestant(2, 'active'),
-        createMockContestant(3, 'active'),
-        createMockContestant(4, 'active'),
-        createMockContestant(5, 'active'),
+        createMockContestant(1, "active"),
+        createMockContestant(2, "active"),
+        createMockContestant(3, "active"),
+        createMockContestant(4, "active"),
+        createMockContestant(5, "active"),
       ];
 
       render(
@@ -169,13 +183,15 @@ describe('PodiumsRow', () => {
 
       // No reveal buttons should be present
       for (let i = 1; i <= 5; i++) {
-        expect(screen.queryByTestId(`reveal-contestant-${i}`)).not.toBeInTheDocument();
+        expect(
+          screen.queryByTestId(`reveal-contestant-${i}`),
+        ).not.toBeInTheDocument();
       }
     });
   });
 
-  describe('Bidding Display', () => {
-    it('should display bids at correct positions', () => {
+  describe("Bidding Display", () => {
+    it("should display bids at correct positions", () => {
       const contestants = [
         createMockContestant(1),
         createMockContestant(2),
@@ -195,15 +211,15 @@ describe('PodiumsRow', () => {
       );
 
       // Positions 1 and 2 should show bids
-      expect(screen.getByTestId('bid-amount-1')).toHaveTextContent('4');
-      expect(screen.getByTestId('bid-amount-2')).toHaveTextContent('5');
+      expect(screen.getByTestId("bid-amount-1")).toHaveTextContent("4");
+      expect(screen.getByTestId("bid-amount-2")).toHaveTextContent("5");
 
       // Position 3 should show no bid (---)
-      const display3 = screen.getByTestId('digital-display-3');
-      expect(display3).toHaveTextContent('---');
+      const display3 = screen.getByTestId("digital-display-3");
+      expect(display3).toHaveTextContent("---");
     });
 
-    it('should match bids to contestants by player_id', () => {
+    it("should match bids to contestants by player_id", () => {
       // Contestants at positions 1, 3, 5
       const contestants = [
         createMockContestant(1), // player_id: 101
@@ -228,19 +244,19 @@ describe('PodiumsRow', () => {
       );
 
       // Position 1 should have bid
-      expect(screen.getByTestId('bid-amount-1')).toHaveTextContent('4');
+      expect(screen.getByTestId("bid-amount-1")).toHaveTextContent("4");
 
       // Position 3 should have no bid
-      const display3 = screen.getByTestId('digital-display-3');
-      expect(display3).toHaveTextContent('---');
+      const display3 = screen.getByTestId("digital-display-3");
+      expect(display3).toHaveTextContent("---");
 
       // Position 5 should have bid
-      expect(screen.getByTestId('bid-amount-5')).toHaveTextContent('6');
+      expect(screen.getByTestId("bid-amount-5")).toHaveTextContent("6");
     });
   });
 
-  describe('Current Bidder Indication', () => {
-    it('should mark correct podium as current bidder', () => {
+  describe("Current Bidder Indication", () => {
+    it("should mark correct podium as current bidder", () => {
       const contestants = [
         createMockContestant(1),
         createMockContestant(2),
@@ -259,20 +275,24 @@ describe('PodiumsRow', () => {
         />,
       );
 
-      const podium2 = screen.getByTestId('podium-2');
-      expect(podium2).toHaveAttribute('data-current', 'true');
+      const podium2 = screen.getByTestId("podium-2");
+      expect(podium2).toHaveAttribute("data-current", "true");
     });
   });
 
-  describe('Winner Display', () => {
-    it('should mark correct podium as winner', () => {
+  describe("Winner Display", () => {
+    it("should mark correct podium as winner", () => {
       const contestants = [
         createMockContestant(1),
         createMockContestant(2),
         createMockContestant(3),
       ];
 
-      const bids = [createMockBid(1, 4), createMockBid(2, 5), createMockBid(3, 3)];
+      const bids = [
+        createMockBid(1, 4),
+        createMockBid(2, 5),
+        createMockBid(3, 3),
+      ];
 
       render(
         <PodiumsRow
@@ -284,16 +304,16 @@ describe('PodiumsRow', () => {
         />,
       );
 
-      const podium2 = screen.getByTestId('podium-2');
-      expect(podium2).toHaveAttribute('data-winner', 'true');
+      const podium2 = screen.getByTestId("podium-2");
+      expect(podium2).toHaveAttribute("data-winner", "true");
 
       // Winner label should be visible
-      expect(screen.getByTestId('winner-label-2')).toBeInTheDocument();
+      expect(screen.getByTestId("winner-label-2")).toBeInTheDocument();
     });
   });
 
-  describe('Props Propagation', () => {
-    it('should pass allContestantsRevealed to all podiums', () => {
+  describe("Props Propagation", () => {
+    it("should pass allContestantsRevealed to all podiums", () => {
       const contestants = [createMockContestant(1), createMockContestant(2)];
 
       render(
@@ -310,10 +330,10 @@ describe('PodiumsRow', () => {
 
       // When all contestants revealed and product shown,
       // current bidder should show input
-      expect(screen.getByTestId('bid-input-1')).toBeInTheDocument();
+      expect(screen.getByTestId("bid-input-1")).toBeInTheDocument();
     });
 
-    it('should prevent bid input when product not shown', () => {
+    it("should prevent bid input when product not shown", () => {
       const contestants = [createMockContestant(1)];
 
       render(
@@ -329,12 +349,12 @@ describe('PodiumsRow', () => {
       );
 
       // Should not show input when product not shown
-      expect(screen.queryByTestId('bid-input-1')).not.toBeInTheDocument();
+      expect(screen.queryByTestId("bid-input-1")).not.toBeInTheDocument();
     });
   });
 
-  describe('Bid Matching Edge Cases (Critical)', () => {
-    it('should handle bid with no matching contestant', () => {
+  describe("Bid Matching Edge Cases (Critical)", () => {
+    it("should handle bid with no matching contestant", () => {
       const contestants = [
         createMockContestant(1), // player_id: 101
       ];
@@ -354,15 +374,15 @@ describe('PodiumsRow', () => {
       );
 
       // Position 1 should show contestant but no bid (---)
-      expect(screen.getByText('Player1')).toBeInTheDocument();
-      const display1 = screen.getByTestId('digital-display-1');
-      expect(display1).toHaveTextContent('---');
+      expect(screen.getByText("Player1")).toBeInTheDocument();
+      const display1 = screen.getByTestId("digital-display-1");
+      expect(display1).toHaveTextContent("---");
 
       // Position 2 should be empty
-      expect(screen.getByTestId('podium-2-empty')).toBeInTheDocument();
+      expect(screen.getByTestId("podium-2-empty")).toBeInTheDocument();
     });
 
-    it('should handle contestant at non-sequential positions', () => {
+    it("should handle contestant at non-sequential positions", () => {
       const contestants = [
         createMockContestant(1), // player_id: 101
         createMockContestant(3), // player_id: 103
@@ -382,24 +402,24 @@ describe('PodiumsRow', () => {
       );
 
       // Position 1 should have bid
-      expect(screen.getByTestId('bid-amount-1')).toHaveTextContent('4');
+      expect(screen.getByTestId("bid-amount-1")).toHaveTextContent("4");
 
       // Position 2 should be empty
-      expect(screen.getByTestId('podium-2-empty')).toBeInTheDocument();
+      expect(screen.getByTestId("podium-2-empty")).toBeInTheDocument();
 
       // Position 3 should have contestant but no bid
-      expect(screen.getByText('Player3')).toBeInTheDocument();
-      const display3 = screen.getByTestId('digital-display-3');
-      expect(display3).toHaveTextContent('---');
+      expect(screen.getByText("Player3")).toBeInTheDocument();
+      const display3 = screen.getByTestId("digital-display-3");
+      expect(display3).toHaveTextContent("---");
 
       // Position 4 should be empty
-      expect(screen.getByTestId('podium-4-empty')).toBeInTheDocument();
+      expect(screen.getByTestId("podium-4-empty")).toBeInTheDocument();
 
       // Position 5 should have bid
-      expect(screen.getByTestId('bid-amount-5')).toHaveTextContent('6');
+      expect(screen.getByTestId("bid-amount-5")).toHaveTextContent("6");
     });
 
-    it('should display duplicate bid amounts at different positions', () => {
+    it("should display duplicate bid amounts at different positions", () => {
       const contestants = [
         createMockContestant(1),
         createMockContestant(2),
@@ -423,20 +443,20 @@ describe('PodiumsRow', () => {
       );
 
       // Both should display (backend should reject, but UI shows)
-      expect(screen.getByTestId('bid-amount-1')).toHaveTextContent('4');
-      expect(screen.getByTestId('bid-amount-2')).toHaveTextContent('4');
-      expect(screen.getByTestId('bid-amount-3')).toHaveTextContent('5');
+      expect(screen.getByTestId("bid-amount-1")).toHaveTextContent("4");
+      expect(screen.getByTestId("bid-amount-2")).toHaveTextContent("4");
+      expect(screen.getByTestId("bid-amount-3")).toHaveTextContent("5");
     });
   });
 
-  describe('Reveal Order Edge Cases (Critical)', () => {
-    it('should show reveal on position 1 when all pending', () => {
+  describe("Reveal Order Edge Cases (Critical)", () => {
+    it("should show reveal on position 1 when all pending", () => {
       const contestants = [
-        createMockContestant(1, 'pending_reveal'),
-        createMockContestant(2, 'pending_reveal'),
-        createMockContestant(3, 'pending_reveal'),
-        createMockContestant(4, 'pending_reveal'),
-        createMockContestant(5, 'pending_reveal'),
+        createMockContestant(1, "pending_reveal"),
+        createMockContestant(2, "pending_reveal"),
+        createMockContestant(3, "pending_reveal"),
+        createMockContestant(4, "pending_reveal"),
+        createMockContestant(5, "pending_reveal"),
       ];
 
       const onRevealContestant = vi.fn();
@@ -453,14 +473,22 @@ describe('PodiumsRow', () => {
       );
 
       // Should show reveal button on position 1 (leftmost)
-      expect(screen.getByTestId('reveal-contestant-1')).toBeInTheDocument();
-      expect(screen.queryByTestId('reveal-contestant-2')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('reveal-contestant-3')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('reveal-contestant-4')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('reveal-contestant-5')).not.toBeInTheDocument();
+      expect(screen.getByTestId("reveal-contestant-1")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("reveal-contestant-2"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("reveal-contestant-3"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("reveal-contestant-4"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("reveal-contestant-5"),
+      ).not.toBeInTheDocument();
     });
 
-    it('should handle empty contestants array', () => {
+    it("should handle empty contestants array", () => {
       render(
         <PodiumsRow
           contestants={[]}
@@ -477,7 +505,7 @@ describe('PodiumsRow', () => {
       }
     });
 
-    it('should handle only one contestant', () => {
+    it("should handle only one contestant", () => {
       const contestants = [
         createMockContestant(3), // Only position 3
       ];
@@ -493,21 +521,21 @@ describe('PodiumsRow', () => {
       );
 
       // Positions 1, 2 should be empty
-      expect(screen.getByTestId('podium-1-empty')).toBeInTheDocument();
-      expect(screen.getByTestId('podium-2-empty')).toBeInTheDocument();
+      expect(screen.getByTestId("podium-1-empty")).toBeInTheDocument();
+      expect(screen.getByTestId("podium-2-empty")).toBeInTheDocument();
 
       // Position 3 should have contestant
-      expect(screen.getByTestId('podium-3')).toBeInTheDocument();
-      expect(screen.getByText('Player3')).toBeInTheDocument();
+      expect(screen.getByTestId("podium-3")).toBeInTheDocument();
+      expect(screen.getByText("Player3")).toBeInTheDocument();
 
       // Positions 4, 5 should be empty
-      expect(screen.getByTestId('podium-4-empty')).toBeInTheDocument();
-      expect(screen.getByTestId('podium-5-empty')).toBeInTheDocument();
+      expect(screen.getByTestId("podium-4-empty")).toBeInTheDocument();
+      expect(screen.getByTestId("podium-5-empty")).toBeInTheDocument();
     });
   });
 
-  describe('Current Bidder and Winner Edge Cases (Critical)', () => {
-    it('should handle currentBidderPosition out of range (too high)', () => {
+  describe("Current Bidder and Winner Edge Cases (Critical)", () => {
+    it("should handle currentBidderPosition out of range (too high)", () => {
       const contestants = [createMockContestant(1), createMockContestant(2)];
 
       render(
@@ -523,11 +551,11 @@ describe('PodiumsRow', () => {
       );
 
       // Should not crash, no podium should be marked as current
-      expect(screen.queryByTestId('bid-input-1')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('bid-input-2')).not.toBeInTheDocument();
+      expect(screen.queryByTestId("bid-input-1")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("bid-input-2")).not.toBeInTheDocument();
     });
 
-    it('should handle currentBidderPosition at zero', () => {
+    it("should handle currentBidderPosition at zero", () => {
       const contestants = [createMockContestant(1)];
 
       render(
@@ -543,10 +571,10 @@ describe('PodiumsRow', () => {
       );
 
       // Should not crash
-      expect(screen.queryByTestId('bid-input-1')).not.toBeInTheDocument();
+      expect(screen.queryByTestId("bid-input-1")).not.toBeInTheDocument();
     });
 
-    it('should handle currentBidderPosition at empty position', () => {
+    it("should handle currentBidderPosition at empty position", () => {
       const contestants = [createMockContestant(1), createMockContestant(3)];
 
       render(
@@ -562,11 +590,11 @@ describe('PodiumsRow', () => {
       );
 
       // Position 2 should be empty, no input shown
-      expect(screen.getByTestId('podium-2-empty')).toBeInTheDocument();
-      expect(screen.queryByTestId('bid-input-2')).not.toBeInTheDocument();
+      expect(screen.getByTestId("podium-2-empty")).toBeInTheDocument();
+      expect(screen.queryByTestId("bid-input-2")).not.toBeInTheDocument();
     });
 
-    it('should handle winnerPosition out of range', () => {
+    it("should handle winnerPosition out of range", () => {
       const contestants = [createMockContestant(1), createMockContestant(2)];
 
       render(
@@ -580,11 +608,11 @@ describe('PodiumsRow', () => {
       );
 
       // Should not crash, no podium should be marked as winner
-      expect(screen.queryByTestId('winner-label-1')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('winner-label-2')).not.toBeInTheDocument();
+      expect(screen.queryByTestId("winner-label-1")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("winner-label-2")).not.toBeInTheDocument();
     });
 
-    it('should handle winnerPosition at empty position', () => {
+    it("should handle winnerPosition at empty position", () => {
       const contestants = [createMockContestant(1), createMockContestant(3)];
 
       render(
@@ -598,19 +626,21 @@ describe('PodiumsRow', () => {
       );
 
       // Position 2 is empty, no winner display
-      expect(screen.getByTestId('podium-2-empty')).toBeInTheDocument();
-      expect(screen.queryByTestId('winner-label-2')).not.toBeInTheDocument();
+      expect(screen.getByTestId("podium-2-empty")).toBeInTheDocument();
+      expect(screen.queryByTestId("winner-label-2")).not.toBeInTheDocument();
     });
   });
 
-  describe('Props Propagation to All Podiums (Critical)', () => {
-    it('should pass all callbacks to all 5 podiums', () => {
+  describe("Props Propagation to All Podiums (Critical)", () => {
+    it("should pass all callbacks to all 5 podiums", async () => {
       const contestants = [createMockContestant(1), createMockContestant(2)];
 
       const onBidSubmit = vi.fn();
       const onUpdateBid = vi.fn();
       const onRevealContestant = vi.fn();
-      const onReplaceContestant = vi.fn();
+      const onReplaceRandom = vi.fn();
+      const onReplaceManual = vi.fn();
+      const user = userEvent.setup();
 
       render(
         <PodiumsRow
@@ -619,24 +649,29 @@ describe('PodiumsRow', () => {
           currentBidderPosition={null}
           winnerPosition={null}
           role="host"
+          canReplaceContestants={true}
           onBidSubmit={onBidSubmit}
           onUpdateBid={onUpdateBid}
           onRevealContestant={onRevealContestant}
-          onReplaceContestant={onReplaceContestant}
+          onReplaceContestantRandom={onReplaceRandom}
+          onReplaceContestantManual={onReplaceManual}
         />,
       );
 
-      // Verify callbacks work by checking replace buttons exist for contestants
-      expect(screen.getByTestId('replace-contestant-1')).toBeInTheDocument();
-      expect(screen.getByTestId('replace-contestant-2')).toBeInTheDocument();
+      // Verify callbacks work by checking manage buttons exist for contestants
+      expect(screen.getByTestId("manage-contestant-1")).toBeInTheDocument();
+      expect(screen.getByTestId("manage-contestant-2")).toBeInTheDocument();
 
-      // Click one to verify callback is wired
-      fireEvent.click(screen.getByTestId('replace-contestant-1'));
-      expect(onReplaceContestant).toHaveBeenCalledWith(1);
+      // Click menu to open it
+      await user.click(screen.getByTestId("manage-contestant-1"));
+
+      // Click replace option
+      await user.click(screen.getByText("Replace with Random"));
+      expect(onReplaceRandom).toHaveBeenCalledWith(contestants[0].id);
     });
 
-    it('should handle undefined callbacks gracefully', () => {
-      const contestants = [createMockContestant(1, 'active')];
+    it("should handle undefined callbacks gracefully", () => {
+      const contestants = [createMockContestant(1, "active")];
 
       // Should not crash with no callbacks
       expect(() => {

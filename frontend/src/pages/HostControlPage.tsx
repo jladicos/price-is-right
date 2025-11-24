@@ -1,12 +1,21 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button, Card, Container, Heading, Stack, Text, HStack, VStack } from '@chakra-ui/react';
-import { useGameState } from '../hooks/useGameState';
-import { useGameStore, type ContestantWithPlayer } from '../store/gameStore';
-import { showToast } from '../utils/toast';
-import { ManualSelectContestantModal } from '../components/ManualSelectContestantModal';
-import { ReplaceContestantModal } from '../components/ReplaceContestantModal';
-import { StartGameConfirmModal } from '../components/StartGameConfirmModal';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Button,
+  Card,
+  Container,
+  Heading,
+  Stack,
+  Text,
+  HStack,
+  VStack,
+} from "@chakra-ui/react";
+import { useGameState } from "../hooks/useGameState";
+import { useGameStore, type ContestantWithPlayer } from "../store/gameStore";
+import { showToast } from "../utils/toast";
+import { ManualSelectContestantModal } from "../components/ManualSelectContestantModal";
+import { ReplaceContestantModal } from "../components/ReplaceContestantModal";
+import { StartGameConfirmModal } from "../components/StartGameConfirmModal";
 
 export default function HostControlPage() {
   const navigate = useNavigate();
@@ -30,12 +39,13 @@ export default function HostControlPage() {
   const [isStartGameModalOpen, setIsStartGameModalOpen] = useState(false);
   const [isManualSelectOpen, setIsManualSelectOpen] = useState(false);
   const [isReplaceModalOpen, setIsReplaceModalOpen] = useState(false);
-  const [contestantToReplace, setContestantToReplace] = useState<ContestantWithPlayer | null>(null);
+  const [contestantToReplace, setContestantToReplace] =
+    useState<ContestantWithPlayer | null>(null);
 
   const handleStartNewGameClick = () => {
     // Check if there's a game in progress
     const workflow = gameState?.workflow;
-    const hasGameInProgress = workflow && workflow.phase_type !== 'not_started';
+    const hasGameInProgress = workflow && workflow.phase_type !== "not_started";
 
     if (hasGameInProgress) {
       // Show confirmation modal if game is in progress
@@ -53,9 +63,10 @@ export default function HostControlPage() {
       await startNewGame();
     } catch (err) {
       showToast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'Failed to start game',
-        type: 'error',
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to start game",
+        type: "error",
       });
     } finally {
       setIsStarting(false);
@@ -68,9 +79,10 @@ export default function HostControlPage() {
       await advancePhase();
     } catch (err) {
       showToast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'Failed to advance phase',
-        type: 'error',
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to advance phase",
+        type: "error",
       });
     } finally {
       setIsAdvancing(false);
@@ -83,9 +95,10 @@ export default function HostControlPage() {
       await revealContestant(contestantRowId);
     } catch (err) {
       showToast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'Failed to reveal contestant',
-        type: 'error',
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to reveal contestant",
+        type: "error",
       });
     } finally {
       setRevealingId(null);
@@ -97,7 +110,11 @@ export default function HostControlPage() {
     setIsReplaceModalOpen(true);
   };
 
-  const handleManualSelectConfirm = async (playerId: number, position: number, segment: string) => {
+  const handleManualSelectConfirm = async (
+    playerId: number,
+    position: number,
+    segment: string,
+  ) => {
     // Use the new manual select endpoint that handles both empty and occupied positions
     await manualSelectContestant(playerId, position, segment);
   };
@@ -106,25 +123,36 @@ export default function HostControlPage() {
     await replaceContestantRandom(contestantRowId);
   };
 
-  const handleReplaceManualConfirm = async (contestantRowId: number, newPlayerId: number) => {
+  const handleReplaceManualConfirm = async (
+    contestantRowId: number,
+    newPlayerId: number,
+  ) => {
     await replaceContestantManual(contestantRowId, newPlayerId);
   };
 
   const handleRefreshRow = async () => {
-    if (!confirm('Refresh all 5 contestants? This will replace everyone in the row.')) {
+    if (
+      !confirm(
+        "Refresh all 5 contestants? This will replace everyone in the row.",
+      )
+    ) {
       return;
     }
 
-    const segment = gameState?.workflow.current_segment === 'section_2' ? 'section_2' : 'section_1';
+    const segment =
+      gameState?.workflow.current_segment === "section_2"
+        ? "section_2"
+        : "section_1";
 
     setIsRefreshing(true);
     try {
       await refreshContestantsRow(segment);
     } catch (err) {
       showToast({
-        title: 'Error',
-        description: err instanceof Error ? err.message : 'Failed to refresh row',
-        type: 'error',
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Failed to refresh row",
+        type: "error",
       });
     } finally {
       setIsRefreshing(false);
@@ -138,7 +166,7 @@ export default function HostControlPage() {
           {/* Header */}
           <HStack justify="space-between">
             <Heading size="lg">Host Game Control</Heading>
-            <Button variant="outline" onClick={() => navigate('/welcome')}>
+            <Button variant="outline" onClick={() => navigate("/welcome")}>
               Back to Welcome
             </Button>
           </HStack>
@@ -167,7 +195,7 @@ export default function HostControlPage() {
         {/* Header */}
         <HStack justify="space-between">
           <Heading size="lg">Host Game Control</Heading>
-          <Button variant="outline" onClick={() => navigate('/welcome')}>
+          <Button variant="outline" onClick={() => navigate("/welcome")}>
             Back to Welcome
           </Button>
         </HStack>
@@ -177,13 +205,15 @@ export default function HostControlPage() {
           <Card.Body>
             <VStack align="start" gap={2}>
               <Text>
-                <strong>Current Phase:</strong> {workflow?.phase_type || 'not_started'}
+                <strong>Current Phase:</strong>{" "}
+                {workflow?.phase_type || "not_started"}
               </Text>
               <Text>
-                <strong>Segment:</strong> {workflow?.current_segment || 'N/A'}
+                <strong>Segment:</strong> {workflow?.current_segment || "N/A"}
               </Text>
               <Text>
-                <strong>Segment Index:</strong> {workflow?.current_segment_index ?? 'N/A'}
+                <strong>Segment Index:</strong>{" "}
+                {workflow?.current_segment_index ?? "N/A"}
               </Text>
               <Text>
                 <strong>Eligible Audience:</strong> {eligibleCount}
@@ -215,12 +245,12 @@ export default function HostControlPage() {
               </Button>
               {!canStartGame && (
                 <Text fontSize="sm" color="orange.600">
-                  ⚠️ Cannot start game: Need at least 5 eligible audience members. Currently have{' '}
-                  {eligibleCount}. Add more players with the &quot;audience&quot; role from the
-                  Admin Tools page.
+                  ⚠️ Cannot start game: Need at least 5 eligible audience
+                  members. Currently have {eligibleCount}. Add more players with
+                  the &quot;audience&quot; role from the Admin Tools page.
                 </Text>
               )}
-              {workflow?.phase_type !== 'not_started' && (
+              {workflow?.phase_type !== "not_started" && (
                 <Text fontSize="sm" color="gray.500">
                   Game in progress - starting new game will reset everything
                 </Text>
@@ -233,7 +263,9 @@ export default function HostControlPage() {
         <Card.Root>
           <Card.Header>
             <HStack justify="space-between" flexWrap="wrap" gap={2}>
-              <Heading size="lg">Contestants Row ({contestants.length}/5)</Heading>
+              <Heading size="lg">
+                Contestants Row ({contestants.length}/5)
+              </Heading>
               <HStack gap={2}>
                 <Button
                   colorScheme="blue"
@@ -255,7 +287,9 @@ export default function HostControlPage() {
           </Card.Header>
           <Card.Body>
             {contestants.length === 0 ? (
-              <Text color="gray.500">No contestants selected yet. Start a new game to begin.</Text>
+              <Text color="gray.500">
+                No contestants selected yet. Start a new game to begin.
+              </Text>
             ) : (
               <VStack gap={4} align="stretch">
                 {contestants.map((contestant) => (
@@ -264,23 +298,29 @@ export default function HostControlPage() {
                       <HStack justify="space-between">
                         <VStack align="start" gap={1}>
                           <Text fontWeight="bold">
-                            Position {contestant.position}: {contestant.first_name}{' '}
-                            {contestant.last_name}
+                            Position {contestant.position}:{" "}
+                            {contestant.first_name} {contestant.last_name}
                           </Text>
                           <Text fontSize="sm" color="gray.600">
-                            Status: {contestant.status} | Role: {contestant.role}
+                            Status: {contestant.status} | Role:{" "}
+                            {contestant.role}
                           </Text>
                           {contestant.revealed_at && (
                             <Text fontSize="sm" color="green.600">
-                              Revealed at: {new Date(contestant.revealed_at).toLocaleTimeString()}
+                              Revealed at:{" "}
+                              {new Date(
+                                contestant.revealed_at,
+                              ).toLocaleTimeString()}
                             </Text>
                           )}
                         </VStack>
                         <HStack gap={2}>
-                          {contestant.status === 'pending_reveal' && (
+                          {contestant.status === "pending_reveal" && (
                             <Button
                               colorScheme="green"
-                              onClick={() => handleRevealContestant(contestant.id)}
+                              onClick={() =>
+                                handleRevealContestant(contestant.id)
+                              }
                               loading={revealingId === contestant.id}
                               disabled={isLoading}
                             >
@@ -306,7 +346,7 @@ export default function HostControlPage() {
         </Card.Root>
 
         {/* Phase Advancement */}
-        {workflow?.phase_type !== 'not_started' && (
+        {workflow?.phase_type !== "not_started" && (
           <Card.Root>
             <Card.Header>
               <Heading size="lg">Phase Control</Heading>
@@ -317,14 +357,15 @@ export default function HostControlPage() {
                 size="lg"
                 onClick={handleAdvancePhase}
                 loading={isAdvancing}
-                disabled={isLoading || workflow?.current_segment === 'finale'}
+                disabled={isLoading || workflow?.current_segment === "finale"}
               >
                 Advance to Next Phase
               </Button>
               <Text fontSize="sm" color="gray.500" mt={2}>
-                Current: {workflow?.current_segment} [{workflow?.current_segment_index}]
+                Current: {workflow?.current_segment} [
+                {workflow?.current_segment_index}]
               </Text>
-              {workflow?.current_segment === 'finale' && (
+              {workflow?.current_segment === "finale" && (
                 <Text fontSize="sm" color="green.600" mt={2} fontWeight="bold">
                   ✓ Game Complete - You are at the finale (showcase showdown)
                 </Text>
