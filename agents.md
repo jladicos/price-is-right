@@ -107,7 +107,17 @@ These constraints MUST be met regardless of implementation approach:
 
 ### Architecture
 - ✅ **Dockerized** - entire project runs via Docker Compose
-- ✅ **Container-only dependencies** - install libraries inside Docker images, not on the host (never run `npm install`, Homebrew, etc. on the maintainer’s machine without explicit approval)
+- ✅ **Container-only dependencies** - install libraries inside Docker images, not on the host (never run `npm install`, Homebrew, etc. on the maintainer's machine without explicit approval)
+
+### Testing
+- ✅ **Always run tests in Docker** - use `./scripts/test.sh` to run tests in the proper containerized environment
+- ✅ **Never run tests on host** - `npm test` on the host machine may have different dependencies, configurations, or missing environment variables
+- ✅ **Test each increment** - run `./scripts/test.sh` after implementing each feature to verify it works in the deployment environment
+- ✅ **Maintain test coverage** - every new feature must include comprehensive tests (aim for 100% coverage)
+- ✅ **Tests must pass before proceeding** - never move to the next step if tests are failing
+- ✅ **Use existing test patterns** - follow the project's established testing conventions (test-utils, mocks, etc.)
+
+**Rationale**: The Docker environment is the source of truth. Tests that pass on the host but fail in Docker are false positives. Always validate in the environment where the code will actually run.
 
 ### Code Quality
 - ✅ **Clear separation of concerns** (don't mix UI, business logic, and data access)
@@ -197,7 +207,7 @@ These constraints MUST be met regardless of implementation approach:
   ### During Implementation
   
   - **Stay focused** on the current increment
-  - **Test as you go** - don't wait until "finished"
+  - **Test as you go** - run `./scripts/test.sh` in Docker after each change, don't wait until "finished"
   - **Ask questions** when stuck or uncertain
   - **Document non-obvious decisions** in code comments
   - **Keep the developer informed** of progress

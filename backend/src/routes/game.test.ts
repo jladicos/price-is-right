@@ -2148,4 +2148,754 @@ describe("Game API Routes", () => {
       expect(response.statusCode).toBe(400);
     });
   });
+
+  describe("POST /api/game/wheel-start", () => {
+    it("should start wheel phase successfully", async () => {
+      // Setup: Start game and create bidding winner
+      await app.inject({
+        method: "POST",
+        url: "/api/game/start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      // Reveal first contestant to make them active (eligible spinner)
+      const contestant = db
+        .prepare(
+          "SELECT id FROM contestants_row WHERE game_segment = 'section_1' LIMIT 1",
+        )
+        .get() as { id: number };
+
+      await app.inject({
+        method: "POST",
+        url: "/api/game/reveal-contestant",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          contestantRowId: contestant.id,
+        },
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.workflow).toBeDefined();
+      expect(body.workflow.phase_type).toBe("wheel");
+      expect(body.state).toBeDefined();
+      expect(body.state.workflow.phase_type).toBe("wheel");
+    });
+
+    it("should require authentication", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start",
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should require host role", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start",
+        headers: {
+          Authorization: `Bearer ${playerToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it("should validate gameSegment is required", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {},
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain("gameSegment");
+    });
+
+    it("should fail if game not started", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain("not started");
+    });
+
+    it("should fail if no eligible spinners", async () => {
+      // Start game and manually set phase to something other than not_started
+      // to pass the validation, but don't create any contestants
+      await app.inject({
+        method: "POST",
+        url: "/api/game/start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      // Delete all contestants to simulate no eligible spinners
+      db.prepare("DELETE FROM contestants_row").run();
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain("No eligible spinners");
+    });
+  });
+
+  describe("POST /api/game/wheel-spin", () => {
+    let winnerId: number;
+
+    beforeEach(async () => {
+      // Setup: Start game, reveal contestant, start wheel phase
+      await app.inject({
+        method: "POST",
+        url: "/api/game/start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      const contestantRow = db
+        .prepare(
+          "SELECT id, player_id FROM contestants_row WHERE game_segment = 'section_1' LIMIT 1",
+        )
+        .get() as { id: number; player_id: number };
+
+      winnerId = contestantRow.player_id;
+
+      // Reveal contestant to make them active
+      await app.inject({
+        method: "POST",
+        url: "/api/game/reveal-contestant",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          contestantRowId: contestantRow.id,
+        },
+      });
+
+      await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+    });
+
+    it("should process wheel spin successfully", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-spin",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.spin).toBeDefined();
+      expect(body.spin.result).toBeGreaterThanOrEqual(0.05);
+      expect(body.spin.result).toBeLessThanOrEqual(1.0);
+      expect(body.total).toBe(body.spin.result);
+      expect(typeof body.eliminated).toBe("boolean");
+      expect(body.state).toBeDefined();
+    });
+
+    it("should require authentication", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-spin",
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should allow player to spin", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-spin",
+        headers: {
+          Authorization: `Bearer ${playerToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+    });
+
+    it("should validate playerId is required", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-spin",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain("playerId");
+    });
+
+    it("should validate gameSegment is required", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-spin",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain("gameSegment");
+    });
+
+    it("should fail if phase is not wheel", async () => {
+      // Override phase back to bidding
+      db.prepare(
+        "UPDATE game_workflow SET phase_type = 'bidding', phase_metadata = NULL",
+      ).run();
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-spin",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+    });
+
+    it("should handle player elimination on going over", async () => {
+      // Force a spin that goes over 1.00
+      db.prepare(
+        "INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number) VALUES (?, ?, ?, ?, ?)",
+      ).run(winnerId, "section_1", 1, 0.95, 0);
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-spin",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.total).toBeGreaterThan(1.0);
+      expect(body.eliminated).toBe(true);
+    });
+  });
+
+  describe("POST /api/game/wheel-stay", () => {
+    let winnerId: number;
+
+    beforeEach(async () => {
+      // Setup: Start game, reveal contestant, start wheel phase
+      await app.inject({
+        method: "POST",
+        url: "/api/game/start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      const contestantRow = db
+        .prepare(
+          "SELECT id, player_id FROM contestants_row WHERE game_segment = 'section_1' LIMIT 1",
+        )
+        .get() as { id: number; player_id: number };
+
+      winnerId = contestantRow.player_id;
+
+      // Reveal contestant to make them active
+      await app.inject({
+        method: "POST",
+        url: "/api/game/reveal-contestant",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          contestantRowId: contestantRow.id,
+        },
+      });
+
+      await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+
+      // Player spins once
+      await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-spin",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+    });
+
+    it("should complete player turn successfully", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-stay",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(typeof body.allPlayersFinished).toBe("boolean");
+      expect(typeof body.needsSpinoff).toBe("boolean");
+      expect(body.tiedPlayerIds).toBeInstanceOf(Array);
+      expect(body.state).toBeDefined();
+    });
+
+    it("should require authentication", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-stay",
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should allow player to stay", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-stay",
+        headers: {
+          Authorization: `Bearer ${playerToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+    });
+
+    it("should validate playerId is required", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-stay",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain("playerId");
+    });
+
+    it("should validate gameSegment is required", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-stay",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain("gameSegment");
+    });
+
+    it("should fail if phase is not wheel", async () => {
+      // Override phase back to bidding
+      db.prepare(
+        "UPDATE game_workflow SET phase_type = 'bidding', phase_metadata = NULL",
+      ).run();
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-stay",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+    });
+
+    it("should fail if player has no spins", async () => {
+      // Delete the spin we made in beforeEach
+      db.prepare("DELETE FROM wheel_spins WHERE player_id = ?").run(winnerId);
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-stay",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          playerId: winnerId,
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain("no spins");
+    });
+  });
+
+  describe("POST /api/game/wheel-start-spinoff", () => {
+    let winner1Id: number;
+    let winner2Id: number;
+
+    beforeEach(async () => {
+      // Setup: Start game, reveal two contestants, start wheel phase
+      await app.inject({
+        method: "POST",
+        url: "/api/game/start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      const contestants = db
+        .prepare(
+          "SELECT id, player_id FROM contestants_row WHERE game_segment = 'section_1' LIMIT 2",
+        )
+        .all() as { id: number; player_id: number }[];
+
+      winner1Id = contestants[0].player_id;
+      winner2Id = contestants[1].player_id;
+
+      // Reveal both contestants to make them active
+      await app.inject({
+        method: "POST",
+        url: "/api/game/reveal-contestant",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          contestantRowId: contestants[0].id,
+        },
+      });
+
+      await app.inject({
+        method: "POST",
+        url: "/api/game/reveal-contestant",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          contestantRowId: contestants[1].id,
+        },
+      });
+
+      await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+
+      // Create a tie scenario - both spin 0.50
+      db.prepare(
+        "INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number) VALUES (?, ?, ?, ?, ?)",
+      ).run(winner1Id, "section_1", 1, 0.50, 0);
+
+      db.prepare(
+        "INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number) VALUES (?, ?, ?, ?, ?)",
+      ).run(winner2Id, "section_1", 1, 0.50, 0);
+    });
+
+    it("should start spinoff successfully", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start-spinoff",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+          spinoffNumber: 1,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.workflow).toBeDefined();
+      expect(body.workflow.phase_type).toBe("wheel");
+      expect(body.state).toBeDefined();
+
+      // Verify metadata contains spinoff info
+      const metadata = JSON.parse(body.workflow.phase_metadata);
+      expect(metadata.spinoffNumber).toBe(1);
+      expect(metadata.tiedPlayerIds).toContain(winner1Id);
+      expect(metadata.tiedPlayerIds).toContain(winner2Id);
+    });
+
+    it("should require authentication", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start-spinoff",
+        payload: {
+          gameSegment: "section_1",
+          spinoffNumber: 1,
+        },
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should require host role", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start-spinoff",
+        headers: {
+          Authorization: `Bearer ${playerToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+          spinoffNumber: 1,
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it("should validate gameSegment is required", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start-spinoff",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          spinoffNumber: 1,
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain("gameSegment");
+    });
+
+    it("should validate spinoffNumber is required", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start-spinoff",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain("spinoffNumber");
+    });
+
+    it("should fail if phase is not wheel", async () => {
+      // Override phase back to bidding
+      db.prepare(
+        "UPDATE game_workflow SET phase_type = 'bidding', phase_metadata = NULL",
+      ).run();
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start-spinoff",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+          spinoffNumber: 1,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+    });
+
+    it("should fail if no tie exists", async () => {
+      // Delete one player's spin to remove tie
+      db.prepare("DELETE FROM wheel_spins WHERE player_id = ?").run(winner2Id);
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/wheel-start-spinoff",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+          "Content-Type": "application/json",
+        },
+        payload: {
+          gameSegment: "section_1",
+          spinoffNumber: 1,
+        },
+      });
+
+      expect(response.statusCode).toBe(500);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(false);
+      expect(body.error).toContain("no tie");
+    });
+  });
 });

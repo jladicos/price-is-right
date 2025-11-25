@@ -11,6 +11,10 @@ import {
   refreshContestantsRow,
   selectNextContestant,
   manualSelectContestant,
+  startWheelPhase,
+  processWheelSpin,
+  completePlayerWheelTurn,
+  startWheelSpinOff,
 } from "../services/game-state.js";
 import { updateGameWorkflow } from "../db/game-workflow.js";
 import { getGameStructure } from "../utils/products.js";
@@ -628,6 +632,210 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
           success: false,
           error:
             error instanceof Error ? error.message : "Failed to override phase",
+        });
+      }
+    },
+  );
+
+  /**
+   * POST /api/game/wheel-start
+   * Start the wheel phase for a game segment
+   * Validates eligible players exist, initializes wheel state
+   * Host only
+   */
+  fastify.post<{
+    Body: { gameSegment: string };
+  }>(
+    "/game/wheel-start",
+    {
+      preHandler: [authenticateRequest, requireHost],
+    },
+    async (request, reply) => {
+      try {
+        const { gameSegment } = request.body;
+
+        if (!gameSegment || typeof gameSegment !== "string") {
+          return reply.status(400).send({
+            success: false,
+            error: "gameSegment is required and must be a string",
+          });
+        }
+
+        const workflow = startWheelPhase(gameSegment);
+        const state = getCurrentState();
+
+        return reply.status(200).send({
+          success: true,
+          workflow,
+          state,
+        });
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to start wheel phase",
+        });
+      }
+    },
+  );
+
+  /**
+   * POST /api/game/wheel-spin
+   * Process a wheel spin for a player
+   * Records spin, calculates total, checks for elimination
+   * Authenticated users (player or host)
+   */
+  fastify.post<{
+    Body: { playerId: number; gameSegment: string };
+  }>(
+    "/game/wheel-spin",
+    {
+      preHandler: [authenticateRequest],
+    },
+    async (request, reply) => {
+      try {
+        const { playerId, gameSegment } = request.body;
+
+        if (!playerId || typeof playerId !== "number") {
+          return reply.status(400).send({
+            success: false,
+            error: "playerId is required and must be a number",
+          });
+        }
+
+        if (!gameSegment || typeof gameSegment !== "string") {
+          return reply.status(400).send({
+            success: false,
+            error: "gameSegment is required and must be a string",
+          });
+        }
+
+        const result = processWheelSpin(playerId, gameSegment);
+        const state = getCurrentState();
+
+        return reply.status(200).send({
+          success: true,
+          spin: result.spin,
+          total: result.total,
+          eliminated: result.eliminated,
+          state,
+        });
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to process wheel spin",
+        });
+      }
+    },
+  );
+
+  /**
+   * POST /api/game/wheel-stay
+   * Complete a player's wheel turn (they choose to stay)
+   * Checks if all players finished, detects ties, determines winner
+   * Authenticated users (player or host)
+   */
+  fastify.post<{
+    Body: { playerId: number; gameSegment: string };
+  }>(
+    "/game/wheel-stay",
+    {
+      preHandler: [authenticateRequest],
+    },
+    async (request, reply) => {
+      try {
+        const { playerId, gameSegment } = request.body;
+
+        if (!playerId || typeof playerId !== "number") {
+          return reply.status(400).send({
+            success: false,
+            error: "playerId is required and must be a number",
+          });
+        }
+
+        if (!gameSegment || typeof gameSegment !== "string") {
+          return reply.status(400).send({
+            success: false,
+            error: "gameSegment is required and must be a string",
+          });
+        }
+
+        const result = completePlayerWheelTurn(playerId, gameSegment);
+        const state = getCurrentState();
+
+        return reply.status(200).send({
+          success: true,
+          allPlayersFinished: result.allPlayersFinished,
+          needsSpinoff: result.needsSpinoff,
+          winnerId: result.winnerId,
+          tiedPlayerIds: result.tiedPlayerIds,
+          state,
+        });
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to complete player turn",
+        });
+      }
+    },
+  );
+
+  /**
+   * POST /api/game/wheel-start-spinoff
+   * Start a spinoff round for tied players
+   * Validates tie exists, initializes spinoff metadata
+   * Host only
+   */
+  fastify.post<{
+    Body: { gameSegment: string; spinoffNumber: number };
+  }>(
+    "/game/wheel-start-spinoff",
+    {
+      preHandler: [authenticateRequest, requireHost],
+    },
+    async (request, reply) => {
+      try {
+        const { gameSegment, spinoffNumber } = request.body;
+
+        if (!gameSegment || typeof gameSegment !== "string") {
+          return reply.status(400).send({
+            success: false,
+            error: "gameSegment is required and must be a string",
+          });
+        }
+
+        if (spinoffNumber === undefined || typeof spinoffNumber !== "number") {
+          return reply.status(400).send({
+            success: false,
+            error: "spinoffNumber is required and must be a number",
+          });
+        }
+
+        const workflow = startWheelSpinOff(gameSegment, spinoffNumber);
+        const state = getCurrentState();
+
+        return reply.status(200).send({
+          success: true,
+          workflow,
+          state,
+        });
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Failed to start spinoff",
         });
       }
     },

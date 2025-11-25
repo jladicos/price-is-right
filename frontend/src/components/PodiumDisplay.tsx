@@ -4,14 +4,13 @@ import {
   VStack,
   HStack,
   Text,
-  Image,
   Input,
   Button,
 } from "@chakra-ui/react";
 import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "./ui/menu";
+import { PlayerCard } from "./PlayerCard";
 import type { ContestantWithPlayer } from "../store/gameStore";
 import type { BidWithPlayer } from "../store/gameStore";
-import { getPlayerPhotoUrl } from "../utils/imageUrls";
 
 interface PodiumDisplayProps {
   position: number; // 1-5
@@ -214,7 +213,6 @@ export function PodiumDisplay({
   }
 
   // Revealed contestant
-  const photoUrl = getPlayerPhotoUrl(contestant.photo_filename);
   const isCurrentPlayer = currentPlayerId === contestant.player_id;
   const canInputBid =
     isCurrentBidder &&
@@ -320,20 +318,19 @@ export function PodiumDisplay({
           transform={isWinner ? "translateX(-50%)" : "none"}
           width={isWinner ? "240px" : "150px"}
           height={isWinner ? "240px" : "150px"}
-          borderRadius="md"
-          overflow="hidden"
-          border="3px solid"
-          borderColor={isWinner ? "green.500" : "gray.300"}
-          boxShadow={isWinner ? "0 0 20px rgba(34, 197, 94, 0.6)" : "sm"}
-          transition="all 0.3s ease"
           zIndex={isWinner ? 15 : 1}
         >
-          <Image
-            src={photoUrl}
-            alt={`${contestant.first_name} ${contestant.last_name}`}
-            width="100%"
-            height="100%"
-            objectFit="cover"
+          <PlayerCard
+            player={{
+              id: contestant.player_id,
+              first_name: contestant.first_name,
+              last_name: contestant.last_name,
+              photo_filename: contestant.photo_filename,
+            }}
+            size={isWinner ? "large" : "medium"}
+            showName={false} // Name handled separately above
+            badge={undefined} // Badge handled separately for winners
+            variant={isWinner ? "winner" : isCurrentBidder && allContestantsRevealed && productHasBeenShown ? "highlighted" : "default"}
           />
         </Box>
       </Box>
@@ -359,7 +356,7 @@ export function PodiumDisplay({
           borderRadius="lg"
           height="280px"
           border="3px solid"
-          borderColor={isWinner ? "green.600" : colors.primary}
+          borderColor={colors.primary}
           boxShadow="lg"
           display="flex"
           alignItems="flex-end"
