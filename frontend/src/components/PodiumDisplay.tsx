@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Box,
-  VStack,
-  HStack,
-  Text,
-  Input,
-  Button,
-} from "@chakra-ui/react";
+import { Box, VStack, HStack, Text, Input, Button } from "@chakra-ui/react";
 import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "./ui/menu";
 import { PlayerCard } from "./PlayerCard";
 import type { ContestantWithPlayer } from "../store/gameStore";
@@ -330,7 +323,15 @@ export function PodiumDisplay({
             size={isWinner ? "large" : "medium"}
             showName={false} // Name handled separately above
             badge={undefined} // Badge handled separately for winners
-            variant={isWinner ? "winner" : isCurrentBidder && allContestantsRevealed && productHasBeenShown ? "highlighted" : "default"}
+            variant={
+              isWinner
+                ? "winner"
+                : isCurrentBidder &&
+                    allContestantsRevealed &&
+                    productHasBeenShown
+                  ? "highlighted"
+                  : "default"
+            }
           />
         </Box>
       </Box>

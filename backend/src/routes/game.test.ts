@@ -2750,11 +2750,11 @@ describe("Game API Routes", () => {
       // Create a tie scenario - both spin 0.50
       db.prepare(
         "INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number) VALUES (?, ?, ?, ?, ?)",
-      ).run(winner1Id, "section_1", 1, 0.50, 0);
+      ).run(winner1Id, "section_1", 1, 0.5, 0);
 
       db.prepare(
         "INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number) VALUES (?, ?, ?, ?, ?)",
-      ).run(winner2Id, "section_1", 1, 0.50, 0);
+      ).run(winner2Id, "section_1", 1, 0.5, 0);
     });
 
     it("should start spinoff successfully", async () => {

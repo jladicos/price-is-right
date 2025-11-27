@@ -108,7 +108,7 @@ export function PlayerCard({
         >
           <Box
             position="absolute"
-            top="-45px"
+            top={showName ? "-80px" : "-45px"}
             left="50%"
             transform="translateX(-50%)"
             bg={

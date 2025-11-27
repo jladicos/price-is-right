@@ -131,6 +131,7 @@ export function getAllActiveContestants(): ContestantWithPlayer[] {
 /**
  * Reveal a contestant to the audience
  * Updates status to 'active' and sets revealed_at timestamp
+ * Also updates added_at to make this contestant the "most recent" for bidding order
  * NOTE: This does NOT update the player's role - that's done in the service layer
  */
 export function revealContestant(contestantId: number): Contestant {
@@ -140,6 +141,7 @@ export function revealContestant(contestantId: number): Contestant {
     UPDATE contestants_row
     SET status = 'active',
         revealed_at = datetime('now'),
+        added_at = datetime('now'),
         updated_at = datetime('now')
     WHERE id = ?
   `);
@@ -370,4 +372,157 @@ export function findNextEmptyPosition(_segment: string): number | null {
   }
 
   return null; // All positions filled
+}
+
+/**
+ * Copy contestants from one segment to another, excluding wheel participants
+ * Used when transitioning from wheel phase to next bidding segment
+ * (e.g., section_1_finale -> section_2)
+ *
+ * Only copies contestants who did NOT win bidding rounds (i.e., did not participate in the wheel).
+ * This preserves the 2-3 non-winners from section_1.
+ * Preserves added_at timestamp so bidding order logic works correctly.
+ *
+ * Also selects the next contestant from the audience and places them at the position
+ * of the last bidding winner with status='pending_reveal'. This contestant will be
+ * revealed when the host clicks "Come on Down".
+ */
+export function copyContestantsToNextSegment(
+  fromSegment: string,
+  toSegment: string,
+): void {
+  const db = getDatabase();
+
+  // Get all contestants from the source segment who did NOT win any bidding rounds
+  // (bidding winners participated in the wheel and should not be copied)
+  // Copy both 'active' and 'pending_reveal' contestants
+  // The pending_reveal was already chosen at the end of the last bidding round
+  // Include added_at to preserve the timestamp
+  const contestants = db
+    .prepare(
+      `
+    SELECT player_id, position, status, added_at
+    FROM contestants_row
+    WHERE game_segment = ?
+      AND status IN ('active', 'pending_reveal')
+      AND player_id NOT IN (
+        SELECT DISTINCT player_id
+        FROM bids
+        WHERE game_segment = ?
+          AND is_winner = 1
+      )
+    ORDER BY position ASC
+  `,
+    )
+    .all(fromSegment, fromSegment) as Array<{
+    player_id: number;
+    position: number;
+    status: string;
+    added_at: string;
+  }>;
+
+  // Copy each contestant to the new segment, preserving their status and added_at timestamp
+  const stmt = db.prepare(`
+    INSERT INTO contestants_row (player_id, position, game_segment, status, added_at)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+
+  for (const contestant of contestants) {
+    stmt.run(
+      contestant.player_id,
+      contestant.position,
+      toSegment,
+      contestant.status, // Preserve status (active or pending_reveal)
+      contestant.added_at, // Preserve original timestamp
+    );
+  }
+
+  // No need to add a new pending_reveal contestant here
+  // The pending_reveal contestant from the previous segment is already copied above
+}
+
+/**
+ * Get all contestant rows for a segment, including empty positions (player_id = NULL)
+ * Used for testing and validation of contestant positioning
+ */
+export function getAllContestantRows(segment: string): Array<{
+  id: number;
+  player_id: number | null;
+  position: number;
+  game_segment: string;
+  status: string;
+  added_at: string;
+  revealed_at: string | null;
+}> {
+  const db = getDatabase();
+
+  const rows = db
+    .prepare(
+      `
+    SELECT *
+    FROM contestants_row
+    WHERE game_segment = ?
+    ORDER BY position ASC
+  `,
+    )
+    .all(segment) as Array<{
+    id: number;
+    player_id: number | null;
+    position: number;
+    game_segment: string;
+    status: string;
+    added_at: string;
+    revealed_at: string | null;
+  }>;
+
+  return rows;
+}
+
+/**
+ * Get the position of the most recent bidding winner in a segment
+ * Returns null if no winners found
+ */
+export function getLastBiddingWinnerPosition(segment: string): number | null {
+  const db = getDatabase();
+
+  const result = db
+    .prepare(
+      `
+    SELECT c.position
+    FROM contestants_row c
+    JOIN bids b ON b.player_id = c.player_id
+    WHERE c.game_segment = ?
+      AND b.game_segment = ?
+      AND b.is_winner = 1
+    ORDER BY b.id DESC
+    LIMIT 1
+  `,
+    )
+    .get(segment, segment) as { position: number } | undefined;
+
+  return result ? result.position : null;
+}
+
+/**
+ * Check if a player is a bidding winner in a segment
+ */
+export function isPlayerBiddingWinner(
+  playerId: number,
+  segment: string,
+): boolean {
+  const db = getDatabase();
+
+  const result = db
+    .prepare(
+      `
+    SELECT COUNT(*) as count
+    FROM bids
+    WHERE player_id = ?
+      AND game_segment = ?
+      AND is_winner = 1
+  `,
+    )
+    .get(playerId, segment) as { count: number };
+
+  return result.count > 0;
 }

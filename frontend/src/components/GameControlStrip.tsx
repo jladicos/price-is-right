@@ -16,11 +16,14 @@ interface GameControlStripProps {
   onHideProduct?: () => void;
   onRevealWinner?: () => void;
   onAdvancePhase?: () => void;
+  onNextSpinner?: () => void;
+  onResetWheel?: () => void; // Debug: reset wheel to first player
   onRestartGame?: () => void;
   onStartNewGame?: () => void;
   onRefreshGameState?: () => void;
   onRefreshContestantsRow?: () => void;
   isLoading?: boolean;
+  showNextSpinnerButton?: boolean;
 }
 
 export function GameControlStrip({
@@ -32,15 +35,19 @@ export function GameControlStrip({
   onHideProduct,
   onRevealWinner,
   onAdvancePhase,
+  onNextSpinner,
+  onResetWheel,
   onRestartGame,
   onStartNewGame,
   onRefreshGameState,
   onRefreshContestantsRow,
   isLoading = false,
+  showNextSpinnerButton = false,
 }: GameControlStripProps) {
   const navigate = useNavigate();
   const workflow = gameState.workflow;
   const isBiddingPhase = workflow.phase_type === "bidding";
+  const isWheelPhase = workflow.phase_type === "wheel";
 
   // Modal state
   const [isStartGameModalOpen, setIsStartGameModalOpen] = useState(false);
@@ -202,6 +209,65 @@ export function GameControlStrip({
                     ({5 - currentBids.length} left)
                   </Text>
                 )}
+              </Button>
+            )}
+
+            {/* Advance Phase Button */}
+            <Button
+              onClick={onAdvancePhase}
+              colorPalette="cyan"
+              size="lg"
+              variant="solid"
+              disabled={isLoading}
+            >
+              Next Phase →
+            </Button>
+          </HStack>
+        )}
+
+        {/* Wheel Phase Controls */}
+        {role === "host" && isWheelPhase && (
+          <HStack gap={4} justify="center" flex="1" wrap="wrap">
+            {/* Phase Info */}
+            <Box
+              bg="purple.600"
+              px={4}
+              py={2}
+              borderRadius="md"
+              minWidth="200px"
+            >
+              <Text
+                fontSize="sm"
+                fontWeight="bold"
+                color="white"
+                textAlign="center"
+                textTransform="uppercase"
+                letterSpacing="wide"
+              >
+                {workflow.current_segment} - Wheel
+              </Text>
+            </Box>
+
+            {/* Debug: Reset to First Player */}
+            <Button
+              onClick={onResetWheel}
+              colorPalette="orange"
+              size="md"
+              variant="solid"
+              disabled={isLoading}
+            >
+              🔄 Reset to First Player
+            </Button>
+
+            {/* Next Spinner Button */}
+            {showNextSpinnerButton && (
+              <Button
+                onClick={onNextSpinner}
+                colorPalette="teal"
+                size="lg"
+                disabled={isLoading}
+              >
+                Next Spinner →
               </Button>
             )}
 

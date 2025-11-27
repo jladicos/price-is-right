@@ -93,6 +93,7 @@ export function getBidsForRound(
     FROM bids b
     JOIN players p ON b.player_id = p.id
     LEFT JOIN contestants_row c ON b.player_id = c.player_id
+      AND c.game_segment = b.game_segment
       AND c.status = 'active'
     WHERE b.game_segment = ?
       AND b.round_number = ?
@@ -310,4 +311,34 @@ export function getBidByPlayerForRound(
     .get(playerId, segment, roundNumber, currentRetry) as Bid | undefined;
 
   return bid;
+}
+
+/**
+ * Get all bidding winners for a game segment
+ * Returns players who won bidding rounds in this segment
+ */
+export function getWinnersForSegment(segment: string): BidWithPlayer[] {
+  const db = getDatabase();
+
+  const winners = db
+    .prepare(
+      `
+    SELECT DISTINCT
+      b.*,
+      p.first_name,
+      p.last_name,
+      p.photo_filename,
+      c.position
+    FROM bids b
+    JOIN players p ON b.player_id = p.id
+    LEFT JOIN contestants_row c ON b.player_id = c.player_id
+      AND c.status IN ('active', 'won')
+    WHERE b.game_segment = ?
+      AND b.is_winner = 1
+    ORDER BY b.round_number ASC
+  `,
+    )
+    .all(segment) as BidWithPlayer[];
+
+  return winners;
 }

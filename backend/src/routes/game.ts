@@ -16,7 +16,7 @@ import {
   completePlayerWheelTurn,
   startWheelSpinOff,
 } from "../services/game-state.js";
-import { updateGameWorkflow } from "../db/game-workflow.js";
+import { updateGameWorkflow, getGameWorkflow } from "../db/game-workflow.js";
 import { getGameStructure } from "../utils/products.js";
 import type { GamePhase, WheelPhase, ShowcasePhase } from "../types/product.js";
 
@@ -420,17 +420,21 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         // Replace the winner with a new contestant
         let replacementAdded = false;
         if (currentPhaseType === "bidding") {
-          // Only auto-select if we're in a valid segment (not finale)
+          // Only auto-select if we're in a valid segment
+          // Skip auto-fill ONLY when transitioning from wheel to bidding (handled separately below)
           if (
             currentSegment === "section_1" ||
             currentSegment === "section_2"
           ) {
             // Find the winner (status='won') and replace them
+            // Filter by current segment to avoid finding winners from other segments
             const { getAllActiveContestants } = await import(
               "../db/contestants.js"
             );
             const contestants = getAllActiveContestants();
-            const winner = contestants.find((c) => c.status === "won");
+            const winner = contestants.find(
+              (c) => c.status === "won" && c.game_segment === currentSegment,
+            );
 
             if (winner) {
               // Replace the winner with a random contestant
@@ -528,7 +532,7 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
         const currentMetadata = workflow.phase_metadata
           ? JSON.parse(workflow.phase_metadata)
           : {};
-        const nextMetadata = { ...nextPhase };
+        const nextMetadata: Record<string, unknown> = { ...nextPhase };
 
         // Preserve is_fresh_row, but update to false if we just added a replacement
         if (replacementAdded) {
@@ -537,13 +541,63 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
           nextMetadata.is_fresh_row = currentMetadata.is_fresh_row;
         }
 
-        // Update workflow to next phase
-        updateGameWorkflow({
-          current_segment: nextSegment,
-          current_segment_index: nextIndex,
-          phase_type: nextPhase.type,
-          phase_metadata: JSON.stringify(nextMetadata),
-        });
+        // Note: skip_auto_fill flag is only used when transitioning FROM wheel TO bidding
+        // It's automatically ignored when advancing between bidding rounds
+
+        // Special handling: Transitioning FROM wheel phase TO bidding phase
+        if (currentPhaseType === "wheel" && nextPhase.type === "bidding") {
+          // Copy contestants from previous bidding segment to new segment
+          // (excludes ALL bidding winners - both wheel winner and losers)
+          const { copyContestantsToNextSegment } = await import(
+            "../db/contestants.js"
+          );
+
+          // Map wheel segment back to its bidding segment
+          let fromSegment = currentSegment;
+          if (currentSegment === "section_1_finale") {
+            fromSegment = "section_1";
+          } else if (currentSegment === "section_2_finale") {
+            fromSegment = "section_2";
+          }
+
+          // Copy non-winners to the next segment (excludes anyone who participated in wheel)
+          copyContestantsToNextSegment(fromSegment, nextSegment);
+
+          // Set is_fresh_row to false since we're continuing with existing contestants
+          // The copied contestants retain their original added_at timestamps,
+          // so getBiddingOrder() can correctly determine the most recent
+          nextMetadata.is_fresh_row = false;
+
+          // Set skip_auto_fill flag to prevent auto-filling on this first advance
+          // This allows the host to manually reveal the first contestant via "come on down"
+          // The flag will be cleared on the next advance, allowing normal auto-fill behavior
+          nextMetadata.skip_auto_fill = true;
+
+          request.log.info(
+            `Copied contestants from ${fromSegment} to ${nextSegment} (excluding bidding winners)`,
+          );
+        }
+
+        // Special handling for wheel phases
+        if (nextPhase.type === "wheel") {
+          // First update the segment
+          updateGameWorkflow({
+            current_segment: nextSegment,
+            current_segment_index: nextIndex,
+            phase_type: nextPhase.type,
+            phase_metadata: JSON.stringify(nextMetadata),
+          });
+          // Then call startWheelPhase to properly initialize wheel metadata
+          startWheelPhase(nextSegment);
+        } else {
+          // Update workflow to next phase (non-wheel phases)
+          updateGameWorkflow({
+            current_segment: nextSegment,
+            current_segment_index: nextIndex,
+            phase_type: nextPhase.type,
+            phase_metadata: JSON.stringify(nextMetadata),
+          });
+        }
 
         const state = getCurrentState();
 
@@ -836,6 +890,57 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
           success: false,
           error:
             error instanceof Error ? error.message : "Failed to start spinoff",
+        });
+      }
+    },
+  );
+
+  /**
+   * POST /api/game/wheel-reset
+   * DEBUGGING: Reset wheel phase to first player
+   * Clears all spins for current segment and resets to first spinner
+   * Host only
+   */
+  fastify.post(
+    "/game/wheel-reset",
+    {
+      preHandler: [authenticateRequest, requireHost],
+    },
+    async (request, reply) => {
+      try {
+        const workflow = getGameWorkflow();
+
+        // Validate we're in wheel phase
+        if (workflow.phase_type !== "wheel") {
+          return reply.status(400).send({
+            success: false,
+            error: "Not in wheel phase",
+          });
+        }
+
+        const segment = workflow.current_segment;
+        if (!segment) {
+          return reply.status(400).send({
+            success: false,
+            error: "No current segment",
+          });
+        }
+
+        // Use startWheelPhase to reset everything
+        const updatedWorkflow = startWheelPhase(segment);
+        const state = getCurrentState();
+
+        return reply.status(200).send({
+          success: true,
+          workflow: updatedWorkflow,
+          state,
+        });
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Failed to reset wheel",
         });
       }
     },

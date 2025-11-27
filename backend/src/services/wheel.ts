@@ -5,6 +5,7 @@ import {
   getPlayerTotalsForSegment as dbGetPlayerTotalsForSegment,
   type WheelSpin,
 } from "../db/wheel-spins.js";
+import { getWinnersForSegment } from "../db/bids.js";
 import { getAllActiveContestants } from "../db/contestants.js";
 
 /**
@@ -199,23 +200,42 @@ export function determineWheelWinner(
  * Get eligible spinners for a wheel segment
  * Returns players who won bidding rounds in the current section
  */
-export function getEligibleSpinners(_gameSegment: string): Array<{
+export function getEligibleSpinners(gameSegment: string): Array<{
   player_id: number;
   first_name: string;
   last_name: string;
   photo_filename: string;
   position: number;
 }> {
-  // Eligible spinners are stored in metadata during bidding rounds
-  // For now, we'll get all active contestants as a placeholder
-  // This will be refined when we integrate with game state management
-  const contestants = getAllActiveContestants();
+  // Map wheel segments to their corresponding bidding segments
+  // Wheel happens after bidding rounds, so section_1_finale uses section_1 bids
+  let biddingSegment = gameSegment;
+  if (gameSegment === "section_1_finale") {
+    biddingSegment = "section_1";
+  } else if (gameSegment === "section_2_finale") {
+    biddingSegment = "section_2";
+  }
 
-  return contestants.map((c) => ({
-    player_id: c.player_id,
-    first_name: c.first_name,
-    last_name: c.last_name,
-    photo_filename: c.photo_filename,
-    position: c.position,
+  // Get bidding winners for the corresponding bidding segment
+  const winners = getWinnersForSegment(biddingSegment);
+
+  // If no winners found, fall back to all active contestants (for testing)
+  if (winners.length === 0) {
+    const contestants = getAllActiveContestants();
+    return contestants.map((c) => ({
+      player_id: c.player_id,
+      first_name: c.first_name,
+      last_name: c.last_name,
+      photo_filename: c.photo_filename,
+      position: c.position,
+    }));
+  }
+
+  return winners.map((w) => ({
+    player_id: w.player_id,
+    first_name: w.first_name,
+    last_name: w.last_name,
+    photo_filename: w.photo_filename,
+    position: w.position || 0, // position might be null if not in contestant's row
   }));
 }

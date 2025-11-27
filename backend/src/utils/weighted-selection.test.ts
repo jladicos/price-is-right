@@ -116,8 +116,8 @@ describe("Weighted Selection", () => {
     it("should handle missing/null/undefined weights by treating as 1.0", () => {
       const items = [
         { id: 1, weight: 1.0 },
-        { id: 2, weight: undefined as any },
-        { id: 3, weight: null as any },
+        { id: 2, weight: undefined as unknown as number },
+        { id: 3, weight: null as unknown as number },
       ];
 
       // Should not throw and should select items

@@ -242,10 +242,12 @@ const biddingRoutes: FastifyPluginAsync = async (fastify) => {
           }
 
           // Update contestant status to 'won'
+          // Filter by BOTH player_id AND game_segment to avoid marking wrong contestant
           const contestants = await import("../db/contestants.js");
           const activeContestants = contestants.getAllActiveContestants();
           const winnerContestant = activeContestants.find(
-            (c) => c.player_id === winner.player_id,
+            (c) =>
+              c.player_id === winner.player_id && c.game_segment === segment,
           );
 
           if (winnerContestant) {

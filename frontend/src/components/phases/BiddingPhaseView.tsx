@@ -48,6 +48,7 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
   >(null);
 
   const role = currentPlayer?.role || "audience";
+  // Backend now filters contestants by current segment, so we can use them directly
   const contestants = gameState.contestantsRow;
   const currentBids = gameState.currentBids || [];
   const currentBidderPosition = gameState.currentBidderPosition;

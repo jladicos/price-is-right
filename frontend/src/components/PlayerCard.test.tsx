@@ -19,7 +19,10 @@ describe("PlayerCard", () => {
 
       const image = screen.getByAltText("John Doe");
       expect(image).toBeInTheDocument();
-      expect(image).toHaveAttribute("src", expect.stringContaining("john-doe.jpg"));
+      expect(image).toHaveAttribute(
+        "src",
+        expect.stringContaining("john-doe.jpg"),
+      );
     });
 
     it("should not show name by default", () => {
@@ -37,7 +40,9 @@ describe("PlayerCard", () => {
     it("should not render children by default", () => {
       render(<PlayerCard player={mockPlayer} />);
 
-      expect(screen.queryByTestId("player-card-children")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("player-card-children"),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -93,6 +98,28 @@ describe("PlayerCard", () => {
       const badge = screen.getByTestId("player-card-badge");
       expect(badge).toHaveTextContent("TOP SPINNER");
     });
+
+    it("should use custom badgeTestId when provided", () => {
+      render(
+        <PlayerCard
+          player={mockPlayer}
+          badge="WINNER"
+          badgeTestId="custom-badge-id"
+        />,
+      );
+
+      expect(screen.getByTestId("custom-badge-id")).toBeInTheDocument();
+      expect(screen.getByTestId("custom-badge-id")).toHaveTextContent("WINNER");
+      expect(screen.queryByTestId("player-card-badge")).not.toBeInTheDocument();
+    });
+
+    it("should handle WINNER! with exclamation mark", () => {
+      render(<PlayerCard player={mockPlayer} badge="WINNER!" />);
+
+      const badge = screen.getByTestId("player-card-badge");
+      expect(badge).toHaveTextContent("WINNER!");
+      // Should use green color scheme (uses includes check, not exact match)
+    });
   });
 
   describe("Size Variants", () => {
@@ -131,7 +158,9 @@ describe("PlayerCard", () => {
       const photo = screen.getByTestId("player-card-photo");
       expect(photo).toBeInTheDocument();
       // Default variant has gray border
-      expect(photo).toHaveStyle({ borderColor: expect.stringContaining("gray") });
+      expect(photo).toHaveStyle({
+        borderColor: expect.stringContaining("gray"),
+      });
     });
 
     it("should render highlighted variant", () => {
@@ -139,7 +168,9 @@ describe("PlayerCard", () => {
 
       const photo = screen.getByTestId("player-card-photo");
       // Highlighted has blue border
-      expect(photo).toHaveStyle({ borderColor: expect.stringContaining("blue") });
+      expect(photo).toHaveStyle({
+        borderColor: expect.stringContaining("blue"),
+      });
     });
 
     it("should render winner variant", () => {
@@ -147,7 +178,9 @@ describe("PlayerCard", () => {
 
       const photo = screen.getByTestId("player-card-photo");
       // Winner has green border
-      expect(photo).toHaveStyle({ borderColor: expect.stringContaining("green") });
+      expect(photo).toHaveStyle({
+        borderColor: expect.stringContaining("green"),
+      });
     });
 
     it("should render eliminated variant with overlay", () => {
@@ -155,7 +188,9 @@ describe("PlayerCard", () => {
 
       const photo = screen.getByTestId("player-card-photo");
       // Eliminated has red border
-      expect(photo).toHaveStyle({ borderColor: expect.stringContaining("red") });
+      expect(photo).toHaveStyle({
+        borderColor: expect.stringContaining("red"),
+      });
 
       const overlay = screen.getByTestId("player-card-eliminated-overlay");
       expect(overlay).toBeInTheDocument();
@@ -165,7 +200,9 @@ describe("PlayerCard", () => {
     it("should not show eliminated overlay for other variants", () => {
       render(<PlayerCard player={mockPlayer} variant="default" />);
 
-      expect(screen.queryByTestId("player-card-eliminated-overlay")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("player-card-eliminated-overlay"),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -174,7 +211,7 @@ describe("PlayerCard", () => {
       render(
         <PlayerCard player={mockPlayer}>
           <div data-testid="custom-child">Custom Content</div>
-        </PlayerCard>
+        </PlayerCard>,
       );
 
       const childrenContainer = screen.getByTestId("player-card-children");
@@ -189,7 +226,7 @@ describe("PlayerCard", () => {
       render(
         <PlayerCard player={mockPlayer}>
           <button>Spin Again</button>
-        </PlayerCard>
+        </PlayerCard>,
       );
 
       const button = screen.getByRole("button", { name: "Spin Again" });
@@ -200,7 +237,7 @@ describe("PlayerCard", () => {
       render(
         <PlayerCard player={mockPlayer}>
           <div>Total: $0.75</div>
-        </PlayerCard>
+        </PlayerCard>,
       );
 
       expect(screen.getByText("Total: $0.75")).toBeInTheDocument();
@@ -212,17 +249,23 @@ describe("PlayerCard", () => {
       render(
         <PlayerCard player={mockPlayer} showName={true} badge="LEADER">
           <div>Spin Total: $0.85</div>
-        </PlayerCard>
+        </PlayerCard>,
       );
 
       expect(screen.getByTestId("player-card-name")).toHaveTextContent("John");
-      expect(screen.getByTestId("player-card-badge")).toHaveTextContent("LEADER");
+      expect(screen.getByTestId("player-card-badge")).toHaveTextContent(
+        "LEADER",
+      );
       expect(screen.getByText("Spin Total: $0.85")).toBeInTheDocument();
     });
 
     it("should render eliminated variant with badge", () => {
       render(
-        <PlayerCard player={mockPlayer} variant="eliminated" badge="ELIMINATED" />
+        <PlayerCard
+          player={mockPlayer}
+          variant="eliminated"
+          badge="ELIMINATED"
+        />,
       );
 
       const badge = screen.getByTestId("player-card-badge");
@@ -243,7 +286,7 @@ describe("PlayerCard", () => {
         >
           <button>Stay</button>
           <button>Spin Again</button>
-        </PlayerCard>
+        </PlayerCard>,
       );
 
       const photo = screen.getByTestId("player-card-photo");
@@ -251,9 +294,13 @@ describe("PlayerCard", () => {
       expect(styles.width).toBe("240px");
 
       expect(screen.getByTestId("player-card-name")).toBeInTheDocument();
-      expect(screen.getByTestId("player-card-badge")).toHaveTextContent("CURRENT");
+      expect(screen.getByTestId("player-card-badge")).toHaveTextContent(
+        "CURRENT",
+      );
       expect(screen.getByRole("button", { name: "Stay" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Spin Again" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Spin Again" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -277,6 +324,57 @@ describe("PlayerCard", () => {
 
       const image = screen.getByAltText("Jane Smith");
       expect(image).toBeInTheDocument();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle empty photo_filename", () => {
+      const player = { ...mockPlayer, photo_filename: "" };
+      render(<PlayerCard player={player} />);
+
+      const image = screen.getByAltText("John Doe") as HTMLImageElement;
+      expect(image.src).toContain("/images/players/");
+    });
+
+    it("should handle null photo_filename", () => {
+      const player = {
+        ...mockPlayer,
+        photo_filename: null as unknown as string,
+      };
+      render(<PlayerCard player={player} />);
+
+      const image = screen.getByAltText("John Doe") as HTMLImageElement;
+      expect(image.src).toContain("/images/players/");
+    });
+
+    it("should handle very long player names", () => {
+      const player = {
+        ...mockPlayer,
+        first_name: "Christopher",
+        last_name: "Worthington-Smythe",
+      };
+      render(<PlayerCard player={player} showName />);
+
+      // Component only shows first_name, not full name
+      expect(screen.getByText("Christopher")).toBeInTheDocument();
+      // But alt text has full name
+      expect(
+        screen.getByAltText("Christopher Worthington-Smythe"),
+      ).toBeInTheDocument();
+    });
+
+    it("should handle special characters in player name", () => {
+      const player = {
+        ...mockPlayer,
+        first_name: "José",
+        last_name: "O'Brien-Smith",
+      };
+      render(<PlayerCard player={player} showName />);
+
+      // Component only shows first_name
+      expect(screen.getByText("José")).toBeInTheDocument();
+      // But alt text has full name
+      expect(screen.getByAltText("José O'Brien-Smith")).toBeInTheDocument();
     });
   });
 });

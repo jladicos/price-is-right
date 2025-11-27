@@ -479,4 +479,195 @@ describe("Bids Database Functions", () => {
       expect(bid?.bid_amount).toBe(1500);
     });
   });
+
+  describe("REGRESSION: Cross-Segment Bid Tracking (Bug Fix)", () => {
+    /**
+     * CRITICAL REGRESSION TEST
+     * Bug: Duplicate bids when player exists in multiple segments
+     * Symptom: After 3 players bid in section 2, currentBids array had 5 entries
+     * Root Cause: getBidsForRound() LEFT JOIN didn't filter by game_segment
+     * Fix: Added "AND c.game_segment = b.game_segment" to JOIN condition
+     */
+    it("should not duplicate bids when player exists in multiple segments", () => {
+      const db = getDatabase();
+
+      // Player 1 is in both section_1 AND section_2
+      // This happens when a player wins in section_1 and advances to section_2
+      const player1Row = db
+        .prepare(
+          `INSERT INTO players (first_name, last_name, access_code, role)
+           VALUES (?, ?, ?, ?)`,
+        )
+        .run("CrossSegment", "Player1", "CROSS1", "player");
+      const player1Id = player1Row.lastInsertRowid as number;
+
+      // Add player1 to section_1 (won status)
+      db.prepare(
+        `INSERT INTO contestants_row (player_id, game_segment, position, status)
+         VALUES (?, ?, ?, ?)`,
+      ).run(player1Id, "section_1", 1, "won");
+
+      // Add player1 to section_2 (active - they won section_1 and moved to section_2)
+      db.prepare(
+        `INSERT INTO contestants_row (player_id, game_segment, position, status)
+         VALUES (?, ?, ?, ?)`,
+      ).run(player1Id, "section_2", 2, "active");
+
+      // Player 2 and 3 only in section_2
+      addContestantToRow(2, 3, "section_2", "active");
+      addContestantToRow(3, 4, "section_2", "active");
+
+      // Submit bids for section_2, round 1
+      createBid(player1Id, "product-002", 1, "section_2", 1000, 0);
+      createBid(2, "product-002", 1, "section_2", 1100, 0);
+      createBid(3, "product-002", 1, "section_2", 1200, 0);
+
+      // Get bids for section_2
+      const bids = getBidsForRound("section_2", 1, 0);
+
+      // CRITICAL: Should only have 3 bids, not 4 or 5 from duplicate joins
+      expect(bids).toHaveLength(3);
+
+      // Player 1 should appear exactly once
+      const player1Bids = bids.filter((b) => b.player_id === player1Id);
+      expect(player1Bids).toHaveLength(1);
+
+      // Verify each player appears exactly once
+      const playerIds = bids.map((b) => b.player_id);
+      const uniquePlayerIds = new Set(playerIds);
+      expect(uniquePlayerIds.size).toBe(3); // All unique
+    });
+
+    it("should mark winner in correct segment when player in multiple segments", () => {
+      const db = getDatabase();
+
+      // Create player who will be in both segments
+      const playerRow = db
+        .prepare(
+          `INSERT INTO players (first_name, last_name, access_code, role)
+           VALUES (?, ?, ?, ?)`,
+        )
+        .run("MultiSegment", "Winner", "MULTI1", "player");
+      const playerId = playerRow.lastInsertRowid as number;
+
+      // Player in both segments
+      db.prepare(
+        `INSERT INTO contestants_row (player_id, game_segment, position, status)
+         VALUES (?, ?, ?, ?)`,
+      ).run(playerId, "section_1", 1, "won");
+      db.prepare(
+        `INSERT INTO contestants_row (player_id, game_segment, position, status)
+         VALUES (?, ?, ?, ?)`,
+      ).run(playerId, "section_2", 2, "active");
+
+      // Create bids in both segments
+      createBid(playerId, "product-001", 1, "section_1", 1500, 0);
+      createBid(playerId, "product-002", 1, "section_2", 2000, 0);
+
+      // Mark as winner in section_2
+      const section2Bid = getBidByPlayerForRound(playerId, "section_2", 1);
+      expect(section2Bid).toBeDefined();
+
+      markWinner(section2Bid!.id);
+
+      // Verify section_1 bid is NOT marked as winner
+      const section1Bid = getBidByPlayerForRound(playerId, "section_1", 1);
+      expect(section1Bid).toBeDefined();
+      expect(section1Bid!.is_winner).toBe(0); // Should NOT be winner
+
+      // Verify section_2 bid IS marked as winner
+      const updatedSection2Bid = getBidByPlayerForRound(
+        playerId,
+        "section_2",
+        1,
+      );
+      expect(updatedSection2Bid!.is_winner).toBe(1); // Should be winner
+    });
+
+    it("should handle getBidsForRound when same player in multiple segments with same round number", () => {
+      const db = getDatabase();
+
+      // Create player in both segments
+      const playerRow = db
+        .prepare(
+          `INSERT INTO players (first_name, last_name, access_code, role)
+           VALUES (?, ?, ?, ?)`,
+        )
+        .run("Overlap", "Player", "OVER1", "player");
+      const playerId = playerRow.lastInsertRowid as number;
+
+      addContestantToRow(playerId, 1, "section_1", "won");
+      addContestantToRow(playerId, 2, "section_2", "active");
+
+      // Create bids in both segments for round 1
+      createBid(playerId, "product-001", 1, "section_1", 1500, 0);
+      createBid(playerId, "product-002", 1, "section_2", 2500, 0);
+
+      // Add other players to section_2
+      createBid(2, "product-002", 1, "section_2", 2000, 0);
+      addContestantToRow(2, 3, "section_2", "active");
+
+      createBid(3, "product-002", 1, "section_2", 2200, 0);
+      addContestantToRow(3, 4, "section_2", "active");
+
+      // Get bids for section_2, round 1
+      const section2Bids = getBidsForRound("section_2", 1, 0);
+
+      // Should only return section_2 bids
+      expect(section2Bids).toHaveLength(3);
+      section2Bids.forEach((bid) => {
+        expect(bid.game_segment).toBe("section_2");
+      });
+
+      // Verify the player's bid is the section_2 one, not section_1
+      const playerBid = section2Bids.find((b) => b.player_id === playerId);
+      expect(playerBid).toBeDefined();
+      expect(playerBid!.bid_amount).toBe(2500); // section_2 bid
+      expect(playerBid!.bid_amount).not.toBe(1500); // NOT section_1 bid
+
+      // Get bids for section_1, round 1
+      const section1Bids = getBidsForRound("section_1", 1, 0);
+
+      // Should only have the one bid from section_1
+      expect(section1Bids.length).toBeGreaterThan(0);
+      const section1PlayerBid = section1Bids.find(
+        (b) => b.player_id === playerId,
+      );
+      if (section1PlayerBid) {
+        expect(section1PlayerBid.bid_amount).toBe(1500); // section_1 bid
+      }
+    });
+
+    it("should properly join contestant data only from matching segment", () => {
+      const db = getDatabase();
+
+      // Create player in both segments with different positions
+      const playerRow = db
+        .prepare(
+          `INSERT INTO players (first_name, last_name, access_code, role)
+           VALUES (?, ?, ?, ?)`,
+        )
+        .run("Position", "Test", "POS1", "player");
+      const playerId = playerRow.lastInsertRowid as number;
+
+      // Add to section_1 at position 1
+      addContestantToRow(playerId, 1, "section_1", "won");
+
+      // Add to section_2 at position 4
+      addContestantToRow(playerId, 4, "section_2", "active");
+
+      // Create bid in section_2
+      createBid(playerId, "product-002", 1, "section_2", 2500, 0);
+
+      // Get bids for section_2
+      const section2Bids = getBidsForRound("section_2", 1, 0);
+
+      const playerBid = section2Bids.find((b) => b.player_id === playerId);
+      expect(playerBid).toBeDefined();
+
+      // CRITICAL: Should have position from section_2 (4), not section_1 (1)
+      expect(playerBid!.position).toBe(4);
+      expect(playerBid!.position).not.toBe(1);
+    });
+  });
 });

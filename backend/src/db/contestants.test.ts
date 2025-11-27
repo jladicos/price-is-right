@@ -11,6 +11,7 @@ import {
   getBiddingOrder,
   getContestantById,
   findNextEmptyPosition,
+  copyContestantsToNextSegment,
 } from "./contestants.js";
 import { getDatabase } from "./connection.js";
 import { setupTestDatabase, cleanupTestDatabase } from "./test-helper.js";
@@ -679,6 +680,229 @@ describe("Contestants Database Functions", () => {
       const contestant = addContestantToRow(1, 1, "section_1", "active");
       // On creation, these should be the same (or very close)
       expect(contestant.added_at).toBe(contestant.created_at);
+    });
+  });
+
+  describe("copyContestantsToNextSegment", () => {
+    it("should copy contestants preserving their original positions", () => {
+      const db = getDatabase();
+
+      // Setup: Create 5 contestants in section_1
+      addContestantToRow(1, 1, "section_1", "active"); // Player 1 at pos 1 (non-winner)
+      addContestantToRow(2, 2, "section_1", "active"); // Player 2 at pos 2 (non-winner)
+      addContestantToRow(3, 3, "section_1", "active"); // Player 3 at pos 3 (non-winner)
+      addContestantToRow(4, 4, "section_1", "active"); // Player 4 at pos 4 (non-winner)
+      addContestantToRow(5, 5, "section_1", "won"); // Player 5 at pos 5 (BIDDING WINNER)
+
+      // Add a pending_reveal contestant at position 5 (simulating end of last bidding round)
+      addContestantToRow(6, 5, "section_1", "pending_reveal"); // Player 6 replaces winner
+
+      // Mark player 5 as a bidding winner in bids table
+      db.prepare(
+        `INSERT INTO bids (player_id, product_id, game_segment, round_number, bid_amount, is_winner)
+         VALUES (5, 'product1', 'section_1', 1, 1000, 1)`,
+      ).run();
+
+      // Copy from section_1 to section_2
+      copyContestantsToNextSegment("section_1", "section_2");
+
+      // Verify section_2 has 5 contestants:
+      // - 4 non-winners in their original positions (status='active')
+      // - 1 pending_reveal contestant at position 5 (carried over from section_1)
+      const section2Contestants = getContestantsRow("section_2");
+      expect(section2Contestants).toHaveLength(5);
+
+      // Check each non-winner contestant is in their original position
+      const pos1 = section2Contestants.find((c) => c.position === 1);
+      expect(pos1?.player_id).toBe(1);
+      expect(pos1?.status).toBe("active");
+
+      const pos2 = section2Contestants.find((c) => c.position === 2);
+      expect(pos2?.player_id).toBe(2);
+      expect(pos2?.status).toBe("active");
+
+      const pos3 = section2Contestants.find((c) => c.position === 3);
+      expect(pos3?.player_id).toBe(3);
+      expect(pos3?.status).toBe("active");
+
+      const pos4 = section2Contestants.find((c) => c.position === 4);
+      expect(pos4?.player_id).toBe(4);
+      expect(pos4?.status).toBe("active");
+
+      // Position 5 should have the pending_reveal contestant (player 6, carried over)
+      const pos5 = section2Contestants.find((c) => c.position === 5);
+      expect(pos5).toBeDefined();
+      expect(pos5?.status).toBe("pending_reveal");
+      expect(pos5?.player_id).toBe(6); // Should be player 6 (carried over from section_1)
+    });
+
+    it("should exclude ALL bidding winners (both wheel winner and losers)", () => {
+      const db = getDatabase();
+
+      // Setup: 5 contestants, 3 won bidding rounds (participated in wheel)
+      addContestantToRow(1, 1, "section_1", "active"); // Non-winner
+      addContestantToRow(2, 2, "section_1", "won"); // Bidding winner (wheel loser)
+      addContestantToRow(3, 3, "section_1", "won"); // Bidding winner (wheel loser)
+      addContestantToRow(4, 4, "section_1", "active"); // Non-winner
+      addContestantToRow(5, 5, "section_1", "won"); // Bidding winner (wheel winner)
+
+      // Add pending_reveal contestant at position 5 (simulating end of last bidding round)
+      addContestantToRow(6, 5, "section_1", "pending_reveal");
+
+      // Mark players 2, 3, 5 as bidding winners
+      db.prepare(
+        `INSERT INTO bids (player_id, product_id, game_segment, round_number, bid_amount, is_winner)
+         VALUES (2, 'product1', 'section_1', 1, 1000, 1)`,
+      ).run();
+      db.prepare(
+        `INSERT INTO bids (player_id, product_id, game_segment, round_number, bid_amount, is_winner)
+         VALUES (3, 'product2', 'section_1', 2, 1000, 1)`,
+      ).run();
+      db.prepare(
+        `INSERT INTO bids (player_id, product_id, game_segment, round_number, bid_amount, is_winner)
+         VALUES (5, 'product3', 'section_1', 3, 1000, 1)`,
+      ).run();
+
+      // Copy to section_2
+      copyContestantsToNextSegment("section_1", "section_2");
+
+      // Should have 3 contestants:
+      // - 2 non-winners at positions 1 and 4 (status='active')
+      // - 1 pending_reveal contestant at position 5 (player 6, carried over)
+      const section2Contestants = getContestantsRow("section_2");
+      expect(section2Contestants).toHaveLength(3);
+
+      // Check that only non-winners were copied (plus pending_reveal)
+      const activeContestants = section2Contestants.filter(
+        (c) => c.status === "active",
+      );
+      const playerIds = activeContestants.map((c) => c.player_id);
+      expect(playerIds).toContain(1); // Non-winner
+      expect(playerIds).toContain(4); // Non-winner
+      expect(playerIds).not.toContain(2); // Bidding winner (excluded)
+      expect(playerIds).not.toContain(3); // Bidding winner (excluded)
+      expect(playerIds).not.toContain(5); // Bidding winner (excluded)
+
+      // Verify positions are preserved for non-winners
+      expect(section2Contestants.find((c) => c.player_id === 1)?.position).toBe(
+        1,
+      );
+      expect(section2Contestants.find((c) => c.player_id === 4)?.position).toBe(
+        4,
+      );
+
+      // Verify there's a pending_reveal contestant (player 6) at position 5
+      const pendingReveal = section2Contestants.find(
+        (c) => c.status === "pending_reveal",
+      );
+      expect(pendingReveal).toBeDefined();
+      expect(pendingReveal?.position).toBe(5);
+      expect(pendingReveal?.player_id).toBe(6);
+    });
+
+    it("should preserve status when copying contestants", () => {
+      const db = getDatabase();
+
+      // Setup: Various statuses in section_1
+      addContestantToRow(1, 1, "section_1", "pending_reveal");
+      addContestantToRow(2, 2, "section_1", "active");
+      addContestantToRow(3, 3, "section_1", "replaced"); // Will NOT be copied (only active/pending_reveal)
+      addContestantToRow(4, 4, "section_1", "won"); // Bidding winner (will be excluded)
+
+      // Mark player 4 as bidding winner
+      db.prepare(
+        `INSERT INTO bids (player_id, product_id, game_segment, round_number, bid_amount, is_winner)
+         VALUES (4, 'product1', 'section_1', 1, 1000, 1)`,
+      ).run();
+
+      // Copy to section_2
+      copyContestantsToNextSegment("section_1", "section_2");
+
+      // Should have 2 contestants:
+      // - Player 1 with status='pending_reveal' (preserved)
+      // - Player 2 with status='active' (preserved)
+      const section2Contestants = getContestantsRow("section_2");
+      expect(section2Contestants).toHaveLength(2);
+
+      // Check that status was preserved
+      const player1 = section2Contestants.find((c) => c.player_id === 1);
+      expect(player1?.status).toBe("pending_reveal");
+      expect(player1?.position).toBe(1);
+
+      const player2 = section2Contestants.find((c) => c.player_id === 2);
+      expect(player2?.status).toBe("active");
+      expect(player2?.position).toBe(2);
+
+      // Player 3 (replaced) and Player 4 (bidding winner) should NOT be copied
+      expect(
+        section2Contestants.find((c) => c.player_id === 3),
+      ).toBeUndefined();
+      expect(
+        section2Contestants.find((c) => c.player_id === 4),
+      ).toBeUndefined();
+    });
+
+    it("should handle empty source segment gracefully", () => {
+      // No contestants in section_1
+      copyContestantsToNextSegment("section_1", "section_2");
+
+      // section_2 should be empty
+      const section2Contestants = getContestantsRow("section_2");
+      expect(section2Contestants).toHaveLength(0);
+    });
+
+    it("should handle segment with only bidding winners (all excluded)", () => {
+      const db = getDatabase();
+
+      // All active contestants are bidding winners, but there's a pending_reveal
+      addContestantToRow(1, 1, "section_1", "won");
+      addContestantToRow(2, 2, "section_1", "won");
+      addContestantToRow(3, 3, "section_1", "won");
+      // Add a pending_reveal contestant (realistic: added after last bidding round)
+      addContestantToRow(4, 3, "section_1", "pending_reveal");
+
+      // Mark 1, 2, 3 as bidding winners
+      db.prepare(
+        `INSERT INTO bids (player_id, product_id, game_segment, round_number, bid_amount, is_winner)
+         VALUES (1, 'product1', 'section_1', 1, 1000, 1)`,
+      ).run();
+      db.prepare(
+        `INSERT INTO bids (player_id, product_id, game_segment, round_number, bid_amount, is_winner)
+         VALUES (2, 'product2', 'section_1', 2, 1000, 1)`,
+      ).run();
+      db.prepare(
+        `INSERT INTO bids (player_id, product_id, game_segment, round_number, bid_amount, is_winner)
+         VALUES (3, 'product3', 'section_1', 3, 1000, 1)`,
+      ).run();
+
+      copyContestantsToNextSegment("section_1", "section_2");
+
+      // section_2 should have 1 pending_reveal contestant (player 4, carried over)
+      // No active contestants because all were bidding winners
+      const section2Contestants = getContestantsRow("section_2");
+      expect(section2Contestants).toHaveLength(1);
+      expect(section2Contestants[0].status).toBe("pending_reveal");
+      expect(section2Contestants[0].player_id).toBe(4);
+      expect(section2Contestants[0].position).toBe(3);
+    });
+
+    it("should not affect source segment", () => {
+      // Setup section_1
+      addContestantToRow(1, 1, "section_1", "active");
+      addContestantToRow(2, 2, "section_1", "active");
+      addContestantToRow(3, 3, "section_1", "won");
+
+      // Get original count
+      const originalContestants = getContestantsRow("section_1");
+      const originalCount = originalContestants.length;
+
+      // Copy to section_2
+      copyContestantsToNextSegment("section_1", "section_2");
+
+      // section_1 should be unchanged
+      const afterContestants = getContestantsRow("section_1");
+      expect(afterContestants).toHaveLength(originalCount);
+      expect(afterContestants).toEqual(originalContestants);
     });
   });
 });

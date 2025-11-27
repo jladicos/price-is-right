@@ -92,7 +92,9 @@ describe("Player Import Logic", () => {
 
       const player = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
-        .get(accessCode) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+        .get(accessCode) as
+        | { weight?: number; [key: string]: unknown }
+        | undefined;
 
       expect(player).toBeDefined();
       expect(player.email).toBeNull();
@@ -313,7 +315,9 @@ describe("Player Import Logic", () => {
 
       const player = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
-        .get(accessCode) as any;
+        .get(accessCode) as
+        | { weight?: number; [key: string]: unknown }
+        | undefined;
 
       expect(player).toBeDefined();
       expect(player.weight).toBe(1.0);
@@ -331,7 +335,9 @@ describe("Player Import Logic", () => {
 
       const player = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
-        .get(accessCode) as any;
+        .get(accessCode) as
+        | { weight?: number; [key: string]: unknown }
+        | undefined;
 
       expect(player).toBeDefined();
       expect(player.weight).toBe(0.5);
@@ -349,7 +355,9 @@ describe("Player Import Logic", () => {
 
       const player = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
-        .get(accessCode) as any;
+        .get(accessCode) as
+        | { weight?: number; [key: string]: unknown }
+        | undefined;
 
       expect(player).toBeDefined();
       expect(player.weight).toBe(0.0);
@@ -367,7 +375,9 @@ describe("Player Import Logic", () => {
 
       const player = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
-        .get(accessCode) as any;
+        .get(accessCode) as
+        | { weight?: number; [key: string]: unknown }
+        | undefined;
 
       expect(player).toBeDefined();
       // When explicitly passing NULL, database stores NULL (application layer defaults to 1.0 via rowToPlayer)
@@ -387,7 +397,9 @@ describe("Player Import Logic", () => {
 
       const player = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
-        .get(accessCode) as any;
+        .get(accessCode) as
+        | { weight?: number; [key: string]: unknown }
+        | undefined;
 
       expect(player).toBeDefined();
       expect(player.weight).toBe(1.0);
@@ -411,10 +423,10 @@ describe("Player Import Logic", () => {
 
       const min = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
-        .get(code1) as any;
+        .get(code1) as { weight?: number; [key: string]: unknown } | undefined;
       const max = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
-        .get(code2) as any;
+        .get(code2) as { weight?: number; [key: string]: unknown } | undefined;
 
       expect(min.weight).toBe(0);
       expect(max.weight).toBe(1);
@@ -432,7 +444,9 @@ describe("Player Import Logic", () => {
 
       const player = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
-        .get(accessCode) as any;
+        .get(accessCode) as
+        | { weight?: number; [key: string]: unknown }
+        | undefined;
 
       expect(player).toBeDefined();
       expect(player.weight).toBe(0.01);
@@ -450,7 +464,9 @@ describe("Player Import Logic", () => {
 
       const player = db
         .prepare("SELECT * FROM players WHERE access_code = ?")
-        .get(accessCode) as any;
+        .get(accessCode) as
+        | { weight?: number; [key: string]: unknown }
+        | undefined;
 
       expect(player).toBeDefined();
       // SQLite stores REAL, might have floating point precision

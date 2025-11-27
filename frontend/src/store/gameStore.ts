@@ -48,6 +48,27 @@ export interface BidWithPlayer {
   position: number | null;
 }
 
+// Wheel phase types
+export interface WheelSpin {
+  id: number;
+  player_id: number;
+  game_segment: string;
+  spin_number: number;
+  result: number; // Spin value in dollars (0.05 to 1.00)
+  spinoff_number: number;
+  created_at: string;
+}
+
+export interface PlayerTotal {
+  player_id: number;
+  first_name: string;
+  last_name: string;
+  photo_filename: string;
+  position: number;
+  total: number; // Sum of spins in dollars
+  eliminated: boolean; // True if total > 1.00
+}
+
 export interface GameState {
   workflow: GameWorkflow;
   contestantsRow: ContestantWithPlayer[];
@@ -55,6 +76,14 @@ export interface GameState {
   // Bidding phase state (populated when phase_type === 'bidding')
   currentBids?: BidWithPlayer[];
   currentBidderPosition?: number | null;
+  // Wheel phase state (populated when phase_type === 'wheel')
+  wheelSpins?: WheelSpin[];
+  currentSpinner?: number | null; // player_id of current spinner
+  currentWheelPosition?: number; // Current wheel display position in cents (5-100)
+  spinoffNumber?: number; // 0 for regular round, 1+ for spin-offs
+  playerTotals?: PlayerTotal[];
+  wheelWinner?: number | null; // player_id of winner
+  needsSpinoff?: boolean;
 }
 
 interface GameStore {
@@ -63,6 +92,7 @@ interface GameStore {
   isLoading: boolean;
   error: string | null;
   lastUpdated: number;
+  isWheelAnimating: boolean; // UI-only animation state
 
   // Actions
   fetchGameState: () => Promise<void>;
@@ -98,6 +128,13 @@ interface GameStore {
   }>;
   unlockBid: (bidId: number) => Promise<void>;
   updateBidAmount: (bidId: number, newAmount: number) => Promise<void>;
+
+  // Wheel actions
+  startWheelPhase: () => Promise<void>;
+  spinWheel: (playerId: number) => Promise<void>;
+  stayOnWheelSpin: (playerId: number) => Promise<void>;
+  startSpinOff: (spinoffNumber: number) => Promise<void>;
+  resetWheelPhase: () => Promise<void>; // Debug: reset to first player
 
   clearError: () => void;
 }
@@ -177,6 +214,7 @@ export const useGameStore = create<GameStore>((set) => ({
   isLoading: false,
   error: null,
   lastUpdated: 0,
+  isWheelAnimating: false,
 
   // Fetch current game state
   fetchGameState: async () => {
@@ -552,6 +590,154 @@ export const useGameStore = create<GameStore>((set) => ({
       await useGameStore.getState().fetchGameState();
     } else {
       const errorMessage = result.error || "Failed to update bid amount";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Start wheel phase (host only)
+  startWheelPhase: async () => {
+    set({ isLoading: true, error: null });
+
+    const state = useGameStore.getState().gameState;
+    if (!state || !state.workflow.current_segment) {
+      set({ error: "No current segment", isLoading: false });
+      return;
+    }
+
+    const result = await apiCall("/game/start-wheel-phase", {
+      method: "POST",
+      body: JSON.stringify({ game_segment: state.workflow.current_segment }),
+    });
+
+    if (result.success) {
+      await useGameStore.getState().fetchGameState();
+    } else {
+      const errorMessage = result.error || "Failed to start wheel phase";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Spin the wheel for a player
+  spinWheel: async (playerId: number) => {
+    set({ isLoading: true, error: null, isWheelAnimating: true });
+
+    const state = useGameStore.getState().gameState;
+    if (!state || !state.workflow.current_segment) {
+      set({
+        error: "No current segment",
+        isLoading: false,
+        isWheelAnimating: false,
+      });
+      return;
+    }
+
+    const result = await apiCall("/game/wheel-spin", {
+      method: "POST",
+      body: JSON.stringify({
+        playerId: playerId,
+        gameSegment: state.workflow.current_segment,
+      }),
+    });
+
+    if (result.success) {
+      // Keep animation running for 2.5 seconds
+      setTimeout(() => {
+        set({ isWheelAnimating: false });
+      }, 2500);
+
+      await useGameStore.getState().fetchGameState();
+    } else {
+      const errorMessage = result.error || "Failed to spin wheel";
+      set({
+        error: errorMessage,
+        isLoading: false,
+        isWheelAnimating: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Player chooses to stay on current spin result
+  stayOnWheelSpin: async (playerId: number) => {
+    set({ isLoading: true, error: null });
+
+    const state = useGameStore.getState().gameState;
+    if (!state || !state.workflow.current_segment) {
+      set({ error: "No current segment", isLoading: false });
+      return;
+    }
+
+    const result = await apiCall("/game/wheel-stay", {
+      method: "POST",
+      body: JSON.stringify({
+        playerId: playerId,
+        gameSegment: state.workflow.current_segment,
+      }),
+    });
+
+    if (result.success) {
+      await useGameStore.getState().fetchGameState();
+    } else {
+      const errorMessage = result.error || "Failed to stay on spin";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Start a spin-off round (host only)
+  startSpinOff: async (spinoffNumber: number) => {
+    set({ isLoading: true, error: null });
+
+    const state = useGameStore.getState().gameState;
+    if (!state || !state.workflow.current_segment) {
+      set({ error: "No current segment", isLoading: false });
+      return;
+    }
+
+    const result = await apiCall("/game/start-spinoff", {
+      method: "POST",
+      body: JSON.stringify({
+        game_segment: state.workflow.current_segment,
+        spinoff_number: spinoffNumber,
+      }),
+    });
+
+    if (result.success) {
+      await useGameStore.getState().fetchGameState();
+    } else {
+      const errorMessage = result.error || "Failed to start spin-off";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // DEBUG: Reset wheel phase to first player
+  resetWheelPhase: async () => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall("/game/wheel-reset", {
+      method: "POST",
+    });
+
+    if (result.success) {
+      await useGameStore.getState().fetchGameState();
+      set({ isLoading: false });
+    } else {
+      const errorMessage = result.error || "Failed to reset wheel";
       set({
         error: errorMessage,
         isLoading: false,

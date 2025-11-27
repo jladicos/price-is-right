@@ -53,6 +53,7 @@ describe("Game State - Wheel Integration", () => {
     addContestantToRow(players[3], 4, segment, "active");
 
     // Manually insert winning bids for first 3 players (simulate 3 bidding rounds)
+    // Each round has a different winner (player 0, 1, 2 respectively)
     for (let round = 1; round <= 3; round++) {
       // Insert bids for all 4 contestants
       for (let i = 0; i < 4; i++) {
@@ -66,7 +67,7 @@ describe("Game State - Wheel Integration", () => {
           0,
           (i + 1) * 1000 + round * 100,
           `product_${round}`,
-          i === 0 ? 1 : 0,
+          i === round - 1 ? 1 : 0, // Player 0 wins round 1, player 1 wins round 2, player 2 wins round 3
         );
       }
     }
@@ -83,7 +84,7 @@ describe("Game State - Wheel Integration", () => {
       }),
     });
 
-    return { players, winners: [players[0], players[0], players[0]] };
+    return { players, winners: [players[0], players[1], players[2]] };
   }
 
   describe("startWheelPhase", () => {
@@ -1038,9 +1039,9 @@ describe("Game State - Wheel Integration", () => {
       const db = getDatabase();
       const eligibleSpinners = getEligibleSpinners("section_1");
 
-      // Note: const { players } = setupGameWithBiddingWinners creates 4 contestants (3 winners + 1 active)
-      // but getEligibleSpinners returns ALL active contestants (status IN 'active', 'won')
-      // So we have 4 eligible spinners, and we'll tie all 4 at 0.85
+      // setupGameWithBiddingWinners creates 3 bidding winners (players 0, 1, 2)
+      // getEligibleSpinners now returns only bidding winners (is_winner = 1)
+      // So we have 3 eligible spinners, and we'll tie all 3 at 0.85
 
       eligibleSpinners.forEach((spinner) => {
         db.prepare(
@@ -1057,7 +1058,7 @@ describe("Game State - Wheel Integration", () => {
 
       expect(result.isTie).toBe(true);
       expect(result.winnerId).toBeNull();
-      expect(result.tiedPlayerIds).toHaveLength(4); // All four contestants tied
+      expect(result.tiedPlayerIds).toHaveLength(3); // All three bidding winners tied
     });
 
     it("should handle when player gets exactly $1.00 on second spin", () => {
@@ -1168,6 +1169,275 @@ describe("Game State - Wheel Integration", () => {
 
       expect(result.isTie).toBe(false);
       expect(result.winnerId).toBe(lastPlayer.player_id);
+    });
+  });
+
+  describe("REGRESSION: Wheel Turn Advancement With Eliminations (Bug Fix)", () => {
+    /**
+     * CRITICAL REGRESSION TEST
+     * Bug: Eliminated player reappeared as current spinner
+     * Symptom: Player 1 eliminated (>$1.00), Player 2 completed turn, then Player 1 showed up again
+     * Root Cause: completePlayerWheelTurn() didn't skip eliminated players when advancing
+     * Fix: Added while loop to find next non-eliminated player who can spin
+     */
+    it("should skip eliminated player when advancing to next turn", () => {
+      setupGameWithBiddingWinners("section_1");
+      startWheelPhase("section_1");
+
+      const db = getDatabase();
+      const eligibleSpinners = getEligibleSpinners("section_1");
+
+      // Player 0: Spins and gets $1.05 (ELIMINATED - went over)
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[0].player_id, "section_1", 1, 0.55, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[0].player_id, "section_1", 2, 0.50, 0); // Total: $1.05 (OVER)
+
+      // Complete Player 0's turn
+      completePlayerWheelTurn(eligibleSpinners[0].player_id, "section_1");
+
+      const state1 = getCurrentState();
+      // Should advance to Player 1, not stay on Player 0
+      expect(state1.currentSpinner).toBe(eligibleSpinners[1].player_id);
+      expect(state1.currentSpinner).not.toBe(eligibleSpinners[0].player_id);
+
+      // Player 1: Spins and stays at $0.85
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[1].player_id, "section_1", 1, 0.85, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[1].player_id, "section_1", 2, 0.0, 0); // Chose to stay
+
+      completePlayerWheelTurn(eligibleSpinners[1].player_id, "section_1");
+
+      const state2 = getCurrentState();
+      // CRITICAL: Should skip Player 0 (eliminated) and go to Player 2
+      expect(state2.currentSpinner).toBe(eligibleSpinners[2].player_id);
+      expect(state2.currentSpinner).not.toBe(eligibleSpinners[0].player_id); // Must not be eliminated player!
+
+      // Player 2: Spins and stays at $0.90
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[2].player_id, "section_1", 1, 0.90, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[2].player_id, "section_1", 2, 0.0, 0);
+
+      completePlayerWheelTurn(eligibleSpinners[2].player_id, "section_1");
+
+      const state3 = getCurrentState();
+      // All turns complete, Player 2 wins with $0.90
+      expect(state3.currentSpinner).toBeNull(); // Game should be over
+    });
+
+    it("should handle all players eliminated except one", () => {
+      setupGameWithBiddingWinners("section_1");
+      startWheelPhase("section_1");
+
+      const db = getDatabase();
+      const eligibleSpinners = getEligibleSpinners("section_1");
+
+      // Player 0 goes over
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[0].player_id, "section_1", 1, 0.6, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[0].player_id, "section_1", 2, 0.50, 0); // $1.10 - OVER
+
+      completePlayerWheelTurn(eligibleSpinners[0].player_id, "section_1");
+
+      // Should advance to Player 1
+      let state = getCurrentState();
+      expect(state.currentSpinner).toBe(eligibleSpinners[1].player_id);
+
+      // Player 1 goes over
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[1].player_id, "section_1", 1, 0.65, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[1].player_id, "section_1", 2, 0.50, 0); // $1.15 - OVER
+
+      completePlayerWheelTurn(eligibleSpinners[1].player_id, "section_1");
+
+      // Should skip both eliminated players and go to Player 2
+      state = getCurrentState();
+      expect(state.currentSpinner).toBe(eligibleSpinners[2].player_id);
+
+      // Player 2 should win automatically (only non-eliminated player)
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[2].player_id, "section_1", 1, 0.75, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[2].player_id, "section_1", 2, 0.05, 0);
+
+      completePlayerWheelTurn(eligibleSpinners[2].player_id, "section_1");
+
+      const finalState = getCurrentState();
+      expect(finalState.currentSpinner).toBeNull(); // Game over
+
+      // Verify Player 2 is the winner
+      const winner = determineWheelWinner("section_1");
+      expect(winner.winnerId).toBe(eligibleSpinners[2].player_id);
+    });
+
+    it("should handle multiple consecutive eliminated players", () => {
+      // Set up game with 4 players instead of 3
+      const db = getDatabase();
+
+      // Create 4 test players
+      const players: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        const result = db
+          .prepare(
+            `INSERT INTO players (first_name, last_name, role, active, access_code, photo_filename, weight)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          )
+          .run(
+            `Player${i}`,
+            `Last${i}`,
+            "audience",
+            1,
+            `code${i}`,
+            `photo${i}.jpg`,
+            1,
+          );
+        players.push(result.lastInsertRowid as number);
+      }
+
+      // Add all 4 as bidding winners
+      for (let i = 0; i < 4; i++) {
+        addContestantToRow(players[i], i + 1, "section_1", "won");
+        db.prepare(
+          `INSERT INTO bids (player_id, game_segment, round_number, retry_number, bid_amount, product_id, is_winner)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        ).run(players[i], "section_1", i + 1, 0, 1000 + i * 100, "product_1", 1);
+      }
+
+      startWheelPhase("section_1");
+
+      const eligibleSpinners = getEligibleSpinners("section_1");
+      expect(eligibleSpinners).toHaveLength(4);
+
+      // Player 0: Eliminated
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[0].player_id, "section_1", 1, 0.6, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[0].player_id, "section_1", 2, 0.5, 0); // $1.10
+
+      completePlayerWheelTurn(eligibleSpinners[0].player_id, "section_1");
+
+      // Player 1: Eliminated
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[1].player_id, "section_1", 1, 0.7, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[1].player_id, "section_1", 2, 0.4, 0); // $1.10
+
+      completePlayerWheelTurn(eligibleSpinners[1].player_id, "section_1");
+
+      // Player 2: Valid score
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[2].player_id, "section_1", 1, 0.85, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[2].player_id, "section_1", 2, 0.0, 0);
+
+      completePlayerWheelTurn(eligibleSpinners[2].player_id, "section_1");
+
+      // CRITICAL: Should skip Players 0 and 1 (both eliminated) and advance to Player 3
+      const state = getCurrentState();
+      expect(state.currentSpinner).toBe(eligibleSpinners[3].player_id);
+      expect(state.currentSpinner).not.toBe(eligibleSpinners[0].player_id);
+      expect(state.currentSpinner).not.toBe(eligibleSpinners[1].player_id);
+
+      // Player 3: Valid score (wins)
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[3].player_id, "section_1", 1, 0.90, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[3].player_id, "section_1", 2, 0.0, 0);
+
+      completePlayerWheelTurn(eligibleSpinners[3].player_id, "section_1");
+
+      const finalState = getCurrentState();
+      expect(finalState.currentSpinner).toBeNull();
+
+      const winner = determineWheelWinner("section_1");
+      expect(winner.winnerId).toBe(eligibleSpinners[3].player_id); // Player 3 wins with $0.90
+    });
+
+    it("should clear currentSpinner when wheel phase ends with winner", () => {
+      setupGameWithBiddingWinners("section_1");
+      startWheelPhase("section_1");
+
+      const db = getDatabase();
+      const eligibleSpinners = getEligibleSpinners("section_1");
+
+      // Give all players different valid totals, Player 2 wins with highest
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[0].player_id, "section_1", 1, 0.75, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[0].player_id, "section_1", 2, 0.05, 0); // $0.80
+
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[1].player_id, "section_1", 1, 0.80, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[1].player_id, "section_1", 2, 0.10, 0); // $0.90
+
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[2].player_id, "section_1", 1, 0.85, 0);
+      db.prepare(
+        `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(eligibleSpinners[2].player_id, "section_1", 2, 0.10, 0); // $0.95 - WINNER
+
+      // Complete final player's turn
+      completePlayerWheelTurn(eligibleSpinners[2].player_id, "section_1");
+
+      const state = getCurrentState();
+      // CRITICAL REGRESSION: currentSpinner must be cleared when game ends
+      expect(state.currentSpinner).toBeNull();
     });
   });
 });

@@ -51,8 +51,13 @@ export interface GameState {
   // Wheel phase state (populated when phase_type === 'wheel')
   wheelSpins?: WheelSpin[];
   currentSpinner?: number | null;
+  currentWheelPosition?: number; // Current wheel display position in cents (5-100)
   playerTotals?: Array<{
     player_id: number;
+    first_name: string;
+    last_name: string;
+    photo_filename: string;
+    position: number;
     total: number;
     eliminated: boolean;
   }>;
@@ -78,10 +83,23 @@ export function startNewGame(): GameWorkflow {
 export function getCurrentState(): GameState {
   const workflow = getGameWorkflow();
 
-  // Get ALL active contestants regardless of segment
-  // Contestants persist across sections unless explicitly replaced by the host
-  // The game_segment field is just metadata about when they were added
-  const contestantsRow = getAllActiveContestants();
+  // Get contestants for the current segment
+  // Special handling for wheel/finale phases where contestants come from different segments
+  const allContestants = getAllActiveContestants();
+  let contestantSegment = workflow.current_segment;
+
+  // Map finale segments to their source segments
+  if (workflow.current_segment === "section_1_finale") {
+    contestantSegment = "section_1"; // Wheel uses section_1 contestants
+  } else if (workflow.current_segment === "section_2_finale") {
+    contestantSegment = "section_2"; // Wheel uses section_2 contestants
+  } else if (workflow.current_segment === "finale") {
+    contestantSegment = "section_2_finale"; // Showcase uses wheel winners from section_2
+  }
+
+  const contestantsRow = allContestants.filter(
+    (c) => c.game_segment === contestantSegment,
+  );
 
   // Count eligible audience members
   const db = getDatabase();
@@ -127,6 +145,7 @@ export function getCurrentState(): GameState {
     // Calculate player totals
     const eligibleSpinners = getEligibleSpinners(segment);
     state.playerTotals = eligibleSpinners.map((spinner) => ({
+      ...spinner, // Include all player details (first_name, last_name, photo_filename, position)
       player_id: spinner.player_id,
       total: getPlayerTotal(spinner.player_id, segment, state.spinoffNumber),
       eliminated: isPlayerEliminated(
@@ -139,6 +158,26 @@ export function getCurrentState(): GameState {
     // Get winner/tie info from metadata
     state.wheelWinner = metadata.winnerId || null;
     state.needsSpinoff = metadata.needsSpinoff || false;
+
+    // Determine current wheel position for display
+    // This is the last spin result, or 100 ($1.00) if no spins yet for current spinner
+    if (state.currentSpinner && state.wheelSpins) {
+      const currentSpinnerSpins = state.wheelSpins.filter(
+        (s) => s.player_id === state.currentSpinner,
+      );
+      if (currentSpinnerSpins.length > 0) {
+        // Use last spin result (in cents: 5-100)
+        const lastSpinResult =
+          currentSpinnerSpins[currentSpinnerSpins.length - 1].result;
+        state.currentWheelPosition = lastSpinResult * 100;
+      } else {
+        // No spins yet for current spinner - start at $1.00
+        state.currentWheelPosition = 100;
+      }
+    } else {
+      // No current spinner - default to $1.00
+      state.currentWheelPosition = 100;
+    }
   }
 
   return state;
@@ -610,8 +649,16 @@ export function processWheelSpin(
     );
   }
 
+  // Calculate the correct spin number (1-based: first spin = 1, second spin = 2)
+  const currentSpinCount = getPlayerSpinCount(
+    playerId,
+    gameSegment,
+    spinoffNumber,
+  );
+  const spinNumber = currentSpinCount + 1;
+
   // Record the spin
-  const spin = recordSpin(playerId, gameSegment, spinoffNumber);
+  const spin = recordSpin(playerId, gameSegment, spinNumber, spinoffNumber);
 
   // Get updated total and status
   const total = getPlayerTotal(playerId, gameSegment, spinoffNumber);
@@ -697,11 +744,36 @@ export function completePlayerWheelTurn(
   });
 
   if (!allSpinsComplete) {
-    // Update current spinner to next player
+    // Update current spinner to next player who can still spin
     const currentIndex = eligibleSpinners.findIndex(
       (s) => s.player_id === playerId,
     );
-    const nextIndex = (currentIndex + 1) % eligibleSpinners.length;
+
+    // Find the next player who is not eliminated and can still spin
+    let nextIndex = (currentIndex + 1) % eligibleSpinners.length;
+    let attempts = 0;
+    while (attempts < eligibleSpinners.length) {
+      const nextSpinner = eligibleSpinners[nextIndex];
+      const eliminated = isPlayerEliminated(
+        nextSpinner.player_id,
+        gameSegment,
+        spinoffNumber,
+      );
+      const canSpin = canPlayerSpinAgain(
+        nextSpinner.player_id,
+        gameSegment,
+        spinoffNumber,
+      );
+
+      // If this player can spin, use them
+      if (!eliminated && canSpin) {
+        break;
+      }
+
+      // Otherwise, move to next player
+      nextIndex = (nextIndex + 1) % eligibleSpinners.length;
+      attempts++;
+    }
 
     metadata.currentSpinner = eligibleSpinners[nextIndex].player_id;
     metadata.spinnerIndex = nextIndex;
@@ -725,6 +797,9 @@ export function completePlayerWheelTurn(
     // Clear winner - update metadata
     metadata.winnerId = winner.player_id;
     metadata.needsSpinoff = false;
+    // Clear current spinner since all players are done
+    metadata.currentSpinner = null;
+    metadata.spinnerIndex = null;
 
     updateGameWorkflow({
       phase_metadata: JSON.stringify(metadata),
@@ -744,6 +819,9 @@ export function completePlayerWheelTurn(
 
   metadata.needsSpinoff = true;
   metadata.tiedPlayerIds = tiedPlayerIds;
+  // Clear current spinner since we need to start a spinoff
+  metadata.currentSpinner = null;
+  metadata.spinnerIndex = null;
 
   updateGameWorkflow({
     phase_metadata: JSON.stringify(metadata),
