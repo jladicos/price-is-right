@@ -40,6 +40,13 @@ import {
   getPlayerSpinCount,
   type WheelSpin,
 } from "../db/wheel-spins.js";
+import {
+  getShowcaseStateWithProducts,
+} from "./showcase.js";
+import {
+  getShowcaseBids,
+  getShowcaseState,
+} from "../db/showcase.js";
 
 export interface GameState {
   workflow: GameWorkflow;
@@ -64,6 +71,9 @@ export interface GameState {
   wheelWinner?: number | null;
   needsSpinoff?: boolean;
   spinoffNumber?: number;
+  // Showcase phase state (populated when phase_type === 'showcase')
+  showcaseState?: ReturnType<typeof getShowcaseStateWithProducts>;
+  showcaseBids?: ReturnType<typeof getShowcaseBids>;
 }
 
 /**
@@ -167,9 +177,10 @@ export function getCurrentState(): GameState {
       );
       if (currentSpinnerSpins.length > 0) {
         // Use last spin result (in cents: 5-100)
+        // Round to avoid floating point precision issues (e.g., 0.55 * 100 = 54.99999)
         const lastSpinResult =
           currentSpinnerSpins[currentSpinnerSpins.length - 1].result;
-        state.currentWheelPosition = lastSpinResult * 100;
+        state.currentWheelPosition = Math.round(lastSpinResult * 100);
       } else {
         // No spins yet for current spinner - start at $1.00
         state.currentWheelPosition = 100;
@@ -177,6 +188,21 @@ export function getCurrentState(): GameState {
     } else {
       // No current spinner - default to $1.00
       state.currentWheelPosition = 100;
+    }
+  }
+
+  // If in showcase phase, include showcase-specific state
+  if (workflow.phase_type === "showcase") {
+    const showcaseState = getShowcaseState(workflow.id);
+    if (showcaseState) {
+      // Get complete showcase state with products
+      state.showcaseState = getShowcaseStateWithProducts(workflow.id);
+
+      // Get showcase bids for current retry
+      state.showcaseBids = getShowcaseBids(
+        workflow.id,
+        showcaseState.finale_retry_number,
+      );
     }
   }
 

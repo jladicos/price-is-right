@@ -801,4 +801,892 @@ describe("gameStore", () => {
       expect(state.error).toBe("Server error");
     });
   });
+
+  // Showcase Actions Tests
+  describe("Showcase Actions", () => {
+    const mockShowcaseState = {
+      state: {
+        finale_player1_id: 1,
+        finale_player2_id: 2,
+        finale_player1_product_value: 15000,
+        finale_player2_product_value: 12000,
+        finale_player1_showcase: 1,
+        finale_player2_showcase: 2,
+        finale_retry_number: 0,
+        finale_player1_passed: 0,
+        finale_winner_id: null,
+        finale_bonus_won: 0,
+      },
+      showcase1: [
+        {
+          id: "product-1",
+          product: { name: "Car", price: 25000, images: ["car.jpg"] },
+        },
+      ],
+      showcase2: [
+        {
+          id: "product-2",
+          product: { name: "Boat", price: 30000, images: ["boat.jpg"] },
+        },
+      ],
+      showcase1Value: 25000,
+      showcase2Value: 30000,
+      bonusThreshold: 250,
+    };
+
+    const mockShowcaseBids = [
+      {
+        id: 1,
+        game_id: 1,
+        player_id: 1,
+        showcase_number: 1,
+        bid_amount: 24000,
+        retry_number: 0,
+        locked: 1,
+        created_at: "2025-12-01T12:00:00Z",
+        updated_at: "2025-12-01T12:00:00Z",
+        first_name: "John",
+        last_name: "Doe",
+        photo_filename: "john-doe.jpg",
+      },
+    ];
+
+    describe("fetchShowcaseState", () => {
+      beforeEach(() => {
+        // Set up initial game state for showcase tests
+        useGameStore.setState({
+          gameState: mockGameState,
+          isLoading: false,
+          error: null,
+        });
+      });
+
+      it("should fetch showcase state and bids successfully", async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              success: true,
+              ...mockShowcaseState,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              success: true,
+              bids: mockShowcaseBids,
+              retryNumber: 0,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        await store.fetchShowcaseState();
+
+        // Verify both API calls were made
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/state"),
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              Authorization: `Bearer ${testToken}`,
+            }),
+          }),
+        );
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/bids"),
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              Authorization: `Bearer ${testToken}`,
+            }),
+          }),
+        );
+
+        // Verify state was updated correctly
+        const state = useGameStore.getState();
+        expect(state.gameState?.showcaseState).toEqual(mockShowcaseState);
+        expect(state.gameState?.showcaseBids).toEqual(mockShowcaseBids);
+        expect(state.isLoading).toBe(false);
+        expect(state.error).toBe(null);
+        expect(state.lastUpdated).toBeGreaterThan(0);
+      });
+
+      it("should handle showcase state fetch error", async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          json: async () => ({
+            error: "Showcase not initialized",
+          }),
+        });
+
+        const store = useGameStore.getState();
+        await store.fetchShowcaseState();
+
+        const state = useGameStore.getState();
+        expect(state.error).toBe("Showcase not initialized");
+        expect(state.isLoading).toBe(false);
+      });
+
+      it("should handle network error", async () => {
+        mockFetch.mockRejectedValueOnce(new Error("Network error"));
+
+        const store = useGameStore.getState();
+        await store.fetchShowcaseState();
+
+        const state = useGameStore.getState();
+        expect(state.error).toBe("Network error");
+        expect(state.isLoading).toBe(false);
+      });
+
+      it("should handle missing auth token", async () => {
+        mockToken = null;
+
+        const store = useGameStore.getState();
+        await store.fetchShowcaseState();
+
+        const state = useGameStore.getState();
+        expect(state.error).toBe("Not authenticated");
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+
+      it("should handle bids fetch error after successful state fetch", async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              success: true,
+              ...mockShowcaseState,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: false,
+            status: 500,
+            statusText: "Internal Server Error",
+            json: async () => ({
+              error: "Failed to fetch bids",
+            }),
+          });
+
+        const store = useGameStore.getState();
+        await store.fetchShowcaseState();
+
+        const state = useGameStore.getState();
+        // State should be updated but bids might not be
+        expect(state.gameState?.showcaseState).toEqual(mockShowcaseState);
+        expect(state.isLoading).toBe(false);
+      });
+    });
+
+    describe("initializeShowcase", () => {
+      beforeEach(() => {
+        useGameStore.setState({
+          gameState: mockGameState,
+          isLoading: false,
+          error: null,
+        });
+      });
+
+      it("should initialize showcase successfully", async () => {
+        // Mock initialize API call
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              success: true,
+              state: mockShowcaseState,
+            }),
+          })
+          // Mock fetchShowcaseState calls (state + bids)
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              success: true,
+              ...mockShowcaseState,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              success: true,
+              bids: [],
+              retryNumber: 0,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        await store.initializeShowcase();
+
+        // Verify API calls
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/initialize"),
+          expect.objectContaining({
+            method: "POST",
+            headers: expect.objectContaining({
+              Authorization: `Bearer ${testToken}`,
+              "Content-Type": "application/json",
+            }),
+          }),
+        );
+
+        // Verify state was updated
+        const state = useGameStore.getState();
+        expect(state.gameState?.showcaseState).toEqual(mockShowcaseState);
+        expect(state.isLoading).toBe(false);
+        expect(state.error).toBe(null);
+      });
+
+      it("should handle initialize error", async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          json: async () => ({
+            error: "Finalists not found",
+          }),
+        });
+
+        const store = useGameStore.getState();
+
+        await expect(store.initializeShowcase()).rejects.toThrow(
+          "Finalists not found",
+        );
+
+        const state = useGameStore.getState();
+        expect(state.error).toBe("Finalists not found");
+        expect(state.isLoading).toBe(false);
+      });
+
+      it("should handle network error", async () => {
+        mockFetch.mockRejectedValueOnce(new Error("Network failure"));
+
+        const store = useGameStore.getState();
+
+        await expect(store.initializeShowcase()).rejects.toThrow(
+          "Network failure",
+        );
+
+        const state = useGameStore.getState();
+        expect(state.error).toBe("Network failure");
+        expect(state.isLoading).toBe(false);
+      });
+
+      it("should handle missing auth token", async () => {
+        mockToken = null;
+
+        const store = useGameStore.getState();
+
+        await expect(store.initializeShowcase()).rejects.toThrow(
+          "Not authenticated",
+        );
+
+        const state = useGameStore.getState();
+        expect(state.error).toBe("Not authenticated");
+        expect(mockFetch).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("submitPass", () => {
+      beforeEach(() => {
+        useGameStore.setState({
+          gameState: mockGameState,
+          isLoading: false,
+          error: null,
+        });
+      });
+
+      it("should submit pass successfully", async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({}),
+          })
+          // Mock fetchShowcaseState calls
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              ...mockShowcaseState,
+              state: {
+                ...mockShowcaseState.state,
+                finale_player1_passed: 1, // Player1 passed
+                finale_player1_showcase: 2, // Showcases swapped
+                finale_player2_showcase: 1,
+              },
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              bids: [],
+              retryNumber: 0,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        await store.submitPass();
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/pass"),
+          expect.objectContaining({
+            method: "POST",
+            headers: expect.objectContaining({
+              Authorization: `Bearer ${testToken}`,
+            }),
+          }),
+        );
+
+        const state = useGameStore.getState();
+        expect(
+          state.gameState?.showcaseState?.state.finale_player1_passed,
+        ).toBe(1);
+        expect(state.isLoading).toBe(false);
+        expect(state.error).toBe(null);
+      });
+
+      it("should handle pass error", async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          json: async () => ({
+            error: "Cannot pass at this time",
+          }),
+        });
+
+        const store = useGameStore.getState();
+
+        await expect(store.submitPass()).rejects.toThrow(
+          "Cannot pass at this time",
+        );
+
+        const state = useGameStore.getState();
+        expect(state.error).toBe("Cannot pass at this time");
+        expect(state.isLoading).toBe(false);
+      });
+
+      it("should handle network error", async () => {
+        mockFetch.mockRejectedValueOnce(new Error("Network failure"));
+
+        const store = useGameStore.getState();
+
+        await expect(store.submitPass()).rejects.toThrow("Network failure");
+
+        const state = useGameStore.getState();
+        expect(state.error).toBe("Network failure");
+      });
+    });
+
+    describe("submitBidDecision", () => {
+      beforeEach(() => {
+        useGameStore.setState({
+          gameState: mockGameState,
+          isLoading: false,
+          error: null,
+        });
+      });
+
+      it("should submit bid decision successfully", async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({}),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              ...mockShowcaseState,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              bids: [],
+              retryNumber: 0,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        await store.submitBidDecision();
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/bid-decision"),
+          expect.objectContaining({
+            method: "POST",
+          }),
+        );
+
+        const state = useGameStore.getState();
+        expect(state.isLoading).toBe(false);
+        expect(state.error).toBe(null);
+      });
+
+      it("should handle bid decision error", async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          json: async () => ({
+            error: "Invalid state for bid decision",
+          }),
+        });
+
+        const store = useGameStore.getState();
+
+        await expect(store.submitBidDecision()).rejects.toThrow(
+          "Invalid state for bid decision",
+        );
+
+        const state = useGameStore.getState();
+        expect(state.error).toBe("Invalid state for bid decision");
+      });
+    });
+
+    describe("submitShowcaseBid", () => {
+      beforeEach(() => {
+        useGameStore.setState({
+          gameState: mockGameState,
+          isLoading: false,
+          error: null,
+        });
+      });
+
+      it("should submit showcase bid as player", async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({}),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              ...mockShowcaseState,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              bids: mockShowcaseBids,
+              retryNumber: 0,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        await store.submitShowcaseBid(24000);
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/submit-bid"),
+          expect.objectContaining({
+            method: "POST",
+            body: JSON.stringify({ bid_amount: 24000 }),
+          }),
+        );
+
+        const state = useGameStore.getState();
+        expect(state.gameState?.showcaseBids).toEqual(mockShowcaseBids);
+        expect(state.isLoading).toBe(false);
+        expect(state.error).toBe(null);
+      });
+
+      it("should submit showcase bid as host for another player", async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({}),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              ...mockShowcaseState,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              bids: mockShowcaseBids,
+              retryNumber: 0,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        await store.submitShowcaseBid(24000, 2);
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/submit-bid"),
+          expect.objectContaining({
+            method: "POST",
+            body: JSON.stringify({ bid_amount: 24000, player_id: 2 }),
+          }),
+        );
+
+        const state = useGameStore.getState();
+        expect(state.isLoading).toBe(false);
+        expect(state.error).toBe(null);
+      });
+
+      it("should handle submit bid error", async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          json: async () => ({
+            error: "Bid is locked",
+          }),
+        });
+
+        const store = useGameStore.getState();
+
+        await expect(store.submitShowcaseBid(24000)).rejects.toThrow(
+          "Bid is locked",
+        );
+
+        const state = useGameStore.getState();
+        expect(state.error).toBe("Bid is locked");
+      });
+
+      it("should handle network error", async () => {
+        mockFetch.mockRejectedValueOnce(new Error("Connection failed"));
+
+        const store = useGameStore.getState();
+
+        await expect(store.submitShowcaseBid(24000)).rejects.toThrow(
+          "Connection failed",
+        );
+      });
+    });
+
+    describe("unlockShowcaseBid", () => {
+      beforeEach(() => {
+        useGameStore.setState({
+          gameState: mockGameState,
+          isLoading: false,
+          error: null,
+        });
+      });
+
+      it("should unlock showcase bid successfully", async () => {
+        const unlockedBids = [
+          {
+            ...mockShowcaseBids[0],
+            locked: 0, // Unlocked
+          },
+        ];
+
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({}),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              ...mockShowcaseState,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              bids: unlockedBids,
+              retryNumber: 0,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        await store.unlockShowcaseBid(1);
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/unlock-bid"),
+          expect.objectContaining({
+            method: "POST",
+            body: JSON.stringify({ player_id: 1 }),
+          }),
+        );
+
+        const state = useGameStore.getState();
+        expect(state.gameState?.showcaseBids?.[0].locked).toBe(0);
+        expect(state.isLoading).toBe(false);
+        expect(state.error).toBe(null);
+      });
+
+      it("should handle unlock error", async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          json: async () => ({
+            error: "No bid found for player",
+          }),
+        });
+
+        const store = useGameStore.getState();
+
+        await expect(store.unlockShowcaseBid(1)).rejects.toThrow(
+          "No bid found for player",
+        );
+      });
+    });
+
+    describe("updateShowcaseBid", () => {
+      beforeEach(() => {
+        useGameStore.setState({
+          gameState: mockGameState,
+          isLoading: false,
+          error: null,
+        });
+      });
+
+      it("should update showcase bid successfully", async () => {
+        const updatedBids = [
+          {
+            ...mockShowcaseBids[0],
+            bid_amount: 25000, // Updated amount
+          },
+        ];
+
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({}),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              ...mockShowcaseState,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              bids: updatedBids,
+              retryNumber: 0,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        await store.updateShowcaseBid(1, 25000);
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/update-bid"),
+          expect.objectContaining({
+            method: "POST",
+            body: JSON.stringify({ player_id: 1, bid_amount: 25000 }),
+          }),
+        );
+
+        const state = useGameStore.getState();
+        expect(state.gameState?.showcaseBids?.[0].bid_amount).toBe(25000);
+        expect(state.isLoading).toBe(false);
+        expect(state.error).toBe(null);
+      });
+
+      it("should handle update error", async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          json: async () => ({
+            error: "Invalid bid amount",
+          }),
+        });
+
+        const store = useGameStore.getState();
+
+        await expect(store.updateShowcaseBid(1, -100)).rejects.toThrow(
+          "Invalid bid amount",
+        );
+      });
+    });
+
+    describe("revealShowcaseWinner", () => {
+      beforeEach(() => {
+        useGameStore.setState({
+          gameState: mockGameState,
+          isLoading: false,
+          error: null,
+        });
+      });
+
+      it("should reveal winner successfully", async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              winnerId: 1,
+              bonusWon: true,
+              retryNeeded: false,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              ...mockShowcaseState,
+              state: {
+                ...mockShowcaseState.state,
+                finale_winner_id: 1,
+                finale_bonus_won: 1,
+              },
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              bids: mockShowcaseBids,
+              retryNumber: 0,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        const result = await store.revealShowcaseWinner();
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/reveal-winner"),
+          expect.objectContaining({
+            method: "POST",
+          }),
+        );
+
+        expect(result.winnerId).toBe(1);
+        expect(result.bonusWon).toBe(true);
+        expect(result.retryNeeded).toBe(false);
+
+        const state = useGameStore.getState();
+        expect(state.gameState?.showcaseState?.state.finale_winner_id).toBe(1);
+        expect(state.gameState?.showcaseState?.state.finale_bonus_won).toBe(1);
+        expect(state.isLoading).toBe(false);
+        expect(state.error).toBe(null);
+      });
+
+      it("should handle retry needed scenario", async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              winnerId: 0,
+              bonusWon: false,
+              retryNeeded: true,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              ...mockShowcaseState,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              bids: mockShowcaseBids,
+              retryNumber: 0,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        const result = await store.revealShowcaseWinner();
+
+        expect(result.retryNeeded).toBe(true);
+        expect(result.winnerId).toBe(0);
+
+        const state = useGameStore.getState();
+        expect(state.isLoading).toBe(false);
+      });
+
+      it("should handle reveal winner error", async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          json: async () => ({
+            error: "Both players must have bids",
+          }),
+        });
+
+        const store = useGameStore.getState();
+
+        await expect(store.revealShowcaseWinner()).rejects.toThrow(
+          "Both players must have bids",
+        );
+      });
+
+      it("should handle network error", async () => {
+        mockFetch.mockRejectedValueOnce(new Error("Network timeout"));
+
+        const store = useGameStore.getState();
+
+        await expect(store.revealShowcaseWinner()).rejects.toThrow(
+          "Network timeout",
+        );
+      });
+    });
+
+    describe("retryShowcase", () => {
+      beforeEach(() => {
+        useGameStore.setState({
+          gameState: mockGameState,
+          isLoading: false,
+          error: null,
+        });
+      });
+
+      it("should initiate retry successfully", async () => {
+        mockFetch
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              retryNumber: 1,
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              ...mockShowcaseState,
+              state: {
+                ...mockShowcaseState.state,
+                finale_retry_number: 1,
+                finale_winner_id: null, // Reset winner
+                finale_bonus_won: 0,
+              },
+            }),
+          })
+          .mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+              bids: [], // Bids reset for retry
+              retryNumber: 1,
+            }),
+          });
+
+        const store = useGameStore.getState();
+        await store.retryShowcase();
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining("/showcase/retry"),
+          expect.objectContaining({
+            method: "POST",
+          }),
+        );
+
+        const state = useGameStore.getState();
+        expect(state.gameState?.showcaseState?.state.finale_retry_number).toBe(
+          1,
+        );
+        expect(state.gameState?.showcaseBids).toEqual([]);
+        expect(state.isLoading).toBe(false);
+        expect(state.error).toBe(null);
+      });
+
+      it("should handle retry error", async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          json: async () => ({
+            error: "Retry not needed",
+          }),
+        });
+
+        const store = useGameStore.getState();
+
+        await expect(store.retryShowcase()).rejects.toThrow("Retry not needed");
+      });
+    });
+  });
 });

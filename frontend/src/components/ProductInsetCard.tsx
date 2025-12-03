@@ -1,4 +1,6 @@
-import { Box, VStack, Image, Text } from "@chakra-ui/react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Box, VStack, Image, Text, IconButton } from "@chakra-ui/react";
+import { IoChevronBack, IoChevronForward } from "react-icons/io5";
 import { getProductImageUrl } from "../utils/imageUrls";
 
 export interface Product {
@@ -7,35 +9,102 @@ export interface Product {
   images: string[];
 }
 
+export interface ShowcaseProduct {
+  id: string;
+  product: Product;
+}
+
 interface ProductInsetCardProps {
-  product: Product | null;
-  productId: string | null;
+  // Single product mode (bidding rounds)
+  product?: Product | null;
+  productId?: string | null;
+  // Showcase mode (multiple products)
+  products?: ShowcaseProduct[];
+  // Common props
   isVisible: boolean;
   showPrice?: boolean;
-  price?: number;
+  price?: number; // For single product or total showcase value
+  position?: "left" | "right";
 }
 
 export function ProductInsetCard({
   product,
   productId,
+  products,
   isVisible,
   showPrice = false,
   price,
+  position = "right",
 }: ProductInsetCardProps) {
-  if (!isVisible || !product || !productId) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Determine if we're in showcase mode (multiple products)
+  const isShowcaseMode = products && products.length > 0;
+  const hasMultipleProducts = isShowcaseMode && products.length > 1;
+
+  // Get current product to display
+  const currentProduct = isShowcaseMode
+    ? products[currentIndex]?.product
+    : product;
+  const currentProductId = isShowcaseMode
+    ? products[currentIndex]?.id
+    : productId;
+
+  // Don't render if not visible or no product
+  if (!isVisible || !currentProduct || !currentProductId) {
     return null;
   }
 
+  // Auto-advance logic for showcase mode
+  const startAutoAdvance = useCallback(() => {
+    if (!hasMultipleProducts) return;
+
+    // Clear existing timer
+    if (autoAdvanceTimer.current) {
+      clearTimeout(autoAdvanceTimer.current);
+    }
+
+    // Set new timer for 5 seconds
+    const timer = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % products.length);
+    }, 5000);
+
+    autoAdvanceTimer.current = timer;
+  }, [hasMultipleProducts, products?.length]);
+
+  // Start auto-advance when component mounts or index changes
+  useEffect(() => {
+    if (hasMultipleProducts) {
+      startAutoAdvance();
+    }
+
+    return () => {
+      if (autoAdvanceTimer.current) {
+        clearTimeout(autoAdvanceTimer.current);
+      }
+    };
+  }, [currentIndex, hasMultipleProducts, startAutoAdvance]);
+
+  // Manual navigation handlers
+  const handlePrevious = () => {
+    setCurrentIndex((prev) => (prev - 1 + products!.length) % products!.length);
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % products!.length);
+  };
+
   // Use first image from product, with fallback for missing images
-  const firstImageUrl = product.images?.[0]
-    ? getProductImageUrl(product.images[0])
+  const firstImageUrl = currentProduct.images?.[0]
+    ? getProductImageUrl(currentProduct.images[0])
     : "";
 
   return (
     <Box
       position="fixed"
       top="20px"
-      right="20px"
+      {...(position === "left" ? { left: "20px" } : { right: "20px" })}
       width="250px"
       bg="white"
       borderRadius="lg"
@@ -47,7 +116,7 @@ export function ProductInsetCard({
       data-testid="product-inset-card"
     >
       <VStack gap={0} align="stretch">
-        {/* Product Image */}
+        {/* Product Image with Navigation Arrows */}
         <Box
           width="100%"
           height="200px"
@@ -55,15 +124,54 @@ export function ProductInsetCard({
           overflow="hidden"
           borderBottom="3px solid"
           borderColor="blue.500"
+          position="relative"
         >
           <Image
             src={firstImageUrl}
-            alt={product.name}
+            alt={currentProduct.name}
             width="100%"
             height="100%"
             objectFit="contain"
             data-testid="product-inset-image"
           />
+
+          {/* Navigation Arrows - only show in showcase mode with multiple products */}
+          {hasMultipleProducts && (
+            <>
+              <IconButton
+                aria-label="Previous product"
+                position="absolute"
+                left="10px"
+                top="50%"
+                transform="translateY(-50%)"
+                onClick={handlePrevious}
+                size="sm"
+                colorScheme="blue"
+                variant="solid"
+                opacity={0.9}
+                _hover={{ opacity: 1 }}
+                data-testid="carousel-prev-button"
+              >
+                <IoChevronBack size={24} />
+              </IconButton>
+              <IconButton
+                aria-label="Next product"
+                position="absolute"
+                right="10px"
+                top="50%"
+                transform="translateY(-50%)"
+                onClick={handleNext}
+                size="sm"
+                colorScheme="blue"
+                variant="solid"
+                opacity={0.9}
+                _hover={{ opacity: 1 }}
+                data-testid="carousel-next-button"
+              >
+                <IoChevronForward size={24} />
+              </IconButton>
+            </>
+          )}
         </Box>
 
         {/* Product Name */}
@@ -77,11 +185,25 @@ export function ProductInsetCard({
             letterSpacing="wide"
             data-testid="product-inset-name"
           >
-            {product.name}
+            {currentProduct.name}
           </Text>
+
+          {/* Carousel indicator - show current position */}
+          {hasMultipleProducts && (
+            <Text
+              fontSize="xs"
+              textAlign="center"
+              color="white"
+              mt={1}
+              opacity={0.8}
+              data-testid="carousel-indicator"
+            >
+              {currentIndex + 1} / {products.length}
+            </Text>
+          )}
         </Box>
 
-        {/* Product Price - shown when winner is revealed */}
+        {/* Product Price or Total Showcase Value - shown when winner is revealed */}
         {showPrice &&
           price != null &&
           typeof price === "number" &&
@@ -94,8 +216,24 @@ export function ProductInsetCard({
                 color="white"
                 data-testid="product-inset-price"
               >
-                {price < 0 ? "-" : ""}${Math.abs(price).toFixed(2)}
+                {price < 0 ? "-" : ""}$
+                {Math.abs(price).toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </Text>
+              {isShowcaseMode && (
+                <Text
+                  fontSize="sm"
+                  textAlign="center"
+                  color="white"
+                  mt={1}
+                  opacity={0.9}
+                  data-testid="showcase-total-label"
+                >
+                  TOTAL VALUE
+                </Text>
+              )}
             </Box>
           )}
       </VStack>

@@ -1331,6 +1331,18 @@ describe("Game State - Wheel Integration", () => {
         ).run(players[i], "section_1", i + 1, 0, 1000 + i * 100, "product_1", 1);
       }
 
+      // Set up game workflow for bidding phase (required before starting wheel phase)
+      updateGameWorkflow({
+        current_segment: "section_1",
+        current_segment_index: 3,
+        phase_type: "bidding",
+        phase_metadata: JSON.stringify({
+          product_id: "product_4",
+          round_number: 4,
+          retry_number: 0,
+        }),
+      });
+
       startWheelPhase("section_1");
 
       const eligibleSpinners = getEligibleSpinners("section_1");

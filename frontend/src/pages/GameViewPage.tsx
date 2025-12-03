@@ -13,6 +13,7 @@ import { useGameStore } from "../store/gameStore";
 import { useAuthStore } from "../store/authStore";
 import { BiddingPhaseView } from "../components/phases/BiddingPhaseView";
 import { WheelPhaseView } from "./WheelPhaseView";
+import { ShowcasePhaseView } from "../components/phases/ShowcasePhaseView";
 import { showToast } from "../utils/toast";
 
 export default function GameViewPage() {
@@ -128,15 +129,7 @@ export default function GameViewPage() {
       return <WheelPhaseView gameState={gameState} />;
 
     case "showcase":
-      // TODO: Implement ShowcasePhaseView (Phase 7)
-      return (
-        <Container maxW="4xl" centerContent py={10}>
-          <VStack gap={6}>
-            <Heading>Showcase Showdown</Heading>
-            <Text>Showcase Showdown phase - Coming in Phase 7</Text>
-          </VStack>
-        </Container>
-      );
+      return <ShowcasePhaseView gameState={gameState} />;
 
     default:
       return (

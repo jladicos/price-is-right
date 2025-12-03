@@ -38,9 +38,13 @@ describe("Product Utilities", () => {
       expect(config.game_structure.section_1_finale).toEqual({ type: "wheel" });
       expect(config.game_structure.section_2_finale).toEqual({ type: "wheel" });
 
-      expect(config.game_structure.finale.type).toBe("showcase");
-      expect(Array.isArray(config.game_structure.finale.products)).toBe(true);
-      expect(config.game_structure.finale.products.length).toBeGreaterThan(0);
+      // Validate finale structure
+      expect(Array.isArray(config.game_structure.finale.showcase_1)).toBe(true);
+      expect(Array.isArray(config.game_structure.finale.showcase_2)).toBe(true);
+      expect(typeof config.game_structure.finale.bonus_threshold).toBe("number");
+      expect(config.game_structure.finale.showcase_1.length).toBeGreaterThan(0);
+      expect(config.game_structure.finale.showcase_2.length).toBeGreaterThan(0);
+      expect(config.game_structure.finale.bonus_threshold).toBeGreaterThan(0);
     });
 
     it("should validate all products have required fields", () => {
@@ -80,7 +84,10 @@ describe("Product Utilities", () => {
         )
         .map((phase) => phase.product_id);
 
-      const showcaseIds = config.game_structure.finale.products;
+      const showcaseIds = [
+        ...config.game_structure.finale.showcase_1,
+        ...config.game_structure.finale.showcase_2,
+      ];
 
       const allAssignedIds = [...section1Ids, ...section2Ids, ...showcaseIds];
 
@@ -183,14 +190,20 @@ describe("Product Utilities", () => {
       expect(products[0]).toHaveProperty("product");
     });
 
-    it("should return products in correct order", () => {
+    it("should return products from both showcases", () => {
       const config = loadProductConfig();
       const products = getShowcaseProducts();
 
-      expect(products[0].id).toBe(config.game_structure.finale.products[0]);
-      // Verify full array order
-      expect(products.map((p) => p.id)).toEqual(
-        config.game_structure.finale.products,
+      const expectedIds = [
+        ...config.game_structure.finale.showcase_1,
+        ...config.game_structure.finale.showcase_2,
+      ];
+
+      // Verify it returns products from both showcases
+      expect(products.map((p) => p.id)).toEqual(expectedIds);
+      expect(products.length).toBe(
+        config.game_structure.finale.showcase_1.length +
+          config.game_structure.finale.showcase_2.length,
       );
     });
   });

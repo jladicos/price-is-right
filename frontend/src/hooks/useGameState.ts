@@ -67,7 +67,8 @@ export function useGameState(options: UseGameStateOptions = {}) {
         intervalRef.current = null;
       }
     };
-  }, [enabled, pollInterval, fetchGameState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, pollInterval]);
 
   return {
     gameState,

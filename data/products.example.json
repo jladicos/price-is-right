@@ -49,6 +49,26 @@
       "name": "European Cruise",
       "price": 8000,
       "images": ["cruise-ship.jpg", "europe-coast.jpg"]
+    },
+    "luggage-001": {
+      "name": "Designer Luggage Set",
+      "price": 1200,
+      "images": ["luggage-set.jpg"]
+    },
+    "watch-001": {
+      "name": "Luxury Watch",
+      "price": 3500,
+      "images": ["luxury-watch.jpg"]
+    },
+    "grill-001": {
+      "name": "Outdoor Grill & Patio Set",
+      "price": 2500,
+      "images": ["outdoor-grill.jpg"]
+    },
+    "home-theater-001": {
+      "name": "Home Theater System",
+      "price": 4000,
+      "images": ["home-theater.jpg"]
     }
   },
   "game_structure": {
@@ -67,8 +87,16 @@
     ],
     "section_2_finale": { "type": "wheel" },
     "finale": {
-      "type": "showcase",
-      "products": ["car-002", "vacation-002"]
+      "showcase_1": ["car-002", "luggage-001", "watch-001"],
+      "showcase_2": ["vacation-002", "grill-001", "home-theater-001"],
+      "bonus_threshold": 250
     }
+  },
+  "_comments": {
+    "products": "Define all products here with unique IDs. Each product needs a name, price (in dollars), and at least one image.",
+    "game_structure": "Defines the flow of the game with two sections, two wheel finales, and a final showcase.",
+    "finale.showcase_1": "Array of product IDs for the first showcase (3-5 products recommended)",
+    "finale.showcase_2": "Array of product IDs for the second showcase (3-5 products recommended)",
+    "finale.bonus_threshold": "Dollar amount - if winner's bid is within this amount of actual showcase value, they win BOTH showcases (typically $250)"
   }
 }

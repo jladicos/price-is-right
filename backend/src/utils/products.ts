@@ -8,6 +8,9 @@ import type {
   MiniGamePhase,
 } from "../types/product.js";
 
+// Re-export types for convenience
+export type { Product };
+
 let cachedConfig: ProductConfig | null = null;
 
 /**
@@ -103,12 +106,47 @@ export function loadProductConfig(): ProductConfig {
       throw new Error("game_structure must contain 'finale'");
     }
 
+    // Validate finale structure
+    const finale = config.game_structure.finale;
+
+    if (!Array.isArray(finale.showcase_1)) {
+      throw new Error("finale must contain 'showcase_1' array");
+    }
+
+    if (!Array.isArray(finale.showcase_2)) {
+      throw new Error("finale must contain 'showcase_2' array");
+    }
+
+    if (
+      typeof finale.bonus_threshold !== "number" ||
+      finale.bonus_threshold <= 0
+    ) {
+      throw new Error(
+        "finale must contain 'bonus_threshold' as a positive number",
+      );
+    }
+
+    // Check for more than 2 showcases (showcase_3, showcase_4, etc.)
+    const finaleKeys = Object.keys(finale);
+    const showcaseKeys = finaleKeys.filter((key) =>
+      key.match(/^showcase_\d+$/),
+    );
+    if (showcaseKeys.length > 2) {
+      const extraShowcases = showcaseKeys
+        .filter((key) => key !== "showcase_1" && key !== "showcase_2")
+        .join(", ");
+      console.warn(
+        `WARNING: Found extra showcases (${extraShowcases}) in finale. Only showcase_1 and showcase_2 will be used.`,
+      );
+    }
+
     // Extract all product IDs from game structure
     const productIds = Object.keys(config.products);
     const allAssignedIds = [
       ...extractProductIdsFromPhases(config.game_structure.section_1),
       ...extractProductIdsFromPhases(config.game_structure.section_2),
-      ...config.game_structure.finale.products,
+      ...finale.showcase_1,
+      ...finale.showcase_2,
     ];
 
     // Validate all assigned products exist
@@ -175,15 +213,45 @@ export function getBiddingPhasesForSegment(
 
 /**
  * Get showcase products
+ * Returns products from both showcases combined
  */
 export function getShowcaseProducts(): Array<{ id: string; product: Product }> {
   const config = loadProductConfig();
-  const productIds = config.game_structure.finale.products;
+  const productIds = [
+    ...config.game_structure.finale.showcase_1,
+    ...config.game_structure.finale.showcase_2,
+  ];
 
   return productIds.map((id) => ({
     id,
     product: config.products[id],
   }));
+}
+
+/**
+ * Get products for a specific showcase (1 or 2)
+ */
+export function getShowcase(
+  showcaseNumber: 1 | 2,
+): Array<{ id: string; product: Product }> {
+  const config = loadProductConfig();
+  const productIds =
+    showcaseNumber === 1
+      ? config.game_structure.finale.showcase_1
+      : config.game_structure.finale.showcase_2;
+
+  return productIds.map((id) => ({
+    id,
+    product: config.products[id],
+  }));
+}
+
+/**
+ * Get bonus threshold for showcase showdown
+ */
+export function getBonusThreshold(): number {
+  const config = loadProductConfig();
+  return config.game_structure.finale.bonus_threshold;
 }
 
 /**

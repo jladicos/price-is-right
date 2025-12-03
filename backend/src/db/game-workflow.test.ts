@@ -573,8 +573,8 @@ describe("Game Workflow Database Functions", () => {
       ).run();
 
       db.prepare(
-        `INSERT INTO showcase_bids (player_id, product_id, bid_amount)
-         VALUES (1, 'showcase-1', 10000)`,
+        `INSERT INTO showcase_bids (game_id, player_id, showcase_number, bid_amount, retry_number)
+         VALUES (1, 1, 1, 10000, 0)`,
       ).run();
     });
 

@@ -12,6 +12,7 @@ import gameRoutes from "./routes/game.js";
 import adminRoutes from "./routes/admin.js";
 import biddingRoutes from "./routes/bidding.js";
 import productsRoutes from "./routes/products.js";
+import showcaseRoutes from "./routes/showcase.js";
 import { initDatabase, closeDatabase } from "./db/connection.js";
 import { checkForInProgressGame, resumeGame } from "./services/game-resume.js";
 
@@ -71,6 +72,7 @@ const start = async () => {
     await fastify.register(gameRoutes, { prefix: "/api" });
     await fastify.register(biddingRoutes, { prefix: "/api" });
     await fastify.register(productsRoutes, { prefix: "/api" });
+    await fastify.register(showcaseRoutes, { prefix: "/api" });
     await fastify.register(adminRoutes, { prefix: "/api" });
 
     const port = parseInt(process.env.PORT || "3001", 10);

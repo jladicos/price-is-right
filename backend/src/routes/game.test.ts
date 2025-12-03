@@ -4,6 +4,7 @@ import gameRoutes from "./game.js";
 import { initDatabase, closeDatabase } from "../db/connection.js";
 import Database from "better-sqlite3";
 import { setGameEnabled } from "../db/game-state.js";
+import { clearProductCache } from "../utils/products.js";
 
 describe("Game API Routes", () => {
   let app: FastifyInstance;
@@ -47,6 +48,7 @@ describe("Game API Routes", () => {
   afterEach(async () => {
     await app.close();
     closeDatabase();
+    clearProductCache();
   });
 
   describe("GET /api/game/status", () => {
@@ -1081,9 +1083,14 @@ describe("Game API Routes", () => {
       });
 
       // Replace the first contestant with someone else (removing them from the row)
+      // Make sure to select an audience member who is NOT already in the contestants row
       const newAudienceMember = db
         .prepare(
-          "SELECT id FROM players WHERE role = 'audience' AND active = 1 LIMIT 1",
+          `SELECT id FROM players
+           WHERE role = 'audience'
+           AND active = 1
+           AND id NOT IN (SELECT player_id FROM contestants_row WHERE status != 'replaced')
+           LIMIT 1`,
         )
         .get() as { id: number };
       await app.inject({
@@ -1099,8 +1106,17 @@ describe("Game API Routes", () => {
         },
       });
 
+      // Fetch fresh state after replacement
+      const freshState = await app.inject({
+        method: "GET",
+        url: "/api/game/state",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
       // Now replace another contestant with the original player (who is no longer in the row but has role='player')
-      const secondContestant = JSON.parse(state.body).state.contestantsRow[1];
+      const secondContestant = JSON.parse(freshState.body).state.contestantsRow[1];
       const response = await app.inject({
         method: "POST",
         url: "/api/game/replace-contestant-manual",
@@ -1293,17 +1309,7 @@ describe("Game API Routes", () => {
       // Clear any existing contestants to ensure clean state
       db.prepare("DELETE FROM contestants_row").run();
 
-      // Create a fresh player specifically for this test (not from the existing audience pool)
-      // This simulates a player who was previously a contestant but is no longer in the row
-      const result = db
-        .prepare(
-          "INSERT INTO players (first_name, last_name, access_code, role, active) VALUES (?, ?, ?, ?, ?)",
-        )
-        .run("ExistingPlayer", "Test", "EXIST999", "player", 1);
-
-      const existingPlayerId = result.lastInsertRowid as number;
-
-      // Ensure game is started
+      // Ensure game is started first
       const gameState = db.prepare("SELECT * FROM game_workflow").get() as
         | {
             game_enabled: number;
@@ -1319,6 +1325,16 @@ describe("Game API Routes", () => {
           },
         });
       }
+
+      // Create a fresh player AFTER game start and set their role to 'player'
+      // This simulates a player who was previously a contestant but is no longer in the row
+      const result = db
+        .prepare(
+          "INSERT INTO players (first_name, last_name, access_code, role, active) VALUES (?, ?, ?, ?, ?)",
+        )
+        .run("ExistingPlayer", "Test", "EXIST999", "player", 1);
+
+      const existingPlayerId = result.lastInsertRowid as number;
 
       // Now manually select this player (who has role='player' but is not in the row) for position 4
       const response = await app.inject({

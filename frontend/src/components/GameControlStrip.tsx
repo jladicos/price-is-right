@@ -22,8 +22,20 @@ interface GameControlStripProps {
   onStartNewGame?: () => void;
   onRefreshGameState?: () => void;
   onRefreshContestantsRow?: () => void;
+  onRestartShowcase?: () => void; // Debug: restart showcase phase
   isLoading?: boolean;
   showNextSpinnerButton?: boolean;
+  // Showcase phase controls
+  showcase1Revealed?: boolean;
+  showcase2Revealed?: boolean;
+  onRevealShowcase1?: () => void;
+  onRevealShowcase2?: () => void;
+  showResults?: boolean;
+  bothShowcaseBidsSubmitted?: boolean;
+  onRevealShowcaseWinner?: () => void;
+  onRetryShowcase?: () => void;
+  bothPlayersOver?: boolean;
+  hasWinner?: boolean;
 }
 
 export function GameControlStrip({
@@ -41,13 +53,26 @@ export function GameControlStrip({
   onStartNewGame,
   onRefreshGameState,
   onRefreshContestantsRow,
+  onRestartShowcase,
   isLoading = false,
   showNextSpinnerButton = false,
+  // Showcase phase controls
+  showcase1Revealed = false,
+  showcase2Revealed = false,
+  onRevealShowcase1,
+  onRevealShowcase2,
+  showResults = false,
+  bothShowcaseBidsSubmitted = false,
+  onRevealShowcaseWinner,
+  onRetryShowcase,
+  bothPlayersOver = false,
+  hasWinner = false,
 }: GameControlStripProps) {
   const navigate = useNavigate();
   const workflow = gameState.workflow;
   const isBiddingPhase = workflow.phase_type === "bidding";
   const isWheelPhase = workflow.phase_type === "wheel";
+  const isShowcasePhase = workflow.phase_type === "showcase";
 
   // Modal state
   const [isStartGameModalOpen, setIsStartGameModalOpen] = useState(false);
@@ -134,6 +159,11 @@ export function GameControlStrip({
                     onClick={onRefreshContestantsRow}
                   >
                     Refresh Entire Row
+                  </MenuItem>
+                )}
+                {isShowcasePhase && onRestartShowcase && (
+                  <MenuItem value="restart-showcase" onClick={onRestartShowcase}>
+                    🔄 Restart Showcase Phase
                   </MenuItem>
                 )}
                 <MenuItem
@@ -281,6 +311,86 @@ export function GameControlStrip({
             >
               Next Phase →
             </Button>
+          </HStack>
+        )}
+
+        {/* Showcase Phase Controls */}
+        {role === "host" && isShowcasePhase && (
+          <HStack gap={4} justify="center" flex="1" wrap="wrap">
+            {/* Phase Info */}
+            <Box
+              bg="pink.600"
+              px={4}
+              py={2}
+              borderRadius="md"
+              minWidth="200px"
+            >
+              <Text
+                fontSize="sm"
+                fontWeight="bold"
+                color="white"
+                textAlign="center"
+                textTransform="uppercase"
+                letterSpacing="wide"
+              >
+                Showcase Showdown
+              </Text>
+            </Box>
+
+            {/* Reveal Showcase 1 */}
+            {!showcase1Revealed && onRevealShowcase1 && (
+              <Button
+                onClick={onRevealShowcase1}
+                colorPalette="blue"
+                size="lg"
+                disabled={isLoading}
+              >
+                Reveal Showcase 1
+              </Button>
+            )}
+
+            {/* Reveal Showcase 2 */}
+            {showcase1Revealed && !showcase2Revealed && onRevealShowcase2 && (
+              <Button
+                onClick={onRevealShowcase2}
+                colorPalette="blue"
+                size="lg"
+                disabled={isLoading}
+              >
+                Reveal Showcase 2
+              </Button>
+            )}
+
+            {/* Reveal Winner */}
+            {!showResults && onRevealShowcaseWinner && showcase2Revealed && (
+              <Button
+                onClick={onRevealShowcaseWinner}
+                colorPalette="green"
+                size="lg"
+                disabled={isLoading || !bothShowcaseBidsSubmitted}
+              >
+                Reveal Winner
+                {!bothShowcaseBidsSubmitted && (
+                  <Text as="span" ml={2} fontSize="xs">
+                    (waiting for bids)
+                  </Text>
+                )}
+              </Button>
+            )}
+
+            {/* Retry (when both players over) */}
+            {showResults && bothPlayersOver && onRetryShowcase && (
+              <Button
+                onClick={onRetryShowcase}
+                colorPalette="orange"
+                size="lg"
+                disabled={isLoading}
+              >
+                Start Retry
+              </Button>
+            )}
+
+            {/* No "Next Phase" button - Showcase is the final phase */}
           </HStack>
         )}
 

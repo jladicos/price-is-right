@@ -589,6 +589,17 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
           });
           // Then call startWheelPhase to properly initialize wheel metadata
           startWheelPhase(nextSegment);
+        } else if (nextSegment === "finale") {
+          // Special handling for finale segment (FinalePhase doesn't have a type property)
+          updateGameWorkflow({
+            current_segment: nextSegment,
+            current_segment_index: nextIndex,
+            phase_type: "showcase",
+            phase_metadata: JSON.stringify(nextMetadata),
+          });
+          // Initialize showcase showdown (determine finalists, calculate order)
+          const { initializeShowcase } = await import("../services/showcase.js");
+          await initializeShowcase(1); // Game ID is always 1
         } else {
           // Update workflow to next phase (non-wheel phases)
           updateGameWorkflow({

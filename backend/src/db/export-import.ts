@@ -97,13 +97,14 @@ export interface DatabaseExport {
   }>;
   showcaseBids: Array<{
     id: number;
+    gameId: number;
     playerId: number;
-    productId: string;
+    showcaseNumber: number;
     bidAmount: number;
-    passed: number;
-    isWinner: number;
     retryNumber: number;
+    locked: number;
     createdAt: string;
+    updatedAt: string;
   }>;
 }
 
@@ -176,8 +177,9 @@ export function exportDatabase(db: Database.Database): DatabaseExport {
   // Export showcase bids
   const showcaseBids = db
     .prepare(
-      `SELECT id, player_id AS playerId, product_id AS productId, bid_amount AS bidAmount,
-              passed, is_winner AS isWinner, retry_number AS retryNumber, created_at AS createdAt
+      `SELECT id, game_id AS gameId, player_id AS playerId, showcase_number AS showcaseNumber,
+              bid_amount AS bidAmount, retry_number AS retryNumber, locked,
+              created_at AS createdAt, updated_at AS updatedAt
        FROM showcase_bids
        ORDER BY id`,
     )
@@ -359,21 +361,22 @@ export function importDatabase(
     // Import showcase bids
     const insertShowcaseBid = db.prepare(`
       INSERT INTO showcase_bids (
-        id, player_id, product_id, bid_amount,
-        passed, is_winner, retry_number, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        id, game_id, player_id, showcase_number, bid_amount,
+        retry_number, locked, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const showcaseBid of data.showcaseBids) {
       insertShowcaseBid.run(
         showcaseBid.id,
+        showcaseBid.gameId,
         showcaseBid.playerId,
-        showcaseBid.productId,
+        showcaseBid.showcaseNumber,
         showcaseBid.bidAmount,
-        showcaseBid.passed,
-        showcaseBid.isWinner,
         showcaseBid.retryNumber,
+        showcaseBid.locked,
         showcaseBid.createdAt,
+        showcaseBid.updatedAt,
       );
     }
 

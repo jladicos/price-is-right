@@ -419,20 +419,44 @@ During the showcase showdown
 - Backend: 717 tests (27 test files) - Added 148 tests in Phase 6
 - Frontend: 61 tests (30+ test files) - Bidding components tested
 
-#### Phase 7: Spin the Wheel & Showcase Showdown
+#### Phase 7: Spin the Wheel & Showcase Showdown (Backend 50% Complete)
+**Wheel Spin (Pending):**
 - [ ] Backend: Wheel spin logic (values $.05 to $1.00 in $.05 increments)
 - [ ] Backend: Two-spin limit, $1.00 detection, elimination logic
 - [ ] Backend: Spin-off for ties at $1.00
-- [ ] Backend: Showcase logic (order based on wheel results, pass/bid handling)
 - [ ] REST API: POST /api/game/spin-wheel (player action)
-- [ ] REST API: POST /api/game/submit-showcase-bid (player action)
-- [ ] REST API: POST /api/game/showcase-pass (player decision)
-- [ ] Player controls (spin button, choose to stay or spin again, bid or pass)
-- [ ] Host controls (advance players, show/hide products, reveal winners)
-- [ ] Player/audience view: Wheel visualization, showcase podiums (updates via polling)
-- [ ] Winner calculations and announcements
-- [ ] Unit tests for wheel and showcase logic
-- [ ] Integration tests for complete game flow
+- [ ] Player controls (spin button, choose to stay or spin again)
+- [ ] Host controls (advance players)
+- [ ] Player/audience view: Wheel visualization (updates via polling)
+- [ ] Unit tests for wheel logic
+
+**Showcase Showdown ✅ BACKEND COMPLETE:**
+- [x] Backend: Showcase logic (order based on wheel results, pass/bid handling)
+- [x] Database: `showcase_bids` table and finale state columns (migration 005)
+- [x] Database layer: 11 functions (33 tests passing)
+- [x] Service layer: 11 functions with complete business logic (37 tests passing)
+- [x] REST API: 13 endpoints for showcase functionality
+  - [x] POST /api/showcase/initialize - Initialize with finalists
+  - [x] POST /api/showcase/pass - First player passes
+  - [x] POST /api/showcase/bid-decision - First player chooses to bid
+  - [x] POST /api/showcase/submit-bid - Submit showcase bid
+  - [x] POST /api/showcase/unlock-bid - Unlock for re-entry
+  - [x] POST /api/showcase/update-bid - Host override
+  - [x] POST /api/showcase/reveal-winner - Calculate and reveal
+  - [x] POST /api/showcase/retry - Initiate retry
+  - [x] GET /api/showcase/state - Get complete state
+  - [x] GET /api/showcase/bids - Get all bids
+  - [x] GET /api/showcase/winner - Preview winner
+  - [x] GET /api/showcase/finalists - Preview finalists
+- [x] Integration tests: 7 real integration tests (no mocks)
+- [x] Edge case testing: 8 additional edge case scenarios
+- [x] **Total: 77 tests passing (100%)**
+- [ ] Frontend: Zustand store showcase actions
+- [ ] Frontend: ShowcaseInsetCard component
+- [ ] Frontend: BidPassButtons component
+- [ ] Frontend: Host controls for showcase phase
+- [ ] Frontend: Player/audience showcase view
+- [ ] Frontend: Integration with game flow
 
 #### Phase 8: Real-Time Enhancement (WebSocket Layer)
 - [ ] Socket.io server setup

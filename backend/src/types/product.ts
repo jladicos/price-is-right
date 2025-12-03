@@ -34,7 +34,18 @@ export interface WheelPhase {
 }
 
 /**
- * Showcase phase configuration
+ * Finale phase configuration for the showcase showdown
+ * Contains two showcases and bonus threshold
+ */
+export interface FinalePhase {
+  showcase_1: string[]; // Array of product IDs for showcase 1
+  showcase_2: string[]; // Array of product IDs for showcase 2
+  bonus_threshold: number; // Dollar amount within which player wins both showcases
+}
+
+/**
+ * Showcase phase configuration (legacy - kept for backwards compatibility)
+ * Use FinalePhase for the finale showcase showdown
  */
 export interface ShowcasePhase {
   type: "showcase";
@@ -58,7 +69,7 @@ export interface GameStructure {
   section_1_finale: WheelPhase;
   section_2: GamePhase[];
   section_2_finale: WheelPhase;
-  finale: ShowcasePhase;
+  finale: FinalePhase; // Showcase showdown with two showcases
 }
 
 /**

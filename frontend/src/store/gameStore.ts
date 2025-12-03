@@ -69,6 +69,58 @@ export interface PlayerTotal {
   eliminated: boolean; // True if total > 1.00
 }
 
+// Showcase phase types
+export interface Product {
+  name: string;
+  price: number;
+  images: string[];
+}
+
+export interface ShowcaseProduct {
+  id: string; // Product ID
+  product: Product;
+}
+
+export interface ShowcaseBid {
+  id: number;
+  game_id: number;
+  player_id: number;
+  showcase_number: number; // 1 or 2
+  bid_amount: number;
+  retry_number: number;
+  locked: number; // 1 = locked, 0 = unlocked
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShowcaseBidWithPlayer extends ShowcaseBid {
+  first_name: string;
+  last_name: string;
+  photo_filename: string;
+}
+
+export interface ShowcaseState {
+  finale_player1_id: number | null;
+  finale_player2_id: number | null;
+  finale_player1_product_value: number | null;
+  finale_player2_product_value: number | null;
+  finale_player1_showcase: number | null; // 1 or 2
+  finale_player2_showcase: number | null;
+  finale_retry_number: number;
+  finale_player1_passed: number; // 0 or 1
+  finale_winner_id: number | null;
+  finale_bonus_won: number; // 0 or 1
+}
+
+export interface ShowcaseStateWithProducts {
+  state: ShowcaseState;
+  showcase1: ShowcaseProduct[];
+  showcase2: ShowcaseProduct[];
+  showcase1Value: number;
+  showcase2Value: number;
+  bonusThreshold: number;
+}
+
 export interface GameState {
   workflow: GameWorkflow;
   contestantsRow: ContestantWithPlayer[];
@@ -84,6 +136,9 @@ export interface GameState {
   playerTotals?: PlayerTotal[];
   wheelWinner?: number | null; // player_id of winner
   needsSpinoff?: boolean;
+  // Showcase phase state (populated when phase_type === 'showcase')
+  showcaseState?: ShowcaseStateWithProducts;
+  showcaseBids?: ShowcaseBidWithPlayer[];
 }
 
 interface GameStore {
@@ -135,6 +190,21 @@ interface GameStore {
   stayOnWheelSpin: (playerId: number) => Promise<void>;
   startSpinOff: (spinoffNumber: number) => Promise<void>;
   resetWheelPhase: () => Promise<void>; // Debug: reset to first player
+
+  // Showcase actions
+  initializeShowcase: () => Promise<void>;
+  submitPass: () => Promise<void>;
+  submitBidDecision: () => Promise<void>;
+  submitShowcaseBid: (bidAmount: number, playerId?: number) => Promise<void>;
+  unlockShowcaseBid: (playerId: number) => Promise<void>;
+  updateShowcaseBid: (playerId: number, bidAmount: number) => Promise<void>;
+  revealShowcaseWinner: () => Promise<{
+    winnerId: number;
+    bonusWon: boolean;
+    retryNeeded: boolean;
+  }>;
+  retryShowcase: () => Promise<void>;
+  fetchShowcaseState: () => Promise<void>;
 
   clearError: () => void;
 }
@@ -743,6 +813,246 @@ export const useGameStore = create<GameStore>((set) => ({
         isLoading: false,
       });
       throw new Error(errorMessage);
+    }
+  },
+
+  // Initialize showcase showdown (host only)
+  initializeShowcase: async () => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall<ShowcaseStateWithProducts>(
+      "/showcase/initialize",
+      {
+        method: "POST",
+      },
+    );
+
+    if (result.success) {
+      // Fetch updated state after initialization
+      await useGameStore.getState().fetchShowcaseState();
+    } else {
+      const errorMessage = result.error || "Failed to initialize showcase";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // First player passes (host only)
+  submitPass: async () => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall("/showcase/pass", {
+      method: "POST",
+    });
+
+    if (result.success) {
+      // Fetch updated state after pass
+      await useGameStore.getState().fetchShowcaseState();
+    } else {
+      const errorMessage = result.error || "Failed to submit pass";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // First player chooses to bid (host only)
+  submitBidDecision: async () => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall("/showcase/bid-decision", {
+      method: "POST",
+    });
+
+    if (result.success) {
+      // Fetch updated state after bid decision
+      await useGameStore.getState().fetchShowcaseState();
+    } else {
+      const errorMessage = result.error || "Failed to submit bid decision";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Submit showcase bid (player or host)
+  submitShowcaseBid: async (bidAmount: number, playerId?: number) => {
+    set({ isLoading: true, error: null });
+
+    const body: { bid_amount: number; player_id?: number } = {
+      bid_amount: bidAmount,
+    };
+    if (playerId !== undefined) {
+      body.player_id = playerId;
+    }
+
+    const result = await apiCall("/showcase/submit-bid", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+
+    if (result.success) {
+      // Fetch updated state after bid submission
+      await useGameStore.getState().fetchShowcaseState();
+    } else {
+      const errorMessage = result.error || "Failed to submit showcase bid";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Unlock showcase bid (host only)
+  unlockShowcaseBid: async (playerId: number) => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall("/showcase/unlock-bid", {
+      method: "POST",
+      body: JSON.stringify({ player_id: playerId }),
+    });
+
+    if (result.success) {
+      // Fetch updated state after unlocking
+      await useGameStore.getState().fetchShowcaseState();
+    } else {
+      const errorMessage = result.error || "Failed to unlock showcase bid";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Update showcase bid amount (host only)
+  updateShowcaseBid: async (playerId: number, bidAmount: number) => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall("/showcase/update-bid", {
+      method: "POST",
+      body: JSON.stringify({ player_id: playerId, bid_amount: bidAmount }),
+    });
+
+    if (result.success) {
+      // Fetch updated state after updating
+      await useGameStore.getState().fetchShowcaseState();
+    } else {
+      const errorMessage = result.error || "Failed to update showcase bid";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Reveal showcase winner (host only)
+  revealShowcaseWinner: async () => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall<{
+      winnerId: number;
+      bonusWon: boolean;
+      retryNeeded: boolean;
+    }>("/showcase/reveal-winner", {
+      method: "POST",
+    });
+
+    if (result.success && result.data) {
+      // Fetch updated state after revealing winner
+      await useGameStore.getState().fetchShowcaseState();
+      set({ isLoading: false });
+      return {
+        winnerId: result.data.winnerId,
+        bonusWon: result.data.bonusWon,
+        retryNeeded: result.data.retryNeeded,
+      };
+    } else {
+      const errorMessage = result.error || "Failed to reveal showcase winner";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Initiate showcase retry (host only)
+  retryShowcase: async () => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall<{ retryNumber: number }>("/showcase/retry", {
+      method: "POST",
+    });
+
+    if (result.success) {
+      // Fetch updated state after retry
+      await useGameStore.getState().fetchShowcaseState();
+    } else {
+      const errorMessage = result.error || "Failed to retry showcase";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Fetch showcase state with products
+  fetchShowcaseState: async () => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall<
+      ShowcaseStateWithProducts & { success?: boolean }
+    >("/showcase/state");
+
+    if (result.success && result.data) {
+      // Backend includes { success: true, ...state }, so we need to exclude it
+      const { success: _, ...showcaseData } = result.data;
+
+      // Update game state with showcase data
+      set((state) => ({
+        gameState: state.gameState
+          ? {
+              ...state.gameState,
+              showcaseState: showcaseData as ShowcaseStateWithProducts,
+            }
+          : null,
+        isLoading: false,
+        lastUpdated: Date.now(),
+      }));
+
+      // Also fetch showcase bids
+      const bidsResult = await apiCall<{
+        success?: boolean;
+        bids: ShowcaseBidWithPlayer[];
+        retryNumber: number;
+      }>("/showcase/bids");
+
+      if (bidsResult.success && bidsResult.data) {
+        set((state) => ({
+          gameState: state.gameState
+            ? {
+                ...state.gameState,
+                showcaseBids: bidsResult.data?.bids,
+              }
+            : null,
+        }));
+      }
+    } else {
+      set({
+        error: result.error || "Failed to fetch showcase state",
+        isLoading: false,
+      });
     }
   },
 

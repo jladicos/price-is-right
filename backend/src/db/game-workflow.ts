@@ -8,6 +8,17 @@ export interface GameWorkflow {
   phase_metadata: string | null;
   created_at: string;
   updated_at: string;
+  // Finale fields (Phase 7)
+  finale_player1_id?: number | null;
+  finale_player2_id?: number | null;
+  finale_player1_product_value?: number | null;
+  finale_player2_product_value?: number | null;
+  finale_player1_showcase?: number | null;
+  finale_player2_showcase?: number | null;
+  finale_retry_number?: number | null;
+  finale_player1_passed?: number | null;
+  finale_winner_id?: number | null;
+  finale_bonus_won?: number | null;
 }
 
 export interface GameWorkflowUpdate {
@@ -129,7 +140,7 @@ export function resetGame(): void {
     `,
     ).run();
 
-    // Reset workflow to initial state
+    // Reset workflow to initial state (including all finale/showcase fields)
     db.prepare(
       `
       UPDATE game_workflow
@@ -137,6 +148,16 @@ export function resetGame(): void {
           current_segment_index = 0,
           phase_type = 'not_started',
           phase_metadata = NULL,
+          finale_player1_id = NULL,
+          finale_player2_id = NULL,
+          finale_player1_product_value = NULL,
+          finale_player2_product_value = NULL,
+          finale_player1_showcase = NULL,
+          finale_player2_showcase = NULL,
+          finale_retry_number = 0,
+          finale_player1_passed = 0,
+          finale_winner_id = NULL,
+          finale_bonus_won = 0,
           updated_at = datetime('now')
       WHERE id = 1
     `,

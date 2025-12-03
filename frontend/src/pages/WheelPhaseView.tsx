@@ -128,7 +128,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       const lastSpin = wheelSpins[wheelSpins.length - 1];
       // Only update target if we're animating and don't already have a target
       if (lastSpin.player_id === currentSpinnerId) {
-        const targetValue = lastSpin.result * 100;
+        const targetValue = Math.round(lastSpin.result * 100);
         console.log("[WheelPhaseView] Setting target spin value:", {
           rawResult: lastSpin.result,
           targetValue,
