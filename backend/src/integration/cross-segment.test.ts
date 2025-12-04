@@ -65,8 +65,12 @@ describe("Cross-Segment Integration Tests", () => {
       const section1Contestants = getContestantsRow("section_1");
       const section2Contestants = getContestantsRow("section_2");
 
-      expect(section1Contestants.find((c) => c.player_id === player.id)).toBeDefined();
-      expect(section2Contestants.find((c) => c.player_id === player.id)).toBeDefined();
+      expect(
+        section1Contestants.find((c) => c.player_id === player.id),
+      ).toBeDefined();
+      expect(
+        section2Contestants.find((c) => c.player_id === player.id),
+      ).toBeDefined();
     });
 
     it("should track player positions separately in each segment", () => {
@@ -342,9 +346,9 @@ describe("Cross-Segment Integration Tests", () => {
       createBid(journeyPlayer.id, "product-s1-1", 1, "section_1", 1200, 0);
 
       // Step 4: Won section_1
-      db.prepare(
-        "UPDATE contestants_row SET status = 'won' WHERE id = ?",
-      ).run(section1Contestant.id);
+      db.prepare("UPDATE contestants_row SET status = 'won' WHERE id = ?").run(
+        section1Contestant.id,
+      );
 
       // Step 5: Participated in wheel (section_1_finale)
       db.prepare(
@@ -352,12 +356,7 @@ describe("Cross-Segment Integration Tests", () => {
       ).run(journeyPlayer.id, "section_1", 1, 0.85, 0);
 
       // Step 6: Advanced to section_2
-      const section2Contestant = addContestantToRow(
-        journeyPlayer.id,
-        2,
-        "section_2",
-        "active",
-      );
+      addContestantToRow(journeyPlayer.id, 2, "section_2", "active");
 
       // Step 7: Bid in section_2
       createBid(journeyPlayer.id, "product-s2-1", 1, "section_2", 2500, 0);
@@ -367,8 +366,12 @@ describe("Cross-Segment Integration Tests", () => {
       const allSection1 = getContestantsRow("section_1");
       const allSection2 = getContestantsRow("section_2");
 
-      expect(allSection1.find((c) => c.player_id === journeyPlayer.id)).toBeDefined();
-      expect(allSection2.find((c) => c.player_id === journeyPlayer.id)).toBeDefined();
+      expect(
+        allSection1.find((c) => c.player_id === journeyPlayer.id),
+      ).toBeDefined();
+      expect(
+        allSection2.find((c) => c.player_id === journeyPlayer.id),
+      ).toBeDefined();
 
       // Bids are separate
       const section1Bids = getBidsForRound("section_1", 1, 0);
@@ -496,9 +499,9 @@ describe("Cross-Segment Integration Tests", () => {
       );
 
       // Update section_2 contestant to "won"
-      db.prepare(
-        "UPDATE contestants_row SET status = 'won' WHERE id = ?",
-      ).run(section2Contestant.id);
+      db.prepare("UPDATE contestants_row SET status = 'won' WHERE id = ?").run(
+        section2Contestant.id,
+      );
 
       // Verify section_1 status unchanged
       const s1Updated = db
@@ -542,7 +545,9 @@ describe("Cross-Segment Integration Tests", () => {
 
       // Verify section_1 bids deleted
       const section1Bids = getBidsForRound("section_1", 1, 0);
-      expect(section1Bids.find((b) => b.player_id === player.id)).toBeUndefined();
+      expect(
+        section1Bids.find((b) => b.player_id === player.id),
+      ).toBeUndefined();
 
       // Verify section_2 bids still exist
       const section2Bids = getBidsForRound("section_2", 1, 0);

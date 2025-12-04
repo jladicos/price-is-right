@@ -34,12 +34,12 @@ describe("WheelDisplay", () => {
   });
 
   describe("Segment Display", () => {
-    it("should render all 200 segments (20 values × 10 loops)", () => {
+    it("should render all 300 segments (20 values × 15 loops)", () => {
       render(<WheelDisplay currentValue={100} />);
 
-      // Should have 200 total segments (10 loops of 20)
+      // Should have 300 total segments (15 loops of 20)
       const segments = screen.getAllByTestId(/wheel-segment-/);
-      expect(segments).toHaveLength(200);
+      expect(segments).toHaveLength(300);
     });
 
     it("should display segments in correct order", () => {

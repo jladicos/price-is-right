@@ -66,7 +66,7 @@ export function GameControlStrip({
   onRevealShowcaseWinner,
   onRetryShowcase,
   bothPlayersOver = false,
-  hasWinner = false,
+  _hasWinner = false,
 }: GameControlStripProps) {
   const navigate = useNavigate();
   const workflow = gameState.workflow;
@@ -162,7 +162,10 @@ export function GameControlStrip({
                   </MenuItem>
                 )}
                 {isShowcasePhase && onRestartShowcase && (
-                  <MenuItem value="restart-showcase" onClick={onRestartShowcase}>
+                  <MenuItem
+                    value="restart-showcase"
+                    onClick={onRestartShowcase}
+                  >
                     🔄 Restart Showcase Phase
                   </MenuItem>
                 )}
@@ -318,13 +321,7 @@ export function GameControlStrip({
         {role === "host" && isShowcasePhase && (
           <HStack gap={4} justify="center" flex="1" wrap="wrap">
             {/* Phase Info */}
-            <Box
-              bg="pink.600"
-              px={4}
-              py={2}
-              borderRadius="md"
-              minWidth="200px"
-            >
+            <Box bg="pink.600" px={4} py={2} borderRadius="md" minWidth="200px">
               <Text
                 fontSize="sm"
                 fontWeight="bold"

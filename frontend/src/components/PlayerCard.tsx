@@ -118,7 +118,9 @@ export function PlayerCard({
                   ? "green.500"
                   : badge === "LEADER"
                     ? "yellow.500"
-                    : "blue.500"
+                    : badge === "TIE"
+                      ? "orange.500"
+                      : "blue.500"
             }
             color="white"
             px={3}

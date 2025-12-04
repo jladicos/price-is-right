@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   determineFinalists,
   calculateBiddingOrder,
@@ -70,8 +70,8 @@ describe("Showcase Service", () => {
       dbUpdateBid(bid2.id, { is_winner: 1 });
 
       // Create wheel spins (player 1 and player 2 win their wheels)
-      createWheelSpin(1, "wheel_1", 1, 1.0, 0); // Perfect $1.00
-      createWheelSpin(2, "wheel_2", 1, 0.95, 0); // $0.95
+      createWheelSpin(1, "section_1_finale", 1, 1.0, 0); // Perfect $1.00
+      createWheelSpin(2, "section_2_finale", 1, 0.95, 0); // $0.95
     });
 
     it("should determine finalists from wheel winners", async () => {
@@ -114,8 +114,8 @@ describe("Showcase Service", () => {
       dbUpdateBid(bid1.id, { is_winner: 1 });
       dbUpdateBid(bid2.id, { is_winner: 1 });
 
-      createWheelSpin(1, "wheel_1", 1, 1.0, 0);
-      createWheelSpin(2, "wheel_2", 1, 0.95, 0);
+      createWheelSpin(1, "section_1_finale", 1, 1.0, 0);
+      createWheelSpin(2, "section_2_finale", 1, 0.95, 0);
     });
 
     it("should initialize showcase with correct player order", async () => {
@@ -127,13 +127,12 @@ describe("Showcase Service", () => {
       expect(state.finale_player2_product_value).toBe(2.58);
     });
 
-    it("should assign showcases correctly (higher value goes first)", async () => {
+    it("should not assign showcases during initialization (deferred to pass/bid decision)", async () => {
       const state = await initializeShowcase(1);
 
-      // Player 1 has higher value (2.88 > 2.58), so goes first
-      // First player gets showcase 1
-      expect(state.finale_player1_showcase).toBe(1);
-      expect(state.finale_player2_showcase).toBe(2);
+      // Showcases are not assigned until player makes pass/bid decision
+      expect(state.finale_player1_showcase).toBe(null);
+      expect(state.finale_player2_showcase).toBe(null);
     });
 
     it("should initialize retry number to 0", async () => {
@@ -161,19 +160,21 @@ describe("Showcase Service", () => {
       dbUpdateBid(bid1.id, { is_winner: 1 });
       dbUpdateBid(bid2.id, { is_winner: 1 });
 
-      createWheelSpin(1, "wheel_1", 1, 1.0, 0);
-      createWheelSpin(2, "wheel_2", 1, 0.95, 0);
+      createWheelSpin(1, "section_1_finale", 1, 1.0, 0);
+      createWheelSpin(2, "section_2_finale", 1, 0.95, 0);
 
       await initializeShowcase(1);
     });
 
-    it("should swap showcase assignments", () => {
+    it("should assign showcase 2 to player1 and showcase 1 to player2 when player1 passes", () => {
+      // Before handlePass, showcases are not assigned
       const stateBefore = getShowcaseState(1)!;
-      expect(stateBefore.finale_player1_showcase).toBe(1);
-      expect(stateBefore.finale_player2_showcase).toBe(2);
+      expect(stateBefore.finale_player1_showcase).toBe(null);
+      expect(stateBefore.finale_player2_showcase).toBe(null);
 
       handlePass(1);
 
+      // After pass, player1 gets showcase 2, player2 gets showcase 1
       const stateAfter = getShowcaseState(1)!;
       expect(stateAfter.finale_player1_showcase).toBe(2);
       expect(stateAfter.finale_player2_showcase).toBe(1);
@@ -198,10 +199,11 @@ describe("Showcase Service", () => {
       dbUpdateBid(bid1.id, { is_winner: 1 });
       dbUpdateBid(bid2.id, { is_winner: 1 });
 
-      createWheelSpin(1, "wheel_1", 1, 1.0, 0);
-      createWheelSpin(2, "wheel_2", 1, 0.95, 0);
+      createWheelSpin(1, "section_1_finale", 1, 1.0, 0);
+      createWheelSpin(2, "section_2_finale", 1, 0.95, 0);
 
       await initializeShowcase(1);
+      handleBidDecision(1);
     });
 
     it("should submit bid for player 1", () => {
@@ -279,10 +281,11 @@ describe("Showcase Service", () => {
       dbUpdateBid(bid1.id, { is_winner: 1 });
       dbUpdateBid(bid2.id, { is_winner: 1 });
 
-      createWheelSpin(1, "wheel_1", 1, 1.0, 0);
-      createWheelSpin(2, "wheel_2", 1, 0.95, 0);
+      createWheelSpin(1, "section_1_finale", 1, 1.0, 0);
+      createWheelSpin(2, "section_2_finale", 1, 0.95, 0);
 
       await initializeShowcase(1);
+      handleBidDecision(1);
     });
 
     it("should determine winner when both valid bids", () => {
@@ -362,10 +365,11 @@ describe("Showcase Service", () => {
       dbUpdateBid(bid1.id, { is_winner: 1 });
       dbUpdateBid(bid2.id, { is_winner: 1 });
 
-      createWheelSpin(1, "wheel_1", 1, 1.0, 0);
-      createWheelSpin(2, "wheel_2", 1, 0.95, 0);
+      createWheelSpin(1, "section_1_finale", 1, 1.0, 0);
+      createWheelSpin(2, "section_2_finale", 1, 0.95, 0);
 
       await initializeShowcase(1);
+      handleBidDecision(1);
     });
 
     it("should store winner in database", () => {
@@ -405,10 +409,11 @@ describe("Showcase Service", () => {
       dbUpdateBid(bid1.id, { is_winner: 1 });
       dbUpdateBid(bid2.id, { is_winner: 1 });
 
-      createWheelSpin(1, "wheel_1", 1, 1.0, 0);
-      createWheelSpin(2, "wheel_2", 1, 0.95, 0);
+      createWheelSpin(1, "section_1_finale", 1, 1.0, 0);
+      createWheelSpin(2, "section_2_finale", 1, 0.95, 0);
 
       await initializeShowcase(1);
+      handleBidDecision(1);
     });
 
     it("should increment retry number", () => {
@@ -444,10 +449,11 @@ describe("Showcase Service", () => {
       dbUpdateBid(bid1.id, { is_winner: 1 });
       dbUpdateBid(bid2.id, { is_winner: 1 });
 
-      createWheelSpin(1, "wheel_1", 1, 1.0, 0);
-      createWheelSpin(2, "wheel_2", 1, 0.95, 0);
+      createWheelSpin(1, "section_1_finale", 1, 1.0, 0);
+      createWheelSpin(2, "section_2_finale", 1, 0.95, 0);
 
       await initializeShowcase(1);
+      handleBidDecision(1);
     });
 
     it("should return complete showcase state with products", () => {
@@ -458,7 +464,7 @@ describe("Showcase Service", () => {
       expect(result.showcase2).toBeInstanceOf(Array);
       expect(result.showcase1Value).toBeGreaterThan(0);
       expect(result.showcase2Value).toBeGreaterThan(0);
-      expect(result.bonusThreshold).toBe(2.5);
+      expect(result.bonusThreshold).toBe(1.0); // Matches config value
     });
 
     it("should include product details", () => {
@@ -482,10 +488,12 @@ describe("Showcase Service", () => {
       dbUpdateBid(bid1.id, { is_winner: 1 });
       dbUpdateBid(bid2.id, { is_winner: 1 });
 
-      createWheelSpin(1, "wheel_1", 1, 1.0, 0);
-      createWheelSpin(2, "wheel_2", 1, 0.95, 0);
+      createWheelSpin(1, "section_1_finale", 1, 1.0, 0);
+      createWheelSpin(2, "section_2_finale", 1, 0.95, 0);
 
       await initializeShowcase(1);
+      // Assign showcases by having player 1 choose to bid
+      handleBidDecision(1);
     });
 
     it("should reject bid when already locked", () => {
@@ -596,26 +604,35 @@ describe("Showcase Service", () => {
       expect(result.player2Over).toBe(false);
     });
 
-    it("should assign correct showcase after pass", () => {
-      // Get initial assignment
-      let state = getShowcaseState(1)!;
-      const player1InitialShowcase = state.finale_player1_showcase;
-      const player2InitialShowcase = state.finale_player2_showcase;
+    it("should assign correct showcase after pass", async () => {
+      // This test needs its own setup WITHOUT handleBidDecision
+      // Reset showcase state by re-initializing
+      const db = getDatabase();
+      db.prepare("DELETE FROM showcase_bids").run();
+      db.prepare(
+        "UPDATE game_workflow SET finale_player1_showcase = NULL, finale_player2_showcase = NULL",
+      ).run();
+      await initializeShowcase(1);
 
-      // Player 1 passes
+      // Verify showcases are not assigned yet
+      let state = getShowcaseState(1)!;
+      expect(state.finale_player1_showcase).toBe(null);
+      expect(state.finale_player2_showcase).toBe(null);
+
+      // Player 1 passes - this assigns showcase 2 to player 1, showcase 1 to player 2
       handlePass(1);
 
       // Get new assignment
       state = getShowcaseState(1)!;
 
-      // Showcases should be swapped
-      expect(state.finale_player1_showcase).toBe(player2InitialShowcase);
-      expect(state.finale_player2_showcase).toBe(player1InitialShowcase);
+      // Verify showcases were assigned correctly after pass
+      expect(state.finale_player1_showcase).toBe(2); // First player gets showcase 2 when passing
+      expect(state.finale_player2_showcase).toBe(1); // Second player gets showcase 1
+      expect(state.finale_player1_passed).toBe(1);
 
       // Submit bid and verify it uses NEW showcase assignment
       submitBid(1, 1, 10);
 
-      const db = getDatabase();
       const bid = db
         .prepare("SELECT * FROM showcase_bids WHERE player_id = 1")
         .get() as any;

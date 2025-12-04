@@ -148,6 +148,7 @@ interface GameStore {
   error: string | null;
   lastUpdated: number;
   isWheelAnimating: boolean; // UI-only animation state
+  pendingSpinTarget: number | null; // Target value for wheel animation (in cents)
 
   // Actions
   fetchGameState: () => Promise<void>;
@@ -285,6 +286,7 @@ export const useGameStore = create<GameStore>((set) => ({
   error: null,
   lastUpdated: 0,
   isWheelAnimating: false,
+  pendingSpinTarget: null,
 
   // Fetch current game state
   fetchGameState: async () => {
@@ -705,11 +707,16 @@ export const useGameStore = create<GameStore>((set) => ({
         error: "No current segment",
         isLoading: false,
         isWheelAnimating: false,
+        pendingSpinTarget: null,
       });
       return;
     }
 
-    const result = await apiCall("/game/wheel-spin", {
+    const result = await apiCall<{
+      spin: { result: number };
+      total: number;
+      eliminated: boolean;
+    }>("/game/wheel-spin", {
       method: "POST",
       body: JSON.stringify({
         playerId: playerId,
@@ -717,19 +724,25 @@ export const useGameStore = create<GameStore>((set) => ({
       }),
     });
 
-    if (result.success) {
-      // Keep animation running for 2.5 seconds
-      setTimeout(() => {
-        set({ isWheelAnimating: false });
-      }, 2500);
+    if (result.success && result.data) {
+      // Store spin result for animation target (convert to cents)
+      const spinTargetCents = Math.round(result.data.spin.result * 100);
+      set({ pendingSpinTarget: spinTargetCents, isLoading: false });
 
-      await useGameStore.getState().fetchGameState();
+      // Wait for animation to complete + pause, THEN fetch state
+      // This ensures winner/tie/elimination only shows after wheel stops
+      // Total: 2.5s animation + 0.5s pause = 3s
+      setTimeout(async () => {
+        await useGameStore.getState().fetchGameState();
+        set({ isWheelAnimating: false, pendingSpinTarget: null });
+      }, 3000);
     } else {
       const errorMessage = result.error || "Failed to spin wheel";
       set({
         error: errorMessage,
         isLoading: false,
         isWheelAnimating: false,
+        pendingSpinTarget: null,
       });
       throw new Error(errorMessage);
     }
@@ -775,11 +788,11 @@ export const useGameStore = create<GameStore>((set) => ({
       return;
     }
 
-    const result = await apiCall("/game/start-spinoff", {
+    const result = await apiCall("/game/wheel-start-spinoff", {
       method: "POST",
       body: JSON.stringify({
-        game_segment: state.workflow.current_segment,
-        spinoff_number: spinoffNumber,
+        gameSegment: state.workflow.current_segment,
+        spinoffNumber: spinoffNumber,
       }),
     });
 
@@ -1017,6 +1030,7 @@ export const useGameStore = create<GameStore>((set) => ({
 
     if (result.success && result.data) {
       // Backend includes { success: true, ...state }, so we need to exclude it
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { success: _, ...showcaseData } = result.data;
 
       // Update game state with showcase data

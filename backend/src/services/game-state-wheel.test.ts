@@ -1195,7 +1195,7 @@ describe("Game State - Wheel Integration", () => {
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
          VALUES (?, ?, ?, ?, ?)`,
-      ).run(eligibleSpinners[0].player_id, "section_1", 2, 0.50, 0); // Total: $1.05 (OVER)
+      ).run(eligibleSpinners[0].player_id, "section_1", 2, 0.5, 0); // Total: $1.05 (OVER)
 
       // Complete Player 0's turn
       completePlayerWheelTurn(eligibleSpinners[0].player_id, "section_1");
@@ -1226,7 +1226,7 @@ describe("Game State - Wheel Integration", () => {
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
          VALUES (?, ?, ?, ?, ?)`,
-      ).run(eligibleSpinners[2].player_id, "section_1", 1, 0.90, 0);
+      ).run(eligibleSpinners[2].player_id, "section_1", 1, 0.9, 0);
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
          VALUES (?, ?, ?, ?, ?)`,
@@ -1254,7 +1254,7 @@ describe("Game State - Wheel Integration", () => {
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
          VALUES (?, ?, ?, ?, ?)`,
-      ).run(eligibleSpinners[0].player_id, "section_1", 2, 0.50, 0); // $1.10 - OVER
+      ).run(eligibleSpinners[0].player_id, "section_1", 2, 0.5, 0); // $1.10 - OVER
 
       completePlayerWheelTurn(eligibleSpinners[0].player_id, "section_1");
 
@@ -1270,7 +1270,7 @@ describe("Game State - Wheel Integration", () => {
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
          VALUES (?, ?, ?, ?, ?)`,
-      ).run(eligibleSpinners[1].player_id, "section_1", 2, 0.50, 0); // $1.15 - OVER
+      ).run(eligibleSpinners[1].player_id, "section_1", 2, 0.5, 0); // $1.15 - OVER
 
       completePlayerWheelTurn(eligibleSpinners[1].player_id, "section_1");
 
@@ -1328,7 +1328,15 @@ describe("Game State - Wheel Integration", () => {
         db.prepare(
           `INSERT INTO bids (player_id, game_segment, round_number, retry_number, bid_amount, product_id, is_winner)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        ).run(players[i], "section_1", i + 1, 0, 1000 + i * 100, "product_1", 1);
+        ).run(
+          players[i],
+          "section_1",
+          i + 1,
+          0,
+          1000 + i * 100,
+          "product_1",
+          1,
+        );
       }
 
       // Set up game workflow for bidding phase (required before starting wheel phase)
@@ -1394,7 +1402,7 @@ describe("Game State - Wheel Integration", () => {
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
          VALUES (?, ?, ?, ?, ?)`,
-      ).run(eligibleSpinners[3].player_id, "section_1", 1, 0.90, 0);
+      ).run(eligibleSpinners[3].player_id, "section_1", 1, 0.9, 0);
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
          VALUES (?, ?, ?, ?, ?)`,
@@ -1429,11 +1437,11 @@ describe("Game State - Wheel Integration", () => {
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
          VALUES (?, ?, ?, ?, ?)`,
-      ).run(eligibleSpinners[1].player_id, "section_1", 1, 0.80, 0);
+      ).run(eligibleSpinners[1].player_id, "section_1", 1, 0.8, 0);
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
          VALUES (?, ?, ?, ?, ?)`,
-      ).run(eligibleSpinners[1].player_id, "section_1", 2, 0.10, 0); // $0.90
+      ).run(eligibleSpinners[1].player_id, "section_1", 2, 0.1, 0); // $0.90
 
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
@@ -1442,7 +1450,7 @@ describe("Game State - Wheel Integration", () => {
       db.prepare(
         `INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number)
          VALUES (?, ?, ?, ?, ?)`,
-      ).run(eligibleSpinners[2].player_id, "section_1", 2, 0.10, 0); // $0.95 - WINNER
+      ).run(eligibleSpinners[2].player_id, "section_1", 2, 0.1, 0); // $0.95 - WINNER
 
       // Complete final player's turn
       completePlayerWheelTurn(eligibleSpinners[2].player_id, "section_1");

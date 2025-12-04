@@ -40,13 +40,8 @@ import {
   getPlayerSpinCount,
   type WheelSpin,
 } from "../db/wheel-spins.js";
-import {
-  getShowcaseStateWithProducts,
-} from "./showcase.js";
-import {
-  getShowcaseBids,
-  getShowcaseState,
-} from "../db/showcase.js";
+import { getShowcaseStateWithProducts } from "./showcase.js";
+import { getShowcaseBids, getShowcaseState } from "../db/showcase.js";
 
 export interface GameState {
   workflow: GameWorkflow;
@@ -170,24 +165,44 @@ export function getCurrentState(): GameState {
     state.needsSpinoff = metadata.needsSpinoff || false;
 
     // Determine current wheel position for display
-    // This is the last spin result, or 100 ($1.00) if no spins yet for current spinner
+    // Priority: current spinner's last spin > last spin overall > default
+    // Default is $0.15 for spin-offs, $1.00 for regular rounds
+    const isSpinoff = (state.spinoffNumber || 0) > 0;
+    const defaultPosition = isSpinoff ? 15 : 100;
+
     if (state.currentSpinner && state.wheelSpins) {
+      // Filter spins for current spinner in current round
       const currentSpinnerSpins = state.wheelSpins.filter(
-        (s) => s.player_id === state.currentSpinner,
+        (s) =>
+          s.player_id === state.currentSpinner &&
+          s.spinoff_number === (state.spinoffNumber || 0),
       );
       if (currentSpinnerSpins.length > 0) {
-        // Use last spin result (in cents: 5-100)
+        // Use current spinner's last spin result (in cents: 5-100)
         // Round to avoid floating point precision issues (e.g., 0.55 * 100 = 54.99999)
         const lastSpinResult =
           currentSpinnerSpins[currentSpinnerSpins.length - 1].result;
         state.currentWheelPosition = Math.round(lastSpinResult * 100);
       } else {
-        // No spins yet for current spinner - start at $1.00
-        state.currentWheelPosition = 100;
+        // No spins yet for current spinner in this round - use default
+        // In spin-off, each player starts at $0.15
+        state.currentWheelPosition = defaultPosition;
+      }
+    } else if (state.wheelSpins && state.wheelSpins.length > 0) {
+      // No current spinner but there are spins (e.g., winner determined)
+      // Filter to current round and keep wheel at last spin position
+      const currentRoundSpins = state.wheelSpins.filter(
+        (s) => s.spinoff_number === (state.spinoffNumber || 0),
+      );
+      if (currentRoundSpins.length > 0) {
+        const lastSpin = currentRoundSpins[currentRoundSpins.length - 1];
+        state.currentWheelPosition = Math.round(lastSpin.result * 100);
+      } else {
+        state.currentWheelPosition = defaultPosition;
       }
     } else {
-      // No current spinner - default to $1.00
-      state.currentWheelPosition = 100;
+      // No spins at all
+      state.currentWheelPosition = defaultPosition;
     }
   }
 
@@ -628,8 +643,31 @@ export function startWheelPhase(gameSegment: string): GameWorkflow {
 }
 
 /**
+ * Helper to check if a player has completed their turn
+ * A player is done if: eliminated OR can't spin again OR explicitly marked as completed
+ */
+function isPlayerTurnComplete(
+  playerId: number,
+  gameSegment: string,
+  spinoffNumber: number,
+  completedTurns: number[],
+): boolean {
+  if (completedTurns.includes(playerId)) {
+    return true;
+  }
+  if (isPlayerEliminated(playerId, gameSegment, spinoffNumber)) {
+    return true;
+  }
+  if (!canPlayerSpinAgain(playerId, gameSegment, spinoffNumber)) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Process a wheel spin for a player
  * Validates player eligibility, generates spin, updates metadata
+ * Auto-determines winner when all players have finished
  */
 export function processWheelSpin(
   playerId: number,
@@ -639,6 +677,11 @@ export function processWheelSpin(
   total: number;
   eliminated: boolean;
   canSpinAgain: boolean;
+  // Auto-completion fields (populated when all players finished)
+  allPlayersFinished?: boolean;
+  needsSpinoff?: boolean;
+  winnerId?: number | null;
+  tiedPlayerIds?: number[];
 } {
   const workflow = getGameWorkflow();
 
@@ -707,6 +750,51 @@ export function processWheelSpin(
     phase_metadata: JSON.stringify(metadata),
   });
 
+  // If player was eliminated or can't spin again, mark their turn as complete
+  const completedTurns: number[] = metadata.completedTurns || [];
+  if (
+    (eliminated || !canSpinAgainResult) &&
+    !completedTurns.includes(playerId)
+  ) {
+    completedTurns.push(playerId);
+    metadata.completedTurns = completedTurns;
+    updateGameWorkflow({
+      phase_metadata: JSON.stringify(metadata),
+    });
+  }
+
+  // Check if all players are now finished (auto-complete for last player)
+  // In spin-off rounds, only check the tied players, not all eligible spinners
+  const playersToCheck =
+    spinoffNumber > 0 && metadata.tiedPlayerIds
+      ? metadata.tiedPlayerIds.map((id: number) => ({ player_id: id }))
+      : eligibleSpinners;
+
+  const allPlayersFinished = playersToCheck.every(
+    (spinner: { player_id: number }) =>
+      isPlayerTurnComplete(
+        spinner.player_id,
+        gameSegment,
+        spinoffNumber,
+        completedTurns,
+      ),
+  );
+
+  // If all players finished, auto-determine winner
+  if (allPlayersFinished) {
+    const completionResult = completePlayerWheelTurn(playerId, gameSegment);
+    return {
+      spin,
+      total,
+      eliminated,
+      canSpinAgain: canSpinAgainResult,
+      allPlayersFinished: completionResult.allPlayersFinished,
+      needsSpinoff: completionResult.needsSpinoff,
+      winnerId: completionResult.winnerId,
+      tiedPlayerIds: completionResult.tiedPlayerIds,
+    };
+  }
+
   return {
     spin,
     total,
@@ -747,61 +835,62 @@ export function completePlayerWheelTurn(
     throw new Error("Cannot complete turn - player has no spins recorded");
   }
 
-  // Get all eligible spinners
+  // Mark this player's turn as complete (they stayed or used all spins)
+  const completedTurns: number[] = metadata.completedTurns || [];
+  if (!completedTurns.includes(playerId)) {
+    completedTurns.push(playerId);
+    metadata.completedTurns = completedTurns;
+  }
+
+  // Get players who need to spin in this round
+  // In spin-off rounds, only the tied players participate
   const eligibleSpinners = getEligibleSpinners(gameSegment);
+  const playersToCheck =
+    spinoffNumber > 0 && metadata.tiedPlayerIds
+      ? eligibleSpinners.filter((s) =>
+          metadata.tiedPlayerIds.includes(s.player_id),
+        )
+      : eligibleSpinners;
 
-  // Check if all players have completed their spins
-  // In regular round: check if all have spun at least once and either stayed or hit 2 spins
-  // In spinoff: check if all have spun once
-  const allSpinsComplete = eligibleSpinners.every((spinner) => {
-    const eliminated = isPlayerEliminated(
+  // Check if all players have completed their turns
+  const allSpinsComplete = playersToCheck.every((spinner) =>
+    isPlayerTurnComplete(
       spinner.player_id,
       gameSegment,
       spinoffNumber,
-    );
-    const canSpin = canPlayerSpinAgain(
-      spinner.player_id,
-      gameSegment,
-      spinoffNumber,
-    );
-
-    // Player is done if eliminated or cannot spin again
-    return eliminated || !canSpin;
-  });
+      completedTurns,
+    ),
+  );
 
   if (!allSpinsComplete) {
-    // Update current spinner to next player who can still spin
-    const currentIndex = eligibleSpinners.findIndex(
+    // Update current spinner to next player who hasn't completed their turn
+    const currentIndex = playersToCheck.findIndex(
       (s) => s.player_id === playerId,
     );
 
-    // Find the next player who is not eliminated and can still spin
-    let nextIndex = (currentIndex + 1) % eligibleSpinners.length;
+    // Find the next player who hasn't completed their turn
+    let nextIndex = (currentIndex + 1) % playersToCheck.length;
     let attempts = 0;
-    while (attempts < eligibleSpinners.length) {
-      const nextSpinner = eligibleSpinners[nextIndex];
-      const eliminated = isPlayerEliminated(
+    while (attempts < playersToCheck.length) {
+      const nextSpinner = playersToCheck[nextIndex];
+      const isComplete = isPlayerTurnComplete(
         nextSpinner.player_id,
         gameSegment,
         spinoffNumber,
-      );
-      const canSpin = canPlayerSpinAgain(
-        nextSpinner.player_id,
-        gameSegment,
-        spinoffNumber,
+        completedTurns,
       );
 
-      // If this player can spin, use them
-      if (!eliminated && canSpin) {
+      // If this player hasn't completed, use them
+      if (!isComplete) {
         break;
       }
 
       // Otherwise, move to next player
-      nextIndex = (nextIndex + 1) % eligibleSpinners.length;
+      nextIndex = (nextIndex + 1) % playersToCheck.length;
       attempts++;
     }
 
-    metadata.currentSpinner = eligibleSpinners[nextIndex].player_id;
+    metadata.currentSpinner = playersToCheck[nextIndex].player_id;
     metadata.spinnerIndex = nextIndex;
 
     updateGameWorkflow({
@@ -899,6 +988,8 @@ export function startWheelSpinOff(
   metadata.tiedPlayerIds = tiedPlayers.map((p) => p.player_id);
   metadata.needsSpinoff = false;
   metadata.winnerId = null;
+  // Reset completedTurns for the new spinoff round
+  metadata.completedTurns = [];
 
   return updateGameWorkflow({
     phase_metadata: JSON.stringify(metadata),

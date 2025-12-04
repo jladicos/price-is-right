@@ -23,7 +23,7 @@ import {
  * Determine the two finalists from wheel winners
  * Returns player IDs and their product values for bidding order determination
  */
-export async function determineFinalists(gameId: number): Promise<{
+export async function determineFinalists(_gameId: number): Promise<{
   player1: { id: number; productValue: number };
   player2: { id: number; productValue: number };
 }> {
@@ -88,7 +88,7 @@ export async function determineFinalists(gameId: number): Promise<{
 export function calculateBiddingOrder(
   player1ProductValue: number,
   player2ProductValue: number,
-  player1Id: number,
+  _player1Id: number,
 ): "player1" | "player2" {
   if (player1ProductValue > player2ProductValue) {
     return "player1";
@@ -112,7 +112,7 @@ export async function initializeShowcase(
 
   // Determine who goes first (higher product value)
   // This determines which player makes the first pass/bid decision
-  const firstPlayer = calculateBiddingOrder(
+  calculateBiddingOrder(
     finalists.player1.productValue,
     finalists.player2.productValue,
     finalists.player1.id,

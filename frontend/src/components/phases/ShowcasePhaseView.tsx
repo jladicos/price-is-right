@@ -1,12 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  Box,
-  HStack,
-  VStack,
-  Button,
-  Text,
-  Heading,
-} from "@chakra-ui/react";
+import { Box, HStack, VStack, Button, Text, Heading } from "@chakra-ui/react";
 import { PodiumDisplay } from "../PodiumDisplay";
 import { ProductInsetCard } from "../ProductInsetCard";
 import { GameControlStrip } from "../GameControlStrip";
@@ -14,7 +7,11 @@ import { ShowcaseModal } from "../ShowcaseModal";
 import { useGameStore } from "../../store/gameStore";
 import { useAuthStore } from "../../store/authStore";
 import { showToast } from "../../utils/toast";
-import type { GameState, ContestantWithPlayer, BidWithPlayer } from "../../store/gameStore";
+import type {
+  GameState,
+  ContestantWithPlayer,
+  BidWithPlayer,
+} from "../../store/gameStore";
 
 interface ShowcasePhaseViewProps {
   gameState: GameState;
@@ -122,22 +119,12 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   const player2Showcase = state.finale_player2_showcase;
   const player1Passed = state.finale_player1_passed;
 
-  // Debug logging
-  console.log("[ShowcasePhaseView] Showcase assignments:", {
-    player1Showcase,
-    player2Showcase,
-    player1Passed,
-    player1Name: player1 ? `${player1.first_name} ${player1.last_name}` : "N/A",
-    player2Name: player2 ? `${player2.first_name} ${player2.last_name}` : "N/A",
-  });
-
   // Get bids
   const player1Bid = showcaseBids.find((b) => b.player_id === player1?.id);
   const player2Bid = showcaseBids.find((b) => b.player_id === player2?.id);
 
   // Winner info
   const winnerId = state.finale_winner_id;
-  const bonusWon = state.finale_bonus_won;
 
   // Adapt player data to ContestantWithPlayer format for PodiumDisplay
   const player1Contestant: ContestantWithPlayer | null = player1
@@ -222,13 +209,6 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
     : null;
 
   // Determine current phase (simplified version based on state)
-  const isShowcase1Revealed =
-    player1Showcase !== null || player2Showcase !== null;
-  const isShowcase2Revealed =
-    player1Showcase !== null && player2Showcase !== null;
-  const showPlayer1BidInput =
-    isShowcase1Revealed && !player1Passed && !player1Bid;
-  const showPlayer2BidInput = isShowcase2Revealed && !player2Bid;
   const showResults = winnerId !== null;
 
   // Handlers
@@ -258,27 +238,11 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
 
   const handlePass = async () => {
     try {
-      console.log("[handlePass] BEFORE submitPass() - Showcase assignments:", {
-        player1Showcase,
-        player2Showcase,
-        player1Passed,
-      });
-
       await submitPass();
       setShowPassBidButtons(false);
 
-      console.log("[handlePass] AFTER submitPass(), BEFORE fetchGameState()");
-
       // Force a refresh to get updated showcase assignments
       await fetchGameState();
-
-      console.log("[handlePass] AFTER first fetchGameState()");
-
-      showToast({
-        title: "Player Passed",
-        description: `${player1?.first_name} ${player1?.last_name} passed. ${player2?.first_name} ${player2?.last_name} will bid on Showcase 1.`,
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -292,11 +256,6 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
     try {
       await submitBidDecision();
       setShowPassBidButtons(false);
-      showToast({
-        title: "Player Will Bid",
-        description: "Player will bid on their showcase.",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -317,12 +276,6 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       }
 
       await submitShowcaseBid(amount, role === "host" ? playerId : undefined);
-
-      showToast({
-        title: "Bid Submitted",
-        description: `Bid of $${amount.toLocaleString()} submitted`,
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -337,18 +290,12 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   const handleShowcaseBidUpdate = async (bidId: number, newAmount: number) => {
     try {
       // Get player ID from the bid
-      const bid = showcaseBids.find(b => b.id === bidId);
+      const bid = showcaseBids.find((b) => b.id === bidId);
       if (!bid) {
         throw new Error("Bid not found");
       }
 
       await updateShowcaseBid(bid.player_id, newAmount);
-
-      showToast({
-        title: "Bid Updated",
-        description: `Bid updated to $${newAmount.toLocaleString()}`,
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -363,18 +310,12 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   const handleShowcaseBidUnlock = async (bidId: number) => {
     try {
       // Get player ID from the bid
-      const bid = showcaseBids.find(b => b.id === bidId);
+      const bid = showcaseBids.find((b) => b.id === bidId);
       if (!bid) {
         throw new Error("Bid not found");
       }
 
       await unlockShowcaseBid(bid.player_id);
-
-      showToast({
-        title: "Bid Unlocked",
-        description: "Bid can now be modified",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -387,22 +328,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
 
   const handleRevealWinner = async () => {
     try {
-      const result = await revealShowcaseWinner();
-      if (result.retryNeeded) {
-        showToast({
-          title: "Both Players Over",
-          description: "Both players went over. Ready for retry.",
-          type: "warning",
-        });
-      } else {
-        showToast({
-          title: "Winner Revealed",
-          description: result.bonusWon
-            ? "Winner gets both showcases!"
-            : "Winner revealed!",
-          type: "success",
-        });
-      }
+      await revealShowcaseWinner();
     } catch (error) {
       showToast({
         title: "Error",
@@ -416,11 +342,6 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   const handleRetry = async () => {
     try {
       await retryShowcase();
-      showToast({
-        title: "Retry Started",
-        description: "Players can now re-bid on the same showcases",
-        type: "info",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -447,11 +368,6 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   const handleStartNewGame = async () => {
     try {
       await startNewGame();
-      showToast({
-        title: "Game Started",
-        description: "New game started",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -468,11 +384,6 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
     }
     try {
       await startNewGame();
-      showToast({
-        title: "Game Restarted",
-        description: "New game started",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -499,7 +410,11 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   };
 
   const handleRestartShowcase = async () => {
-    if (!confirm("Are you sure you want to restart the showcase phase? This will reset all bids and decisions.")) {
+    if (
+      !confirm(
+        "Are you sure you want to restart the showcase phase? This will reset all bids and decisions.",
+      )
+    ) {
       return;
     }
     try {
@@ -515,19 +430,11 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
 
       // Fetch updated state
       await fetchGameState();
-
-      showToast({
-        title: "Showcase Restarted",
-        description: "Showcase phase has been reset to initial state",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
         description:
-          error instanceof Error
-            ? error.message
-            : "Failed to restart showcase",
+          error instanceof Error ? error.message : "Failed to restart showcase",
         type: "error",
       });
     }
@@ -535,7 +442,6 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
 
   return (
     <VStack gap={8} width="100%" p={4} pt="120px" pb="120px">
-
       {/* Main Content: [Inset] [Podium1] [Podium2] [Inset] */}
       <HStack
         gap={8}
@@ -546,18 +452,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       >
         {/* Left Inset - Showcase for player on left */}
         <Box width="300px" flexShrink={0}>
-          {(() => {
-            const shouldShow =
-              player1Showcase &&
-              ((player1Showcase === 1 && showcase1Revealed) ||
-                (player1Showcase === 2 && showcase2Revealed));
-            console.log("[LEFT INSET] Evaluation:", {
-              player1Showcase,
-              showcase1Revealed,
-              showcase2Revealed,
-              shouldShow,
-            });
-            return shouldShow ? (
+          {player1Showcase &&
+            ((player1Showcase === 1 && showcase1Revealed) ||
+              (player1Showcase === 2 && showcase2Revealed)) && (
               <ProductInsetCard
                 products={player1Showcase === 1 ? showcase1 : showcase2}
                 isVisible={true}
@@ -565,8 +462,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
                 price={player1Showcase === 1 ? showcase1Value : showcase2Value}
                 position="left"
               />
-            ) : null;
-          })()}
+            )}
         </Box>
 
         {/* Player 1 Podium */}
@@ -580,8 +476,8 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
               !player1Bid &&
               !showPassBidButtons &&
               showcase1Revealed &&
-              ((player1Showcase === 1) || // Player 1 chose to bid on showcase 1
-               (player1Passed && player1Showcase === 2 && showcase2Revealed)) // Or passed and now bids on showcase 2
+              (player1Showcase === 1 || // Player 1 chose to bid on showcase 1
+                (player1Passed && player1Showcase === 2 && showcase2Revealed)) // Or passed and now bids on showcase 2
             }
             isWinner={winnerId === player1?.id}
             role={role}
@@ -606,7 +502,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
               !player2Bid &&
               !showPassBidButtons &&
               ((player2Showcase === 1 && showcase1Revealed) || // Player 2 bids on showcase 1 (if player 1 passed)
-               (player2Showcase === 2 && showcase2Revealed)) // Or player 2 bids on showcase 2
+                (player2Showcase === 2 && showcase2Revealed)) // Or player 2 bids on showcase 2
             }
             isWinner={winnerId === player2?.id}
             role={role}
@@ -622,18 +518,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
 
         {/* Right Inset - Showcase for player on right */}
         <Box width="300px" flexShrink={0}>
-          {(() => {
-            const shouldShow =
-              player2Showcase &&
-              ((player2Showcase === 1 && showcase1Revealed) ||
-                (player2Showcase === 2 && showcase2Revealed));
-            console.log("[RIGHT INSET] Evaluation:", {
-              player2Showcase,
-              showcase1Revealed,
-              showcase2Revealed,
-              shouldShow,
-            });
-            return shouldShow ? (
+          {player2Showcase &&
+            ((player2Showcase === 1 && showcase1Revealed) ||
+              (player2Showcase === 2 && showcase2Revealed)) && (
               <ProductInsetCard
                 products={player2Showcase === 1 ? showcase1 : showcase2}
                 isVisible={true}
@@ -641,8 +528,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
                 price={player2Showcase === 1 ? showcase1Value : showcase2Value}
                 position="right"
               />
-            ) : null;
-          })()}
+            )}
         </Box>
       </HStack>
 
@@ -653,18 +539,10 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
             {player1.first_name} {player1.last_name} Decision:
           </Text>
           <HStack gap={4}>
-            <Button
-              onClick={handlePass}
-              colorPalette="orange"
-              size="lg"
-            >
+            <Button onClick={handlePass} colorPalette="orange" size="lg">
               Pass
             </Button>
-            <Button
-              onClick={handleBidDecision}
-              colorPalette="green"
-              size="lg"
-            >
+            <Button onClick={handleBidDecision} colorPalette="green" size="lg">
               Bid
             </Button>
           </HStack>

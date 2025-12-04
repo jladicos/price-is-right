@@ -4,16 +4,14 @@ import Database from "better-sqlite3";
 import { initDatabase, closeDatabase } from "../db/connection";
 import { login } from "../services/auth";
 import showcaseRoutes from "./showcase";
-import { addContestantToRow } from "../db/contestants";
 import { updateGameWorkflow } from "../db/game-workflow";
-import { insertWheelSpin } from "../db/wheel";
 
 // Mock getCurrentLeader to return test wheel winners
 vi.mock("../services/wheel.js", () => ({
   getCurrentLeader: vi.fn((wheelId: string) => {
-    if (wheelId === "wheel_1") {
+    if (wheelId === "section_1_finale") {
       return { player_id: 2, spin_value: 100 };
-    } else if (wheelId === "wheel_2") {
+    } else if (wheelId === "section_2_finale") {
       return { player_id: 3, spin_value: 100 };
     }
     return null;
@@ -37,7 +35,6 @@ describe("Showcase API Integration Tests", () => {
   let db: Database.Database;
   let hostToken: string;
   let player1Token: string;
-  let player2Token: string;
 
   beforeEach(async () => {
     // Use in-memory database for tests
@@ -59,7 +56,7 @@ describe("Showcase API Integration Tests", () => {
     // Get auth tokens
     hostToken = login(db, "HOST123").sessionToken;
     player1Token = login(db, "CODE1").sessionToken;
-    player2Token = login(db, "CODE2").sessionToken;
+    login(db, "CODE2"); // Ensure player2 is logged in even if not used directly
 
     // Setup game state for finale
     updateGameWorkflow({
@@ -95,8 +92,9 @@ describe("Showcase API Integration Tests", () => {
       expect(body.state).toBeDefined();
       expect(body.state.finale_player1_id).toBe(2);
       expect(body.state.finale_player2_id).toBe(3);
-      expect(body.state.finale_player1_showcase).toBeDefined();
-      expect(body.state.finale_player2_showcase).toBeDefined();
+      // Showcases are not assigned during initialize - they're assigned when player makes pass/bid decision
+      expect(body.state.finale_player1_showcase).toBe(null);
+      expect(body.state.finale_player2_showcase).toBe(null);
     });
 
     it("should reject non-host requests", async () => {
@@ -194,6 +192,14 @@ describe("Showcase API Integration Tests", () => {
       await app.inject({
         method: "POST",
         url: "/api/showcase/initialize",
+        headers: {
+          authorization: `Bearer ${hostToken}`,
+        },
+      });
+      // Assign showcases by having player choose to bid
+      await app.inject({
+        method: "POST",
+        url: "/api/showcase/bid-decision",
         headers: {
           authorization: `Bearer ${hostToken}`,
         },
@@ -298,6 +304,15 @@ describe("Showcase API Integration Tests", () => {
         },
       });
 
+      // Assign showcases
+      await app.inject({
+        method: "POST",
+        url: "/api/showcase/bid-decision",
+        headers: {
+          authorization: `Bearer ${hostToken}`,
+        },
+      });
+
       // Submit a bid first
       await app.inject({
         method: "POST",
@@ -350,6 +365,15 @@ describe("Showcase API Integration Tests", () => {
       await app.inject({
         method: "POST",
         url: "/api/showcase/initialize",
+        headers: {
+          authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      // Assign showcases
+      await app.inject({
+        method: "POST",
+        url: "/api/showcase/bid-decision",
         headers: {
           authorization: `Bearer ${hostToken}`,
         },
@@ -432,6 +456,15 @@ describe("Showcase API Integration Tests", () => {
         },
       });
 
+      // Assign showcases
+      await app.inject({
+        method: "POST",
+        url: "/api/showcase/bid-decision",
+        headers: {
+          authorization: `Bearer ${hostToken}`,
+        },
+      });
+
       // Submit bids for both players
       await app.inject({
         method: "POST",
@@ -493,6 +526,15 @@ describe("Showcase API Integration Tests", () => {
       await app.inject({
         method: "POST",
         url: "/api/showcase/initialize",
+        headers: {
+          authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      // Assign showcases
+      await app.inject({
+        method: "POST",
+        url: "/api/showcase/bid-decision",
         headers: {
           authorization: `Bearer ${hostToken}`,
         },
@@ -603,6 +645,15 @@ describe("Showcase API Integration Tests", () => {
         },
       });
 
+      // Assign showcases
+      await app.inject({
+        method: "POST",
+        url: "/api/showcase/bid-decision",
+        headers: {
+          authorization: `Bearer ${hostToken}`,
+        },
+      });
+
       await app.inject({
         method: "POST",
         url: "/api/showcase/submit-bid",
@@ -648,6 +699,15 @@ describe("Showcase API Integration Tests", () => {
       await app.inject({
         method: "POST",
         url: "/api/showcase/initialize",
+        headers: {
+          authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      // Assign showcases
+      await app.inject({
+        method: "POST",
+        url: "/api/showcase/bid-decision",
         headers: {
           authorization: `Bearer ${hostToken}`,
         },

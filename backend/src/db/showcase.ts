@@ -108,14 +108,16 @@ export function getShowcaseState(gameId: number): ShowcaseState | null {
  * Get showcase state with player information joined
  * Returns showcase state plus player names and photos
  */
-export function getShowcaseStateWithPlayers(gameId: number): (ShowcaseState & {
-  finale_player1_first_name: string | null;
-  finale_player1_last_name: string | null;
-  finale_player1_photo: string | null;
-  finale_player2_first_name: string | null;
-  finale_player2_last_name: string | null;
-  finale_player2_photo: string | null;
-}) | null {
+export function getShowcaseStateWithPlayers(gameId: number):
+  | (ShowcaseState & {
+      finale_player1_first_name: string | null;
+      finale_player1_last_name: string | null;
+      finale_player1_photo: string | null;
+      finale_player2_first_name: string | null;
+      finale_player2_last_name: string | null;
+      finale_player2_photo: string | null;
+    })
+  | null {
   const db = getDatabase();
 
   const state = db
@@ -144,14 +146,16 @@ export function getShowcaseStateWithPlayers(gameId: number): (ShowcaseState & {
     WHERE gw.id = ?
   `,
     )
-    .get(gameId) as (ShowcaseState & {
-    finale_player1_first_name: string | null;
-    finale_player1_last_name: string | null;
-    finale_player1_photo: string | null;
-    finale_player2_first_name: string | null;
-    finale_player2_last_name: string | null;
-    finale_player2_photo: string | null;
-  }) | undefined;
+    .get(gameId) as
+    | (ShowcaseState & {
+        finale_player1_first_name: string | null;
+        finale_player1_last_name: string | null;
+        finale_player1_photo: string | null;
+        finale_player2_first_name: string | null;
+        finale_player2_last_name: string | null;
+        finale_player2_photo: string | null;
+      })
+    | undefined;
 
   return state || null;
 }

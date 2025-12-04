@@ -1432,7 +1432,9 @@ describe("Game State Service", () => {
       // (The replace logic happens after advancePhase, typically triggered by UI)
       // For this test, verify the winner is marked and ready to be replaced
       const state = getCurrentState();
-      const wonContestant = state.contestantsRow.find((c) => c.status === "won");
+      const wonContestant = state.contestantsRow.find(
+        (c) => c.status === "won",
+      );
       expect(wonContestant).toBeDefined();
     });
 
@@ -1520,7 +1522,9 @@ describe("Game State Service", () => {
 
       // CRITICAL: Should still allow replacement in round 4
       const state = getCurrentState();
-      const wonContestant = state.contestantsRow.find((c) => c.status === "won");
+      const wonContestant = state.contestantsRow.find(
+        (c) => c.status === "won",
+      );
       expect(wonContestant).toBeDefined();
       expect(wonContestant!.player_id).toBe(players[2].id);
 

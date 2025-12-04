@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Box, HStack, VStack, Button, Text } from "@chakra-ui/react";
 import { WheelDisplay } from "../components/WheelDisplay";
 import { PlayerCard } from "../components/PlayerCard";
@@ -12,6 +12,24 @@ interface WheelPhaseViewProps {
   gameState: GameState;
 }
 
+/**
+ * WheelPhaseView - Simplified architecture
+ *
+ * Key insight: The store delays fetchGameState() until after animation completes.
+ * This means gameState (winner, tie, spinner, etc.) won't change during animation.
+ *
+ * During animation:
+ * - gameState stays the same (old state before spin result)
+ * - pendingSpinTarget has the animation target value
+ * - isWheelAnimating is true
+ *
+ * After animation:
+ * - fetchGameState() is called, gameState updates with new info
+ * - pendingSpinTarget is cleared
+ * - isWheelAnimating becomes false
+ *
+ * This eliminates the need for deferred states (deferredWinner, deferredSpinnerId, etc.)
+ */
 export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
   const { currentPlayer } = useAuthStore();
   const {
@@ -20,13 +38,11 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     startSpinOff,
     advancePhase,
     isWheelAnimating,
+    pendingSpinTarget,
     startNewGame,
     fetchGameState,
     resetWheelPhase,
   } = useGameStore();
-
-  const [targetSpinValue, setTargetSpinValue] = useState<number | null>(null); // Target for animation
-  const [isSpinningState, setIsSpinningState] = useState(false);
 
   const role = currentPlayer?.role || "audience";
   const currentPlayerId = currentPlayer?.id;
@@ -46,15 +62,23 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
   // Get wheel participants from playerTotals (includes full player info from backend)
   const wheelParticipants = playerTotals;
 
-  // Find current spinner
+  // Find current spinner - state won't change during animation so we can use directly
   const currentSpinnerContestant = currentSpinnerId
     ? wheelParticipants.find((p) => p.player_id === currentSpinnerId)
     : null;
 
+  // Current spinoff number (0 for regular round)
+  const currentSpinoffNumber = spinoffNumber || 0;
+
   // Find leader (highest total that is ≤ 100 and not eliminated)
   // Only show leader if at least one player has completed their turn
   const hasAnyCompletedTurn = wheelParticipants.some((p) => {
-    const spins = wheelSpins.filter((s) => s.player_id === p.player_id);
+    // Filter spins by current spinoff number
+    const spins = wheelSpins.filter(
+      (s) =>
+        s.player_id === p.player_id &&
+        s.spinoff_number === currentSpinoffNumber,
+    );
     const pt = playerTotals.find((pt) => pt.player_id === p.player_id);
 
     // Completed if eliminated OR if they've spun and are not the current spinner
@@ -87,10 +111,23 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
         })
       : null;
 
-  // Find waiting spinners (contestants who haven't had their turn yet)
+  // Find all tied players (when needsSpinoff is true)
+  const tiedPlayers = needsSpinoff
+    ? wheelParticipants.filter((c) => {
+        const pt = playerTotals.find((p) => p.player_id === c.player_id);
+        return pt && pt.total === leaderTotal && !pt.eliminated;
+      })
+    : [];
+
+  // Find waiting spinners (contestants who haven't had their turn yet in this round)
   const waitingSpinners = wheelParticipants.filter((c) => {
     const pt = playerTotals.find((p) => p.player_id === c.player_id);
-    const spins = wheelSpins.filter((s) => s.player_id === c.player_id);
+    // Filter spins by current spinoff number
+    const spins = wheelSpins.filter(
+      (s) =>
+        s.player_id === c.player_id &&
+        s.spinoff_number === currentSpinoffNumber,
+    );
 
     // Skip eliminated players (they disappear)
     if (pt?.eliminated) return false;
@@ -101,7 +138,15 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     // Skip leader (shown separately on left)
     if (c.player_id === leaderContestant?.player_id) return false;
 
-    // Only include players who haven't spun yet
+    // Skip tied players when spinoff needed (shown on left)
+    if (
+      needsSpinoff &&
+      tiedPlayers.some((tp) => tp.player_id === c.player_id)
+    ) {
+      return false;
+    }
+
+    // Only include players who haven't spun yet in this round
     // Players who have spun and completed their turn will either:
     // 1. Be the leader (shown on left)
     // 2. Be eliminated (disappear)
@@ -109,47 +154,22 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     return spins.length === 0;
   });
 
-  // Get current player's total
+  // Get current player's total - state won't change during animation
   const currentPlayerTotal = currentSpinnerId
     ? playerTotals.find((pt) => pt.player_id === currentSpinnerId)?.total || 0
     : 0;
 
-  // Get current player's spin count
+  // Get current player's spin count (in current round)
   const currentPlayerSpins = currentSpinnerId
-    ? wheelSpins.filter((s) => s.player_id === currentSpinnerId).length
+    ? wheelSpins.filter(
+        (s) =>
+          s.player_id === currentSpinnerId &&
+          s.spinoff_number === currentSpinoffNumber,
+      ).length
     : 0;
 
   // Determine if current user is the current spinner
   const isCurrentSpinner = currentPlayerId === currentSpinnerId;
-
-  // Handle new spins and set animation target
-  useEffect(() => {
-    if (wheelSpins.length > 0 && isWheelAnimating) {
-      const lastSpin = wheelSpins[wheelSpins.length - 1];
-      // Only update target if we're animating and don't already have a target
-      if (lastSpin.player_id === currentSpinnerId) {
-        const targetValue = Math.round(lastSpin.result * 100);
-        console.log("[WheelPhaseView] Setting target spin value:", {
-          rawResult: lastSpin.result,
-          targetValue,
-          currentWheelPosition,
-        });
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setTargetSpinValue(targetValue); // Convert to cents
-      }
-    }
-  }, [wheelSpins, isWheelAnimating, currentSpinnerId, currentWheelPosition]);
-
-  // Sync isSpinning state with store and clear target when done
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsSpinningState(isWheelAnimating);
-
-    // When animation completes, clear the target
-    if (!isWheelAnimating) {
-      setTargetSpinValue(null);
-    }
-  }, [isWheelAnimating]);
 
   // Handlers
   const handleSpin = async () => {
@@ -173,14 +193,9 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
 
     try {
       // Host spins for the current spinner
-      // If no current spinner is set, we shouldn't be able to spin
+      // If no current spinner or spinner is done, silently ignore (wheel should be inactive)
       if (role === "host") {
-        if (!currentSpinnerId) {
-          showToast({
-            title: "Error",
-            description: "No current spinner set. Please advance the game.",
-            type: "error",
-          });
+        if (!currentSpinnerId || currentSpinnerIsDone) {
           return;
         }
         await spinWheel(currentSpinnerId);
@@ -210,11 +225,6 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       if (!playerIdToStay) return;
 
       await stayOnWheelSpin(playerIdToStay);
-      showToast({
-        title: "Stayed",
-        description: `Final total: ${currentPlayerTotal}¢`,
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -377,10 +387,13 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
 
   // Show player controls if user is current spinner and has spun once
   // OR if user is host and current spinner has spun once
+  // NOTE: In spin-off rounds, players only get 1 spin - no Stay/Spin Again option
+  const isInSpinoff = currentSpinoffNumber > 0;
   const currentSpinnerHasSpunOnce =
     currentPlayerSpins === 1 &&
     currentPlayerTotal < 100 &&
-    currentPlayerTotal > 0;
+    currentPlayerTotal > 0 &&
+    !isInSpinoff; // No second spin option in spin-offs
 
   const showPlayerControls =
     currentSpinnerHasSpunOnce && (isCurrentSpinner || role === "host");
@@ -397,20 +410,45 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     !wheelWinner && // No winner yet
     !needsSpinoff; // No tie yet
 
+  // Show "Next Spinner" button when current spinner is done and there are more spinners waiting
   const showNextSpinnerButton =
-    role === "host" && currentSpinnerIsDone && waitingSpinners.length > 0; // Only if there are more spinners waiting
+    role === "host" && currentSpinnerIsDone && waitingSpinners.length > 0;
 
   // Show host controls if user is host
   const showHostControls = role === "host";
 
-  // Winner celebration
-  const showWinnerCelebration = wheelWinner != null;
+  // Winner celebration - state won't change during animation, so we can use wheelWinner directly
+  // showWinnerCelebration will only be true when animation is done AND there's a winner
+  const showWinnerCelebration = wheelWinner != null && !isWheelAnimating;
   const winnerContestant = wheelWinner
     ? wheelParticipants.find((c) => c.player_id === wheelWinner)
     : null;
   const winnerTotal = wheelWinner
     ? playerTotals.find((pt) => pt.player_id === wheelWinner)?.total || 0
     : 0;
+
+  // Find runner-up (second best score, not eliminated, not the winner)
+  const runnerUpTotal = showWinnerCelebration
+    ? playerTotals
+        .filter(
+          (pt) =>
+            !pt.eliminated && pt.total <= 100 && pt.player_id !== wheelWinner,
+        )
+        .reduce((max, pt) => (pt.total > max ? pt.total : max), 0)
+    : 0;
+
+  const runnerUpContestant =
+    runnerUpTotal > 0
+      ? wheelParticipants.find((c) => {
+          const pt = playerTotals.find((p) => p.player_id === c.player_id);
+          return (
+            pt &&
+            pt.total === runnerUpTotal &&
+            !pt.eliminated &&
+            c.player_id !== wheelWinner
+          );
+        })
+      : null;
 
   return (
     <VStack gap={8} width="100%" p={4} pt="120px" pb="120px">
@@ -424,14 +462,82 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
         alignItems="flex-start"
         justifyContent="center"
       >
-        {/* Leader Section (Left) */}
-        <Box width="200px" flexShrink={0}>
-          {leaderContestant && (
+        {/* Leader/Winner Section (Left) */}
+        <Box width={showWinnerCelebration ? "300px" : "200px"} flexShrink={0}>
+          {/* Show winner (large) + runner-up if wheel round is complete, otherwise show leader */}
+          {showWinnerCelebration && winnerContestant ? (
+            <VStack gap={6} alignItems="center">
+              {/* Winner - Large, no name shown (badge identifies them) */}
+              <PlayerCard
+                player={{ ...winnerContestant, id: winnerContestant.player_id }}
+                size="large"
+                badge="WINNER"
+                variant="winner"
+              >
+                <VStack gap={2} alignItems="center">
+                  <Text
+                    fontSize="2xl"
+                    fontWeight="bold"
+                    color="green.500"
+                    textAlign="center"
+                  >
+                    ${winnerTotal.toFixed(2)}
+                  </Text>
+                </VStack>
+              </PlayerCard>
+
+              {/* Runner-up - Small, beneath winner */}
+              {runnerUpContestant && (
+                <PlayerCard
+                  player={{
+                    ...runnerUpContestant,
+                    id: runnerUpContestant.player_id,
+                  }}
+                  size="small"
+                  showName
+                >
+                  <Text
+                    fontSize="md"
+                    fontWeight="bold"
+                    color="gray.500"
+                    textAlign="center"
+                  >
+                    ${runnerUpTotal.toFixed(2)}
+                  </Text>
+                </PlayerCard>
+              )}
+            </VStack>
+          ) : needsSpinoff && tiedPlayers.length > 0 ? (
+            <VStack gap={16} alignItems="center">
+              {/* Show all tied players - extra gap for badge spacing */}
+              {tiedPlayers.map((player) => (
+                <PlayerCard
+                  key={player.player_id}
+                  player={{ ...player, id: player.player_id }}
+                  size="medium"
+                  showName
+                  badge="TIE"
+                >
+                  <VStack gap={2} alignItems="center">
+                    <Text
+                      fontSize="2xl"
+                      fontWeight="bold"
+                      color="yellow.500"
+                      textAlign="center"
+                    >
+                      ${leaderTotal.toFixed(2)}
+                    </Text>
+                  </VStack>
+                </PlayerCard>
+              ))}
+            </VStack>
+          ) : leaderContestant ? (
             <VStack gap={2} alignItems="center">
               <PlayerCard
                 player={{ ...leaderContestant, id: leaderContestant.player_id }}
                 size="medium"
                 showName
+                badge="LEADER"
               >
                 <VStack gap={2} alignItems="center">
                   <Text
@@ -442,22 +548,10 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                   >
                     ${leaderTotal.toFixed(2)}
                   </Text>
-                  <Box
-                    bg="yellow.500"
-                    color="white"
-                    px={3}
-                    py={1}
-                    borderRadius="full"
-                    fontWeight="bold"
-                    fontSize="sm"
-                    boxShadow="md"
-                  >
-                    LEADER
-                  </Box>
                 </VStack>
               </PlayerCard>
             </VStack>
-          )}
+          ) : null}
         </Box>
 
         {/* Wheel Display (Center) */}
@@ -465,81 +559,88 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
           <WheelDisplay
             currentValue={currentWheelPosition}
             targetValue={
-              isSpinningState && targetSpinValue !== null
-                ? targetSpinValue
+              isWheelAnimating && pendingSpinTarget !== null
+                ? pendingSpinTarget
                 : undefined
             }
-            isSpinning={isSpinningState}
+            isSpinning={isWheelAnimating}
             onSpin={handleSpin}
-            disabled={isSpinningState || (!isCurrentSpinner && role !== "host")}
+            disabled={
+              isWheelAnimating ||
+              !currentSpinnerId ||
+              currentSpinnerIsDone ||
+              (!isCurrentSpinner && role !== "host")
+            }
           />
         </Box>
 
-        {/* Current Spinner & Waiting Spinners (Right) */}
-        <Box flex="1" minWidth="400px">
-          <HStack gap={4} alignItems="flex-start" width="100%" wrap="wrap">
-            {/* Current Spinner */}
-            {currentSpinnerContestant && (
-              <VStack gap={2}>
-                <PlayerCard
-                  player={{
-                    ...currentSpinnerContestant,
-                    id: currentSpinnerContestant.player_id,
-                  }}
-                  size="large"
-                  variant="highlighted"
-                  showName
-                >
-                  <VStack gap={6} width="100%" alignItems="center">
-                    {!isSpinningState && !isWheelAnimating && (
-                      <Text
-                        fontSize="2xl"
-                        fontWeight="bold"
-                        color="blue.500"
-                        textAlign="center"
-                      >
-                        ${currentPlayerTotal.toFixed(2)}
-                      </Text>
-                    )}
-
-                    {/* Player Controls (Stay/Spin Again buttons) */}
-                    {showPlayerControls && (
-                      <HStack gap={2} justifyContent="center">
-                        <Button
-                          onClick={handleStay}
-                          colorPalette="green"
-                          size="md"
-                          disabled={isSpinningState}
+        {/* Current Spinner & Waiting Spinners (Right) - Hidden when winner is determined */}
+        {!showWinnerCelebration && (
+          <Box flex="1" minWidth="400px">
+            <HStack gap={4} alignItems="flex-start" width="100%" wrap="wrap">
+              {/* Current Spinner */}
+              {currentSpinnerContestant && (
+                <VStack gap={2}>
+                  <PlayerCard
+                    player={{
+                      ...currentSpinnerContestant,
+                      id: currentSpinnerContestant.player_id,
+                    }}
+                    size="large"
+                    variant="highlighted"
+                    showName
+                  >
+                    <VStack gap={6} width="100%" alignItems="center">
+                      {!isWheelAnimating && (
+                        <Text
+                          fontSize="2xl"
+                          fontWeight="bold"
+                          color="blue.500"
+                          textAlign="center"
                         >
-                          Stay
-                        </Button>
-                        <Button
-                          onClick={handleSpinAgain}
-                          colorPalette="blue"
-                          size="md"
-                          disabled={isSpinningState}
-                        >
-                          Spin Again
-                        </Button>
-                      </HStack>
-                    )}
-                  </VStack>
-                </PlayerCard>
-              </VStack>
-            )}
+                          ${currentPlayerTotal.toFixed(2)}
+                        </Text>
+                      )}
 
-            {/* Waiting Spinners */}
-            {waitingSpinners.map((spinner) => (
-              <Box key={spinner.player_id}>
-                <PlayerCard
-                  player={{ ...spinner, id: spinner.player_id }}
-                  size="small"
-                  showName
-                />
-              </Box>
-            ))}
-          </HStack>
-        </Box>
+                      {/* Player Controls (Stay/Spin Again buttons) */}
+                      {showPlayerControls && (
+                        <HStack gap={2} justifyContent="center">
+                          <Button
+                            onClick={handleStay}
+                            colorPalette="green"
+                            size="md"
+                            disabled={isWheelAnimating}
+                          >
+                            Stay
+                          </Button>
+                          <Button
+                            onClick={handleSpinAgain}
+                            colorPalette="blue"
+                            size="md"
+                            disabled={isWheelAnimating}
+                          >
+                            Spin Again
+                          </Button>
+                        </HStack>
+                      )}
+                    </VStack>
+                  </PlayerCard>
+                </VStack>
+              )}
+
+              {/* Waiting Spinners */}
+              {waitingSpinners.map((spinner) => (
+                <Box key={spinner.player_id}>
+                  <PlayerCard
+                    player={{ ...spinner, id: spinner.player_id }}
+                    size="small"
+                    showName
+                  />
+                </Box>
+              ))}
+            </HStack>
+          </Box>
+        )}
       </HStack>
 
       {/* Host Controls (Conditional) - Only show spin-off and winner controls here */}
@@ -550,16 +651,10 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
               onClick={handleStartSpinOff}
               colorPalette="orange"
               size="md"
-              disabled={isSpinningState}
+              disabled={isWheelAnimating}
             >
               Start Spin-Off (Tie-Breaker)
             </Button>
-          )}
-          {wheelWinner && (
-            <Text fontSize="lg" fontWeight="bold" color="green.500">
-              Winner Determined! Use &quot;Next Phase&quot; button below to
-              continue.
-            </Text>
           )}
         </VStack>
       )}
@@ -576,45 +671,6 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
         onRefreshGameState={handleRefreshGameState}
         showNextSpinnerButton={!!showNextSpinnerButton}
       />
-
-      {/* Winner Celebration Modal */}
-      {showWinnerCelebration && winnerContestant && (
-        <Box
-          position="fixed"
-          top="50%"
-          left="50%"
-          transform="translate(-50%, -50%)"
-          bg="green.500"
-          color="white"
-          px={8}
-          py={6}
-          borderRadius="xl"
-          boxShadow="2xl"
-          zIndex={9999}
-          textAlign="center"
-          minWidth="400px"
-        >
-          <VStack gap={4}>
-            <Text fontSize="3xl" fontWeight="bold">
-              🎉 Winner! 🎉
-            </Text>
-            <Text fontSize="xl">
-              {winnerContestant.first_name} {winnerContestant.last_name}
-            </Text>
-            <Text fontSize="lg">Final Total: ${winnerTotal.toFixed(2)}</Text>
-            {role === "host" && (
-              <Button
-                onClick={handleAdvancePhase}
-                colorPalette="white"
-                variant="outline"
-                size="sm"
-              >
-                Continue to Next Phase
-              </Button>
-            )}
-          </VStack>
-        </Box>
-      )}
     </VStack>
   );
 }

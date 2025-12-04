@@ -1116,7 +1116,8 @@ describe("Game API Routes", () => {
       });
 
       // Now replace another contestant with the original player (who is no longer in the row but has role='player')
-      const secondContestant = JSON.parse(freshState.body).state.contestantsRow[1];
+      const secondContestant = JSON.parse(freshState.body).state
+        .contestantsRow[1];
       const response = await app.inject({
         method: "POST",
         url: "/api/game/replace-contestant-manual",
@@ -1863,6 +1864,33 @@ describe("Game API Routes", () => {
     });
 
     it("should transition from section_2_finale to finale", async () => {
+      // Set up required game state for finale:
+      // Need bidding winners and wheel winners for both sections
+
+      // Add contestants to rows
+      db.prepare(
+        "INSERT INTO contestants_row (player_id, position, game_segment, status) VALUES (?, ?, ?, ?)",
+      ).run(3, 1, "section_1", "won");
+      db.prepare(
+        "INSERT INTO contestants_row (player_id, position, game_segment, status) VALUES (?, ?, ?, ?)",
+      ).run(4, 1, "section_2", "won");
+
+      // Add bidding wins for both sections
+      db.prepare(
+        "INSERT INTO bids (player_id, product_id, round_number, game_segment, bid_amount, retry_number, is_winner) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      ).run(3, "lemon-juice", 1, "section_1", 1200, 0, 1);
+      db.prepare(
+        "INSERT INTO bids (player_id, product_id, round_number, game_segment, bid_amount, retry_number, is_winner) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      ).run(4, "apple-juice", 1, "section_2", 1500, 0, 1);
+
+      // Add wheel winners for both sections
+      db.prepare(
+        "INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number) VALUES (?, ?, ?, ?, ?)",
+      ).run(3, "section_1_finale", 1, 1.0, 0);
+      db.prepare(
+        "INSERT INTO wheel_spins (player_id, game_segment, spin_number, result, spinoff_number) VALUES (?, ?, ?, ?, ?)",
+      ).run(4, "section_2_finale", 1, 0.95, 0);
+
       // Override to section_2_finale
       await app.inject({
         method: "POST",

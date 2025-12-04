@@ -56,8 +56,13 @@ export function useGameState(options: UseGameStateOptions = {}) {
     fetchGameState();
 
     // Set up polling interval
+    // Skip polling during wheel animation to prevent UI updates before animation completes
     intervalRef.current = setInterval(() => {
-      fetchGameState();
+      // Check current animation state from store (not from closure)
+      const currentlyAnimating = useGameStore.getState().isWheelAnimating;
+      if (!currentlyAnimating) {
+        fetchGameState();
+      }
     }, pollInterval);
 
     // Cleanup on unmount

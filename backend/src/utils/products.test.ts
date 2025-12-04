@@ -41,7 +41,9 @@ describe("Product Utilities", () => {
       // Validate finale structure
       expect(Array.isArray(config.game_structure.finale.showcase_1)).toBe(true);
       expect(Array.isArray(config.game_structure.finale.showcase_2)).toBe(true);
-      expect(typeof config.game_structure.finale.bonus_threshold).toBe("number");
+      expect(typeof config.game_structure.finale.bonus_threshold).toBe(
+        "number",
+      );
       expect(config.game_structure.finale.showcase_1.length).toBeGreaterThan(0);
       expect(config.game_structure.finale.showcase_2.length).toBeGreaterThan(0);
       expect(config.game_structure.finale.bonus_threshold).toBeGreaterThan(0);

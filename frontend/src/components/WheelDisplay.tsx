@@ -78,10 +78,10 @@ export function WheelDisplay({
   // With 7 visible segments (560px total), pointer at center (280px from top)
   const CONTAINER_HEIGHT = 560; // 7 segments * 80px
   const HALF_SEGMENT = SEGMENT_HEIGHT / 2; // 40px
-  const NUM_LOOPS = 10; // Render 10 loops to support animation with 3+ rotations plus buffer
-  // Segments box contains 10 loops of 20 = 200 segments total = 16000px tall
+  const NUM_LOOPS = 15; // Render 15 loops to ensure enough segments at loop boundaries
+  // Segments box contains 15 loops of 20 = 300 segments total = 24000px tall
   // When centered with top="50%" and translateY(-50%), the center is at the pointer
-  // The center of the segments box is at: 200 * 80 / 2 = 8000px from its top
+  // The center of the segments box is at: 300 * 80 / 2 = 12000px from its top
   const SEGMENTS_BOX_CENTER =
     (NUM_LOOPS * DISPLAY_ORDER.length * SEGMENT_HEIGHT) / 2; // 8000px
 
@@ -94,13 +94,6 @@ export function WheelDisplay({
     if (isSpinning && targetValue && currentIndex !== -1) {
       // Calculate target position for spinning animation
       const targetIndex = DISPLAY_ORDER.indexOf(targetValue);
-      console.log("[WheelDisplay] Animation calculation:", {
-        currentValue,
-        targetValue,
-        currentIndex,
-        targetIndex,
-        DISPLAY_ORDER,
-      });
       if (targetIndex !== -1) {
         // Current position is at: currentIndex + (STATIC_LOOP_OFFSET * DISPLAY_ORDER.length)
         // This is our starting absolute index (100-119 for loop 5)

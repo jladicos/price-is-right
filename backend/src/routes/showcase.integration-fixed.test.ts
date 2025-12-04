@@ -60,8 +60,8 @@ describe("Showcase API Integration Tests (No Mocks)", () => {
     dbUpdateBid(bid2.id, { is_winner: 1 });
 
     // Create wheel spins - these players won the wheel rounds
-    createWheelSpin(2, "wheel_1", 1, 1.0, 0); // Player 1 gets $1.00 on wheel 1
-    createWheelSpin(3, "wheel_2", 1, 0.95, 0); // Player 2 gets $0.95 on wheel 2
+    createWheelSpin(2, "section_1_finale", 1, 1.0, 0); // Player 1 gets $1.00 on wheel 1
+    createWheelSpin(3, "section_2_finale", 1, 0.95, 0); // Player 2 gets $0.95 on wheel 2
 
     // Create test Fastify app
     app = Fastify();
@@ -96,11 +96,9 @@ describe("Showcase API Integration Tests (No Mocks)", () => {
       expect(body.state.finale_player1_product_value).toBe(2.88); // lemon-juice
       expect(body.state.finale_player2_product_value).toBe(2.58); // apple-juice
 
-      // Verify showcase assignments
-      expect(body.state.finale_player1_showcase).toBeDefined();
-      expect(body.state.finale_player2_showcase).toBeDefined();
-      expect([1, 2]).toContain(body.state.finale_player1_showcase);
-      expect([1, 2]).toContain(body.state.finale_player2_showcase);
+      // Showcases are not assigned during initialize - deferred to pass/bid decision
+      expect(body.state.finale_player1_showcase).toBe(null);
+      expect(body.state.finale_player2_showcase).toBe(null);
     });
 
     it("should reject non-host requests", async () => {
@@ -163,6 +161,16 @@ describe("Showcase API Integration Tests (No Mocks)", () => {
         },
       });
       expect(initResponse.statusCode).toBe(200);
+
+      // Step 1b: Assign showcases via bid decision
+      const bidDecisionResponse = await app.inject({
+        method: "POST",
+        url: "/api/showcase/bid-decision",
+        headers: {
+          authorization: `Bearer ${hostToken}`,
+        },
+      });
+      expect(bidDecisionResponse.statusCode).toBe(200);
 
       // Step 2: Get showcase state
       const stateResponse = await app.inject({
@@ -266,6 +274,15 @@ describe("Showcase API Integration Tests (No Mocks)", () => {
         },
       });
 
+      // Assign showcases
+      await app.inject({
+        method: "POST",
+        url: "/api/showcase/bid-decision",
+        headers: {
+          authorization: `Bearer ${hostToken}`,
+        },
+      });
+
       // Both players bid way over
       await app.inject({
         method: "POST",
@@ -348,8 +365,8 @@ describe("Showcase API Integration Tests (No Mocks)", () => {
       expect(finalWinnerBody.player2Over).toBe(false);
     });
 
-    it("should handle pass scenario with correct showcase reassignment", async () => {
-      // Initialize
+    it("should handle pass scenario with correct showcase assignment", async () => {
+      // Initialize (showcases are null at this point)
       const initResponse = await app.inject({
         method: "POST",
         url: "/api/showcase/initialize",
@@ -358,9 +375,11 @@ describe("Showcase API Integration Tests (No Mocks)", () => {
         },
       });
       const initBody = JSON.parse(initResponse.body);
-      const originalPlayer1Showcase = initBody.state.finale_player1_showcase;
+      // Showcases should be null after initialize
+      expect(initBody.state.finale_player1_showcase).toBe(null);
+      expect(initBody.state.finale_player2_showcase).toBe(null);
 
-      // Player 1 passes
+      // Player 1 passes - this assigns showcases
       await app.inject({
         method: "POST",
         url: "/api/showcase/pass",
@@ -379,10 +398,10 @@ describe("Showcase API Integration Tests (No Mocks)", () => {
       });
       const stateBody = JSON.parse(stateResponse.body);
 
-      // Showcases should be swapped
-      expect(stateBody.state.finale_player1_showcase).not.toBe(
-        originalPlayer1Showcase,
-      );
+      // After pass: player1 gets showcase 2, player2 gets showcase 1
+      expect(stateBody.state.finale_player1_showcase).toBe(2);
+      expect(stateBody.state.finale_player2_showcase).toBe(1);
+      expect(stateBody.state.finale_player1_passed).toBe(1);
 
       // Submit bid and verify it goes to correct showcase
       await app.inject({
@@ -398,9 +417,7 @@ describe("Showcase API Integration Tests (No Mocks)", () => {
       const bid = db
         .prepare("SELECT * FROM showcase_bids WHERE player_id = 2")
         .get() as any;
-      expect(bid.showcase_number).toBe(
-        stateBody.state.finale_player1_showcase,
-      );
+      expect(bid.showcase_number).toBe(2); // Player 1 (id=2) should bid on showcase 2
     });
   });
 });

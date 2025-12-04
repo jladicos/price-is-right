@@ -299,9 +299,7 @@ const showcaseRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({
           success: false,
           error:
-            error instanceof Error
-              ? error.message
-              : "Failed to reveal winner",
+            error instanceof Error ? error.message : "Failed to reveal winner",
         });
       }
     },
@@ -330,9 +328,7 @@ const showcaseRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.status(400).send({
           success: false,
           error:
-            error instanceof Error
-              ? error.message
-              : "Failed to initiate retry",
+            error instanceof Error ? error.message : "Failed to initiate retry",
         });
       }
     },

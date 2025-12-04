@@ -598,7 +598,9 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
             phase_metadata: JSON.stringify(nextMetadata),
           });
           // Initialize showcase showdown (determine finalists, calculate order)
-          const { initializeShowcase } = await import("../services/showcase.js");
+          const { initializeShowcase } = await import(
+            "../services/showcase.js"
+          );
           await initializeShowcase(1); // Game ID is always 1
         } else {
           // Update workflow to next phase (non-wheel phases)

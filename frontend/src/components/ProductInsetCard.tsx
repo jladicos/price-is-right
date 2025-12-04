@@ -37,7 +37,7 @@ export function ProductInsetCard({
   position = "right",
 }: ProductInsetCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const autoAdvanceTimer = useRef<NodeJS.Timeout | null>(null);
+  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Determine if we're in showcase mode (multiple products)
   const isShowcaseMode = products && products.length > 0;
@@ -51,14 +51,9 @@ export function ProductInsetCard({
     ? products[currentIndex]?.id
     : productId;
 
-  // Don't render if not visible or no product
-  if (!isVisible || !currentProduct || !currentProductId) {
-    return null;
-  }
-
   // Auto-advance logic for showcase mode
   const startAutoAdvance = useCallback(() => {
-    if (!hasMultipleProducts) return;
+    if (!hasMultipleProducts || !products) return;
 
     // Clear existing timer
     if (autoAdvanceTimer.current) {
@@ -71,7 +66,7 @@ export function ProductInsetCard({
     }, 5000);
 
     autoAdvanceTimer.current = timer;
-  }, [hasMultipleProducts, products?.length]);
+  }, [hasMultipleProducts, products]);
 
   // Start auto-advance when component mounts or index changes
   useEffect(() => {
@@ -94,6 +89,11 @@ export function ProductInsetCard({
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % products!.length);
   };
+
+  // Don't render if not visible or no product
+  if (!isVisible || !currentProduct || !currentProductId) {
+    return null;
+  }
 
   // Use first image from product, with fallback for missing images
   const firstImageUrl = currentProduct.images?.[0]

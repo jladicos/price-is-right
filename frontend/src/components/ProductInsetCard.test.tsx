@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, act, fireEvent } from "../test/test-utils";
+import { render, screen, act, fireEvent } from "../test/test-utils";
 import { ProductInsetCard } from "./ProductInsetCard";
-import userEvent from "@testing-library/user-event";
 
 describe("ProductInsetCard", () => {
   const mockProduct = {

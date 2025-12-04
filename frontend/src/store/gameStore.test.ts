@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useGameStore, setGameStoreSessionTokenGetter } from "./gameStore";
 import type { GameState } from "./gameStore";
 
@@ -802,8 +802,517 @@ describe("gameStore", () => {
     });
   });
 
+  // Wheel Animation Timing Tests
+  describe("Wheel Animation Timing", () => {
+    const mockWheelState: GameState = {
+      workflow: {
+        id: 1,
+        current_segment: "section_1",
+        current_segment_index: 0,
+        phase_type: "wheel",
+        phase_metadata: '{"type":"wheel"}',
+        created_at: "2025-11-20T12:00:00Z",
+        updated_at: "2025-11-20T12:00:00Z",
+      },
+      contestantsRow: [],
+      eligibleAudienceCount: 50,
+      wheelSpins: [],
+      currentSpinner: 10,
+      currentWheelPosition: 15,
+      spinoffNumber: 0,
+      playerTotals: [],
+      wheelWinner: null,
+      needsSpinoff: false,
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      useGameStore.setState({
+        gameState: mockWheelState,
+        isLoading: false,
+        error: null,
+        lastUpdated: 0,
+        isWheelAnimating: false,
+        pendingSpinTarget: null,
+      });
+    });
+
+    afterEach(() => {
+      // Run any pending timers and clear them before switching to real timers
+      vi.runOnlyPendingTimers();
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    });
+
+    it("should set pendingSpinTarget immediately after spin API returns", async () => {
+      // Mock spin response - player spins and gets $0.75
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          spin: { result: 0.75 },
+          total: 0.75,
+          eliminated: false,
+        }),
+      });
+
+      // Mock fetchGameState response (will be called after timeout)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          state: {
+            ...mockWheelState,
+            playerTotals: [
+              {
+                player_id: 10,
+                first_name: "John",
+                last_name: "Doe",
+                photo_filename: "john.jpg",
+                position: 1,
+                total: 0.75,
+                eliminated: false,
+              },
+            ],
+          },
+        }),
+      });
+
+      const store = useGameStore.getState();
+      // Start the spin (don't await - it won't complete until timeout fires)
+      const spinPromise = store.spinWheel(10);
+
+      // Flush microtasks (required with fake timers)
+      await vi.advanceTimersByTimeAsync(0);
+
+      // pendingSpinTarget should be set to 75 (cents)
+      const stateAfterSpin = useGameStore.getState();
+      expect(stateAfterSpin.pendingSpinTarget).toBe(75);
+      expect(stateAfterSpin.isWheelAnimating).toBe(true);
+
+      // Clean up: advance timers to complete the spin
+      await vi.advanceTimersByTimeAsync(3000);
+      await spinPromise;
+    });
+
+    it("should keep isWheelAnimating true for 3 seconds", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          spin: { result: 0.5 },
+          total: 0.5,
+          eliminated: false,
+        }),
+      });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          state: mockWheelState,
+        }),
+      });
+
+      const store = useGameStore.getState();
+      const spinPromise = store.spinWheel(10);
+
+      // Let fetch resolve
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // Still animating after 1 second
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(useGameStore.getState().isWheelAnimating).toBe(true);
+
+      // Still animating after 2 seconds total
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(useGameStore.getState().isWheelAnimating).toBe(true);
+
+      // Animation should stop after 3 seconds
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(useGameStore.getState().isWheelAnimating).toBe(false);
+
+      await spinPromise;
+    });
+
+    it("should NOT call fetchGameState immediately after spin API returns", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          spin: { result: 0.35 },
+          total: 0.35,
+          eliminated: false,
+        }),
+      });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          state: mockWheelState,
+        }),
+      });
+
+      const store = useGameStore.getState();
+      const spinPromise = store.spinWheel(10);
+
+      // Let spin API resolve
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // Only the spin API should have been called
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/game/wheel-spin"),
+        expect.any(Object),
+      );
+
+      // Clean up
+      await vi.advanceTimersByTimeAsync(3000);
+      await spinPromise;
+    });
+
+    it("should call fetchGameState only after 3 seconds", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          spin: { result: 0.85 },
+          total: 0.85,
+          eliminated: false,
+        }),
+      });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          state: {
+            ...mockWheelState,
+            wheelWinner: 10,
+          },
+        }),
+      });
+
+      const store = useGameStore.getState();
+      const spinPromise = store.spinWheel(10);
+
+      // Let spin API resolve
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // Still only 1 call (spin) after 2 seconds
+      await vi.advanceTimersByTimeAsync(2000);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+
+      // After 3 seconds, fetchGameState should be called
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenLastCalledWith(
+        expect.stringContaining("/game/state"),
+        expect.any(Object),
+      );
+
+      await spinPromise;
+    });
+
+    it("should update gameState with winner only after animation completes", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          spin: { result: 1.0 },
+          total: 1.0,
+          eliminated: false,
+        }),
+      });
+
+      // Response with winner - this should only be reflected after animation
+      const stateWithWinner = {
+        ...mockWheelState,
+        wheelWinner: 10, // Winner is determined
+        playerTotals: [
+          {
+            player_id: 10,
+            first_name: "John",
+            last_name: "Doe",
+            photo_filename: "john.jpg",
+            position: 1,
+            total: 1.0,
+            eliminated: false,
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          state: stateWithWinner,
+        }),
+      });
+
+      const store = useGameStore.getState();
+      const spinPromise = store.spinWheel(10);
+
+      // Let spin API resolve
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // Winner should NOT be shown yet (animation still running)
+      expect(useGameStore.getState().gameState?.wheelWinner).toBe(null);
+
+      // Advance past animation time
+      await vi.advanceTimersByTimeAsync(3000);
+
+      // NOW winner should be visible
+      expect(useGameStore.getState().gameState?.wheelWinner).toBe(10);
+
+      await spinPromise;
+    });
+
+    it("should clear pendingSpinTarget after animation completes", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          spin: { result: 0.6 },
+          total: 0.6,
+          eliminated: false,
+        }),
+      });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          state: mockWheelState,
+        }),
+      });
+
+      const store = useGameStore.getState();
+      const spinPromise = store.spinWheel(10);
+
+      // Flush microtasks (required with fake timers)
+      await vi.advanceTimersByTimeAsync(0);
+
+      // pendingSpinTarget should be set during animation
+      expect(useGameStore.getState().pendingSpinTarget).toBe(60);
+
+      // After animation completes
+      await vi.advanceTimersByTimeAsync(3000);
+
+      // pendingSpinTarget should be cleared
+      expect(useGameStore.getState().pendingSpinTarget).toBe(null);
+
+      await spinPromise;
+    });
+
+    it("should not update tie/elimination state until after animation", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          spin: { result: 0.9 },
+          total: 0.9,
+          eliminated: false,
+        }),
+      });
+
+      // Response with tie situation
+      const stateWithTie = {
+        ...mockWheelState,
+        needsSpinoff: true,
+        playerTotals: [
+          {
+            player_id: 10,
+            first_name: "John",
+            last_name: "Doe",
+            photo_filename: "john.jpg",
+            position: 1,
+            total: 0.9,
+            eliminated: false,
+          },
+          {
+            player_id: 11,
+            first_name: "Jane",
+            last_name: "Doe",
+            photo_filename: "jane.jpg",
+            position: 2,
+            total: 0.9,
+            eliminated: false,
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          state: stateWithTie,
+        }),
+      });
+
+      const store = useGameStore.getState();
+      const spinPromise = store.spinWheel(10);
+
+      // Let spin API resolve
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // Tie should NOT be visible yet
+      expect(useGameStore.getState().gameState?.needsSpinoff).toBe(false);
+
+      // After animation completes
+      await vi.advanceTimersByTimeAsync(3000);
+
+      // NOW tie should be visible
+      expect(useGameStore.getState().gameState?.needsSpinoff).toBe(true);
+
+      await spinPromise;
+    });
+
+    it("should handle spin API error without leaving animation in bad state", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: "Server Error",
+        json: async () => ({
+          error: "Spin failed",
+        }),
+      });
+
+      const store = useGameStore.getState();
+
+      await expect(store.spinWheel(10)).rejects.toThrow("Spin failed");
+
+      // Animation states should be reset
+      const state = useGameStore.getState();
+      expect(state.isWheelAnimating).toBe(false);
+      expect(state.pendingSpinTarget).toBe(null);
+      expect(state.isLoading).toBe(false);
+    });
+
+    it("should convert spin result to cents correctly", async () => {
+      // Test various spin values
+      const testCases = [
+        { input: 0.05, expected: 5 },
+        { input: 0.1, expected: 10 },
+        { input: 0.25, expected: 25 },
+        { input: 0.55, expected: 55 },
+        { input: 1.0, expected: 100 },
+      ];
+
+      for (const { input, expected } of testCases) {
+        // Reset store state
+        useGameStore.setState({
+          gameState: mockWheelState,
+          isLoading: false,
+          error: null,
+          isWheelAnimating: false,
+          pendingSpinTarget: null,
+        });
+        mockFetch.mockClear();
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            spin: { result: input },
+            total: input,
+            eliminated: false,
+          }),
+        });
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            state: mockWheelState,
+          }),
+        });
+
+        const store = useGameStore.getState();
+        const spinPromise = store.spinWheel(10);
+
+        // Flush microtasks (required with fake timers)
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(useGameStore.getState().pendingSpinTarget).toBe(expected);
+
+        // Clean up timer
+        await vi.advanceTimersByTimeAsync(3000);
+        await spinPromise;
+      }
+    });
+
+    it("should show elimination only after animation completes", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          spin: { result: 0.5 },
+          total: 1.25, // Over 1.00, eliminated
+          eliminated: true,
+        }),
+      });
+
+      // Response with eliminated player
+      const stateWithElimination = {
+        ...mockWheelState,
+        currentSpinner: 11, // Moved to next player
+        playerTotals: [
+          {
+            player_id: 10,
+            first_name: "John",
+            last_name: "Doe",
+            photo_filename: "john.jpg",
+            position: 1,
+            total: 1.25,
+            eliminated: true, // Eliminated
+          },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          state: stateWithElimination,
+        }),
+      });
+
+      const store = useGameStore.getState();
+      const spinPromise = store.spinWheel(10);
+
+      // Let spin API resolve
+      await Promise.resolve();
+      await Promise.resolve();
+
+      // Elimination should NOT be visible yet
+      expect(useGameStore.getState().gameState?.playerTotals).toEqual([]);
+
+      // After animation completes
+      await vi.advanceTimersByTimeAsync(3000);
+
+      // NOW elimination should be visible
+      expect(
+        useGameStore.getState().gameState?.playerTotals?.[0]?.eliminated,
+      ).toBe(true);
+
+      await spinPromise;
+    });
+  });
+
   // Showcase Actions Tests
   describe("Showcase Actions", () => {
+    // Clear mocks before each test in this section to prevent interference
+    beforeEach(() => {
+      mockFetch.mockReset();
+    });
+
     const mockShowcaseState = {
       state: {
         finale_player1_id: 1,
