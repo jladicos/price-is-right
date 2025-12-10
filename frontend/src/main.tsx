@@ -4,6 +4,7 @@ import { ChakraProvider } from "@chakra-ui/react";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { system } from "./theme";
+import "./index.css";
 import "./animations.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

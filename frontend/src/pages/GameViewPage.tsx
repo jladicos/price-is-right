@@ -14,12 +14,13 @@ import { useAuthStore } from "../store/authStore";
 import { BiddingPhaseView } from "../components/phases/BiddingPhaseView";
 import { WheelPhaseView } from "./WheelPhaseView";
 import { ShowcasePhaseView } from "../components/phases/ShowcasePhaseView";
+import WaitingScreen from "./WaitingScreen";
 import { showToast } from "../utils/toast";
 
 export default function GameViewPage() {
   const { currentPlayer } = useAuthStore();
   const { gameState, isLoading, error } = useGameState();
-  const { startNewGame } = useGameStore();
+  const { startNewGame, officiallyStartGame } = useGameStore();
 
   const role = currentPlayer?.role || "audience";
 
@@ -58,6 +59,12 @@ export default function GameViewPage() {
   }
 
   const phaseType = gameState.workflow.phase_type;
+  const officiallyStarted = gameState.workflow.officially_started === 1;
+
+  // Show waiting screen for non-host players before game is officially started
+  if (!officiallyStarted && role !== "host") {
+    return <WaitingScreen />;
+  }
 
   // Handle "not_started" phase
   if (phaseType === "not_started") {
@@ -98,6 +105,45 @@ export default function GameViewPage() {
           ) : (
             <Text>Waiting for the host to start the game...</Text>
           )}
+        </VStack>
+      </Container>
+    );
+  }
+
+  // Host can officially start the game (show button if not yet started)
+  if (!officiallyStarted && role === "host") {
+    return (
+      <Container maxW="4xl" centerContent py={10}>
+        <VStack gap={6}>
+          <Heading>Ready to Start</Heading>
+          <Text>
+            Players are on the waiting screen. Click below when ready to begin.
+          </Text>
+          <Button
+            colorPalette="green"
+            size="lg"
+            onClick={async () => {
+              try {
+                await officiallyStartGame();
+                showToast({
+                  title: "Game Started",
+                  description: "Players can now see the game!",
+                  type: "success",
+                });
+              } catch (err) {
+                showToast({
+                  title: "Error",
+                  description:
+                    err instanceof Error
+                      ? err.message
+                      : "Failed to start game",
+                  type: "error",
+                });
+              }
+            }}
+          >
+            Officially Start Game
+          </Button>
         </VStack>
       </Container>
     );

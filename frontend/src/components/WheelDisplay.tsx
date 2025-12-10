@@ -6,6 +6,7 @@ export interface WheelDisplayProps {
   isSpinning?: boolean; // Whether wheel is currently spinning
   onSpin?: () => void; // Callback when wheel is clicked/spun
   disabled?: boolean; // Disable interaction
+  showSpinButton?: boolean; // Whether to show the spin button
   _startingPosition?: "first" | "second" | "spinoff"; // For future implementation
 }
 
@@ -73,6 +74,7 @@ export function WheelDisplay({
   isSpinning = false,
   onSpin,
   disabled = false,
+  showSpinButton = true,
 }: WheelDisplayProps) {
   // Calculate translateY to align segment center with pointer
   // With 7 visible segments (560px total), pointer at center (280px from top)
@@ -223,16 +225,18 @@ export function WheelDisplay({
       </Box>
 
       {/* Accessibility Button */}
-      <Button
-        onClick={handleSpin}
-        disabled={disabled || isSpinning}
-        colorPalette="yellow"
-        size="lg"
-        width="200px"
-        data-testid="spin-wheel-button"
-      >
-        {isSpinning ? "Spinning..." : "Spin Wheel"}
-      </Button>
+      {showSpinButton && (
+        <Button
+          onClick={handleSpin}
+          disabled={disabled || isSpinning}
+          colorPalette="yellow"
+          size="lg"
+          width="200px"
+          data-testid="spin-wheel-button"
+        >
+          {isSpinning ? "Spinning..." : "Spin Wheel"}
+        </Button>
+      )}
     </VStack>
   );
 }

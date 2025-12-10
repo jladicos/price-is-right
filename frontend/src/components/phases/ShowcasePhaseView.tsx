@@ -4,6 +4,7 @@ import { PodiumDisplay } from "../PodiumDisplay";
 import { ProductInsetCard } from "../ProductInsetCard";
 import { GameControlStrip } from "../GameControlStrip";
 import { ShowcaseModal } from "../ShowcaseModal";
+import { PhaseBackground } from "../PhaseBackground";
 import { useGameStore } from "../../store/gameStore";
 import { useAuthStore } from "../../store/authStore";
 import { showToast } from "../../utils/toast";
@@ -441,113 +442,136 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   };
 
   return (
-    <VStack gap={8} width="100%" p={4} pt="120px" pb="120px">
-      {/* Main Content: [Inset] [Podium1] [Podium2] [Inset] */}
-      <HStack
-        gap={8}
-        width="100%"
-        maxWidth="1800px"
-        alignItems="flex-start"
-        justifyContent="center"
-      >
-        {/* Left Inset - Showcase for player on left */}
-        <Box width="300px" flexShrink={0}>
-          {player1Showcase &&
-            ((player1Showcase === 1 && showcase1Revealed) ||
-              (player1Showcase === 2 && showcase2Revealed)) && (
-              <ProductInsetCard
-                products={player1Showcase === 1 ? showcase1 : showcase2}
-                isVisible={true}
-                showPrice={showResults}
-                price={player1Showcase === 1 ? showcase1Value : showcase2Value}
-                position="left"
+    <>
+      <PhaseBackground phase="showcase">
+        {/* Black bar behind podiums - full width, 10.5em tall, at bottom of PhaseBackground */}
+        <Box
+          position="absolute"
+          left={0}
+          right={0}
+          bottom={0}
+          height="10.5em"
+          bg="black"
+        />
+        <VStack
+          gap={8}
+          width="100%"
+          height="100%"
+          p={4}
+          pb="1em"
+          justify="flex-end"
+          position="relative"
+        >
+          {/* Main Content: [Inset] [Podium1] [Podium2] [Inset] */}
+          <HStack
+            gap={24}
+            width="100%"
+            maxWidth="1800px"
+            alignItems="flex-start"
+            justifyContent="center"
+          >
+            {/* Left Inset - Showcase for player on left */}
+            <Box width="300px" flexShrink={0}>
+              {player1Showcase &&
+                (role !== "host" ||
+                  (player1Showcase === 1 && showcase1Revealed) ||
+                  (player1Showcase === 2 && showcase2Revealed)) && (
+                  <ProductInsetCard
+                    products={player1Showcase === 1 ? showcase1 : showcase2}
+                    isVisible={true}
+                    showPrice={showResults}
+                    price={player1Showcase === 1 ? showcase1Value : showcase2Value}
+                    position="left"
+                  />
+                )}
+            </Box>
+
+            {/* Player 1 Podium - 25% larger for showcase */}
+            <Box flexShrink={0} transform="scale(1.25)" transformOrigin="bottom center">
+              <PodiumDisplay
+                position={1}
+                contestant={player1Contestant}
+                bid={player1BidAdapted}
+                isCurrentBidder={
+                  role === "host" &&
+                  !player1Bid &&
+                  !showPassBidButtons &&
+                  showcase1Revealed &&
+                  (player1Showcase === 1 || // Player 1 chose to bid on showcase 1
+                    (player1Passed && player1Showcase === 2 && showcase2Revealed)) // Or passed and now bids on showcase 2
+                }
+                isWinner={winnerId === player1?.id}
+                role={role}
+                currentPlayerId={currentPlayerId}
+                allContestantsRevealed={true}
+                productHasBeenShown={true}
+                canReplaceContestants={false}
+                onBidSubmit={handleShowcaseBidSubmit}
+                onUpdateBid={handleShowcaseBidUpdate}
+                onUnlockBid={handleShowcaseBidUnlock}
               />
-            )}
-        </Box>
+            </Box>
 
-        {/* Player 1 Podium */}
-        <Box flexShrink={0}>
-          <PodiumDisplay
-            position={1}
-            contestant={player1Contestant}
-            bid={player1BidAdapted}
-            isCurrentBidder={
-              role === "host" &&
-              !player1Bid &&
-              !showPassBidButtons &&
-              showcase1Revealed &&
-              (player1Showcase === 1 || // Player 1 chose to bid on showcase 1
-                (player1Passed && player1Showcase === 2 && showcase2Revealed)) // Or passed and now bids on showcase 2
-            }
-            isWinner={winnerId === player1?.id}
-            role={role}
-            currentPlayerId={currentPlayerId}
-            allContestantsRevealed={true}
-            productHasBeenShown={true}
-            canReplaceContestants={false}
-            onBidSubmit={handleShowcaseBidSubmit}
-            onUpdateBid={handleShowcaseBidUpdate}
-            onUnlockBid={handleShowcaseBidUnlock}
-          />
-        </Box>
-
-        {/* Player 2 Podium */}
-        <Box flexShrink={0}>
-          <PodiumDisplay
-            position={2}
-            contestant={player2Contestant}
-            bid={player2BidAdapted}
-            isCurrentBidder={
-              role === "host" &&
-              !player2Bid &&
-              !showPassBidButtons &&
-              ((player2Showcase === 1 && showcase1Revealed) || // Player 2 bids on showcase 1 (if player 1 passed)
-                (player2Showcase === 2 && showcase2Revealed)) // Or player 2 bids on showcase 2
-            }
-            isWinner={winnerId === player2?.id}
-            role={role}
-            currentPlayerId={currentPlayerId}
-            allContestantsRevealed={true}
-            productHasBeenShown={true}
-            canReplaceContestants={false}
-            onBidSubmit={handleShowcaseBidSubmit}
-            onUpdateBid={handleShowcaseBidUpdate}
-            onUnlockBid={handleShowcaseBidUnlock}
-          />
-        </Box>
-
-        {/* Right Inset - Showcase for player on right */}
-        <Box width="300px" flexShrink={0}>
-          {player2Showcase &&
-            ((player2Showcase === 1 && showcase1Revealed) ||
-              (player2Showcase === 2 && showcase2Revealed)) && (
-              <ProductInsetCard
-                products={player2Showcase === 1 ? showcase1 : showcase2}
-                isVisible={true}
-                showPrice={showResults}
-                price={player2Showcase === 1 ? showcase1Value : showcase2Value}
-                position="right"
+            {/* Player 2 Podium - 25% larger for showcase */}
+            <Box flexShrink={0} transform="scale(1.25)" transformOrigin="bottom center">
+              <PodiumDisplay
+                position={2}
+                contestant={player2Contestant}
+                bid={player2BidAdapted}
+                isCurrentBidder={
+                  role === "host" &&
+                  !player2Bid &&
+                  !showPassBidButtons &&
+                  ((player2Showcase === 1 && showcase1Revealed) || // Player 2 bids on showcase 1 (if player 1 passed)
+                    (player2Showcase === 2 && showcase2Revealed)) // Or player 2 bids on showcase 2
+                }
+                isWinner={winnerId === player2?.id}
+                role={role}
+                currentPlayerId={currentPlayerId}
+                allContestantsRevealed={true}
+                productHasBeenShown={true}
+                canReplaceContestants={false}
+                onBidSubmit={handleShowcaseBidSubmit}
+                onUpdateBid={handleShowcaseBidUpdate}
+                onUnlockBid={handleShowcaseBidUnlock}
               />
-            )}
-        </Box>
-      </HStack>
+            </Box>
 
-      {/* Pass/Bid Decision UI */}
-      {role === "host" && showPassBidButtons && player1 && (
-        <VStack gap={4} width="100%">
-          <Text fontSize="xl" fontWeight="bold">
-            {player1.first_name} {player1.last_name} Decision:
-          </Text>
-          <HStack gap={4}>
-            <Button onClick={handlePass} colorPalette="orange" size="lg">
-              Pass
-            </Button>
-            <Button onClick={handleBidDecision} colorPalette="green" size="lg">
-              Bid
-            </Button>
+            {/* Right Inset - Showcase for player on right */}
+            <Box width="300px" flexShrink={0}>
+              {player2Showcase &&
+                (role !== "host" ||
+                  (player2Showcase === 1 && showcase1Revealed) ||
+                  (player2Showcase === 2 && showcase2Revealed)) && (
+                  <ProductInsetCard
+                    products={player2Showcase === 1 ? showcase1 : showcase2}
+                    isVisible={true}
+                    showPrice={showResults}
+                    price={player2Showcase === 1 ? showcase1Value : showcase2Value}
+                    position="right"
+                  />
+                )}
+            </Box>
           </HStack>
+
+          {/* Pass/Bid Decision UI */}
+          {role === "host" && showPassBidButtons && player1 && (
+            <VStack gap={4} width="100%">
+              <Text fontSize="xl" fontWeight="bold">
+                {player1.first_name} {player1.last_name} Decision:
+              </Text>
+              <HStack gap={4}>
+                <Button onClick={handlePass} colorPalette="orange" size="lg">
+                  Pass
+                </Button>
+                <Button onClick={handleBidDecision} colorPalette="green" size="lg">
+                  Bid
+                </Button>
+              </HStack>
+            </VStack>
+          )}
         </VStack>
-      )}
+      </PhaseBackground>
 
       {/* Fixed Control Strip at Bottom */}
       <GameControlStrip
@@ -585,6 +609,6 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
         onClose={handleCloseShowcase2Modal}
         role={role}
       />
-    </VStack>
+    </>
   );
 }

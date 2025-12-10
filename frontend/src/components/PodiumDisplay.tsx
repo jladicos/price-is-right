@@ -81,14 +81,8 @@ export function PodiumDisplay({
         opacity={0.4}
         data-testid={`podium-${position}-empty`}
       >
-        <Text
-          fontSize="xl"
-          fontWeight="bold"
-          textAlign="center"
-          minHeight="32px"
-        >
-          Position {position}
-        </Text>
+        {/* Empty name space */}
+        <Box minHeight="32px" />
 
         <Box
           width="150px"
@@ -188,7 +182,7 @@ export function PodiumDisplay({
         </Box>
 
         {/* Button space - always reserve space */}
-        <Box minHeight="44px">
+        <Box minHeight="44px" position="relative" zIndex={3}>
           {role === "host" && onRevealContestant && shouldShowRevealButton && (
             <Button
               onClick={() => onRevealContestant(contestant.id)}
@@ -265,14 +259,28 @@ export function PodiumDisplay({
     >
       {/* First Name - maintains layout space */}
       {!isWinner && (
-        <Text
-          fontSize="xl"
-          fontWeight="bold"
-          textAlign="center"
+        <Box
+          bg="white"
+          px={3}
+          py={1}
+          borderRadius="md"
+          boxShadow="sm"
+          border="5px solid black"
           minHeight="32px"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          alignSelf="center"
         >
-          {contestant.first_name}
-        </Text>
+          <Text
+            fontSize="xl"
+            fontWeight="bold"
+            textAlign="center"
+            color="gray.800"
+          >
+            {contestant.first_name}
+          </Text>
+        </Box>
       )}
       {/* Empty space for winner to maintain layout */}
       {isWinner && <Box minHeight="32px" />}
@@ -375,16 +383,6 @@ export function PodiumDisplay({
             height="40%"
             bg="linear-gradient(to bottom, rgba(255,255,255,0.2), transparent)"
           />
-          <Text
-            fontSize="sm"
-            color="white"
-            fontWeight="bold"
-            textTransform="uppercase"
-            letterSpacing="wider"
-            position="relative"
-          >
-            {position}
-          </Text>
         </Box>
 
         {/* Digital Display - overlaps podium */}
@@ -481,7 +479,7 @@ export function PodiumDisplay({
       </Box>
 
       {/* Button space - always reserve space */}
-      <Box minHeight="44px">
+      <Box minHeight="44px" position="relative" zIndex={3}>
         {role === "host" &&
           (onReplaceContestantRandom || onReplaceContestantManual) &&
           canReplaceContestants && (

@@ -957,4 +957,215 @@ describe("Players API Routes", () => {
       expect(response.statusCode).toBe(403);
     });
   });
+
+  describe("GET /api/players/online", () => {
+    it("should return all players with active sessions", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/players/online",
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      // Should have structure with total, byRole, players
+      expect(body).toHaveProperty("total");
+      expect(body).toHaveProperty("byRole");
+      expect(body).toHaveProperty("players");
+
+      // Auth user (host) has a session
+      expect(body.total).toBeGreaterThanOrEqual(1);
+      expect(body.byRole.host).toBeGreaterThanOrEqual(1);
+    });
+
+    it("should return players with camelCase field names", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/players/online",
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      // Check first player has correct field names
+      if (body.players.length > 0) {
+        const player = body.players[0];
+        expect(player).toHaveProperty("firstName");
+        expect(player).toHaveProperty("lastName");
+        expect(player).toHaveProperty("photoFilename");
+        expect(player).not.toHaveProperty("first_name");
+        expect(player).not.toHaveProperty("last_name");
+      }
+    });
+
+    it("should count players by role correctly", async () => {
+      // Add players with sessions of different roles
+      db.prepare(
+        "INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)",
+      ).run("Player1", "Test", "PLAY01", "player", 1, "player-token-1");
+
+      db.prepare(
+        "INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)",
+      ).run("Player2", "Test", "PLAY02", "player", 1, "player-token-2");
+
+      db.prepare(
+        "INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)",
+      ).run("Audience1", "Test", "AUD001", "audience", 1, "audience-token-1");
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/players/online",
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      expect(body.total).toBe(4); // auth user (host) + 2 players + 1 audience
+      expect(body.byRole.host).toBe(1);
+      expect(body.byRole.player).toBe(2);
+      expect(body.byRole.audience).toBe(1);
+    });
+
+    it("should not include players without sessions", async () => {
+      // Add a player without a session
+      db.prepare(
+        "INSERT INTO players (first_name, last_name, access_code, role, active) VALUES (?, ?, ?, ?, ?)",
+      ).run("NoSession", "Player", "NOSESS", "player", 1);
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/players/online",
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      // Should NOT include the player without a session
+      const noSessionPlayer = body.players.find(
+        (p: { firstName: string }) => p.firstName === "NoSession",
+      );
+      expect(noSessionPlayer).toBeUndefined();
+    });
+
+    it("should return empty results when no sessions exist", async () => {
+      // Clear all session tokens
+      db.prepare("UPDATE players SET session_token = NULL").run();
+
+      // Create a new auth token for the host
+      const newHostToken = "temp-host-token";
+      db.prepare(
+        "UPDATE players SET session_token = ? WHERE access_code = ?",
+      ).run(newHostToken, "TESTAUTH");
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/players/online",
+        headers: {
+          authorization: `Bearer ${newHostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      // Only the host (who has a session for this request) should be online
+      expect(body.total).toBe(1);
+      expect(body.byRole.host).toBe(1);
+      expect(body.byRole.player).toBe(0);
+      expect(body.byRole.audience).toBe(0);
+    });
+
+    it("should include active field as boolean", async () => {
+      // Add an inactive player with session (edge case)
+      db.prepare(
+        "INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)",
+      ).run("Inactive", "Player", "INACT1", "player", 0, "inactive-token");
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/players/online",
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      // Find the inactive player
+      const inactivePlayer = body.players.find(
+        (p: { firstName: string }) => p.firstName === "Inactive",
+      );
+      expect(inactivePlayer).toBeDefined();
+      expect(inactivePlayer.active).toBe(false);
+      expect(typeof inactivePlayer.active).toBe("boolean");
+    });
+
+    it("should sort by role then name", async () => {
+      // Add multiple players with sessions
+      db.prepare(
+        "INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)",
+      ).run("Zack", "Player", "ZACK01", "player", 1, "zack-token");
+
+      db.prepare(
+        "INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)",
+      ).run("Alice", "Audience", "ALIC01", "audience", 1, "alice-token");
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/players/online",
+        headers: {
+          authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      // Results should be ordered: audience, host, player (alphabetically by role)
+      const roles = body.players.map((p: { role: string }) => p.role);
+      expect(roles.indexOf("audience")).toBeLessThan(roles.indexOf("host"));
+      expect(roles.indexOf("host")).toBeLessThan(roles.indexOf("player"));
+    });
+
+    it("should require authentication", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/players/online",
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should require host role", async () => {
+      // Create a non-host player with session
+      db.prepare(
+        "INSERT INTO players (first_name, last_name, access_code, role, active, session_token) VALUES (?, ?, ?, ?, ?, ?)",
+      ).run("Regular", "Player", "REGPLR", "player", 1, "regular-token");
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/players/online",
+        headers: {
+          authorization: "Bearer regular-token",
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+      const body = JSON.parse(response.body);
+      expect(body.error).toBe("Host access required");
+    });
+  });
 });

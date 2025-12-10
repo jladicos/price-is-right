@@ -22,6 +22,7 @@ export interface BidWithPlayer extends Bid {
 
 /**
  * Create a new bid
+ * Throws user-friendly error if bid amount is already taken (unique constraint violation)
  */
 export function createBid(
   playerId: number,
@@ -38,14 +39,26 @@ export function createBid(
     VALUES (?, ?, ?, ?, ?, ?)
   `);
 
-  const result = stmt.run(
-    playerId,
-    productId,
-    roundNumber,
-    segment,
-    bidAmount,
-    retryNumber,
-  );
+  let result;
+  try {
+    result = stmt.run(
+      playerId,
+      productId,
+      roundNumber,
+      segment,
+      bidAmount,
+      retryNumber,
+    );
+  } catch (error: unknown) {
+    // Handle unique constraint violation (race condition where two users submit same bid)
+    if (
+      error instanceof Error &&
+      error.message.includes("UNIQUE constraint failed")
+    ) {
+      throw new Error("Bid amount already taken. Choose a unique bid.");
+    }
+    throw error;
+  }
 
   // Fetch and return the created bid
   const bid = db
@@ -98,7 +111,7 @@ export function getBidsForRound(
     WHERE b.game_segment = ?
       AND b.round_number = ?
       AND b.retry_number = ?
-    ORDER BY b.created_at ASC
+    ORDER BY b.created_at ASC, b.id ASC
   `,
     )
     .all(segment, roundNumber, currentRetry) as BidWithPlayer[];

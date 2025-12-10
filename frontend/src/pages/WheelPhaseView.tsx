@@ -3,6 +3,7 @@ import { Box, HStack, VStack, Button, Text } from "@chakra-ui/react";
 import { WheelDisplay } from "../components/WheelDisplay";
 import { PlayerCard } from "../components/PlayerCard";
 import { GameControlStrip } from "../components/GameControlStrip";
+import { PhaseBackground } from "../components/PhaseBackground";
 import { useGameStore } from "../store/gameStore";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../utils/toast";
@@ -451,213 +452,240 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       : null;
 
   return (
-    <VStack gap={8} width="100%" p={4} pt="120px" pb="120px">
-      {/* Add top and bottom padding for fixed elements */}
+    <>
+      <PhaseBackground phase="wheel">
+        <Box width="100%" height="100%" position="relative">
+          {/* Main Content: Waiting Spinners | Current Spinner | Wheel | Leader */}
+          {/* Wheel positioned 10em from right edge */}
+          <HStack
+            position="absolute"
+            right="3em"
+            top="50%"
+            transform="translateY(-50%)"
+            gap={4}
+            alignItems="center"
+          >
+            {/* Waiting Spinners (leftmost) - Hidden when winner is determined */}
+            {!showWinnerCelebration && waitingSpinners.length > 0 && (
+              <HStack gap={4} alignItems="center">
+                {waitingSpinners.map((spinner) => (
+                  <Box key={spinner.player_id}>
+                    <PlayerCard
+                      player={{ ...spinner, id: spinner.player_id }}
+                      size="small"
+                      showName
+                    />
+                  </Box>
+                ))}
+              </HStack>
+            )}
 
-      {/* Main Content: Leader on left, Wheel in center, Current/Waiting on right */}
-      <HStack
-        gap={8}
-        width="100%"
-        maxWidth="1800px"
-        alignItems="flex-start"
-        justifyContent="center"
-      >
-        {/* Leader/Winner Section (Left) */}
-        <Box width={showWinnerCelebration ? "300px" : "200px"} flexShrink={0}>
-          {/* Show winner (large) + runner-up if wheel round is complete, otherwise show leader */}
-          {showWinnerCelebration && winnerContestant ? (
-            <VStack gap={6} alignItems="center">
-              {/* Winner - Large, no name shown (badge identifies them) */}
-              <PlayerCard
-                player={{ ...winnerContestant, id: winnerContestant.player_id }}
-                size="large"
-                badge="WINNER"
-                variant="winner"
-              >
-                <VStack gap={2} alignItems="center">
-                  <Text
-                    fontSize="2xl"
-                    fontWeight="bold"
-                    color="green.500"
-                    textAlign="center"
-                  >
-                    ${winnerTotal.toFixed(2)}
-                  </Text>
-                </VStack>
-              </PlayerCard>
-
-              {/* Runner-up - Small, beneath winner */}
-              {runnerUpContestant && (
+            {/* Current Spinner (left of wheel) - Hidden when winner is determined */}
+            {!showWinnerCelebration && currentSpinnerContestant && (
+              <VStack gap={2} marginRight="-14em">
                 <PlayerCard
                   player={{
-                    ...runnerUpContestant,
-                    id: runnerUpContestant.player_id,
+                    ...currentSpinnerContestant,
+                    id: currentSpinnerContestant.player_id,
                   }}
-                  size="small"
+                  size="large"
+                  variant="highlighted"
                   showName
                 >
-                  <Text
-                    fontSize="md"
-                    fontWeight="bold"
-                    color="gray.500"
-                    textAlign="center"
-                  >
-                    ${runnerUpTotal.toFixed(2)}
-                  </Text>
-                </PlayerCard>
-              )}
-            </VStack>
-          ) : needsSpinoff && tiedPlayers.length > 0 ? (
-            <VStack gap={16} alignItems="center">
-              {/* Show all tied players - extra gap for badge spacing */}
-              {tiedPlayers.map((player) => (
-                <PlayerCard
-                  key={player.player_id}
-                  player={{ ...player, id: player.player_id }}
-                  size="medium"
-                  showName
-                  badge="TIE"
-                >
-                  <VStack gap={2} alignItems="center">
-                    <Text
-                      fontSize="2xl"
-                      fontWeight="bold"
-                      color="yellow.500"
-                      textAlign="center"
-                    >
-                      ${leaderTotal.toFixed(2)}
-                    </Text>
+                  <VStack gap={6} width="100%" alignItems="center">
+                    {!isWheelAnimating && (
+                      <Text
+                        fontSize="2xl"
+                        fontWeight="bold"
+                        color="blue.500"
+                        textAlign="center"
+                        bg="black"
+                        px={3}
+                        py={1}
+                        borderRadius="md"
+                        boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                      >
+                        ${currentPlayerTotal.toFixed(2)}
+                      </Text>
+                    )}
+
+                    {/* Player Controls (Stay/Spin Again buttons) */}
+                    {showPlayerControls && (
+                      <HStack gap={2} justifyContent="center">
+                        <Button
+                          onClick={handleStay}
+                          colorPalette="green"
+                          size="md"
+                          disabled={isWheelAnimating}
+                        >
+                          Stay
+                        </Button>
+                        <Button
+                          onClick={handleSpinAgain}
+                          colorPalette="blue"
+                          size="md"
+                          disabled={isWheelAnimating}
+                        >
+                          Spin Again
+                        </Button>
+                      </HStack>
+                    )}
                   </VStack>
                 </PlayerCard>
-              ))}
-            </VStack>
-          ) : leaderContestant ? (
-            <VStack gap={2} alignItems="center">
-              <PlayerCard
-                player={{ ...leaderContestant, id: leaderContestant.player_id }}
-                size="medium"
-                showName
-                badge="LEADER"
-              >
-                <VStack gap={2} alignItems="center">
-                  <Text
-                    fontSize="2xl"
-                    fontWeight="bold"
-                    color="green.500"
-                    textAlign="center"
-                  >
-                    ${leaderTotal.toFixed(2)}
-                  </Text>
-                </VStack>
-              </PlayerCard>
-            </VStack>
-          ) : null}
-        </Box>
+              </VStack>
+            )}
 
-        {/* Wheel Display (Center) */}
-        <Box width="600px" flexShrink={0}>
-          <WheelDisplay
-            currentValue={currentWheelPosition}
-            targetValue={
-              isWheelAnimating && pendingSpinTarget !== null
-                ? pendingSpinTarget
-                : undefined
-            }
-            isSpinning={isWheelAnimating}
-            onSpin={handleSpin}
-            disabled={
-              isWheelAnimating ||
-              !currentSpinnerId ||
-              currentSpinnerIsDone ||
-              (!isCurrentSpinner && role !== "host")
-            }
-          />
-        </Box>
+            {/* Wheel Display */}
+            <Box
+              id="wheel"
+              width="600px"
+              flexShrink={0}
+              position="relative"
+              right="-15em"
+              top="-2em"
+            >
+              <WheelDisplay
+                currentValue={currentWheelPosition}
+                targetValue={
+                  isWheelAnimating && pendingSpinTarget !== null
+                    ? pendingSpinTarget
+                    : undefined
+                }
+                isSpinning={isWheelAnimating}
+                onSpin={handleSpin}
+                disabled={
+                  isWheelAnimating ||
+                  !currentSpinnerId ||
+                  currentSpinnerIsDone ||
+                  (!isCurrentSpinner && role !== "host")
+                }
+                showSpinButton={role === "host" || isCurrentSpinner}
+              />
+            </Box>
 
-        {/* Current Spinner & Waiting Spinners (Right) - Hidden when winner is determined */}
-        {!showWinnerCelebration && (
-          <Box flex="1" minWidth="400px">
-            <HStack gap={4} alignItems="flex-start" width="100%" wrap="wrap">
-              {/* Current Spinner */}
-              {currentSpinnerContestant && (
-                <VStack gap={2}>
+            {/* Leader/Winner Section (right of wheel) */}
+            <Box width={showWinnerCelebration ? "300px" : "200px"} flexShrink={0} marginLeft="1em">
+              {/* Show winner (large) + runner-up if wheel round is complete, otherwise show leader */}
+              {showWinnerCelebration && winnerContestant ? (
+                <VStack gap={6} alignItems="center">
+                  {/* Winner - Large, no name shown (badge identifies them) */}
                   <PlayerCard
-                    player={{
-                      ...currentSpinnerContestant,
-                      id: currentSpinnerContestant.player_id,
-                    }}
+                    player={{ ...winnerContestant, id: winnerContestant.player_id }}
                     size="large"
-                    variant="highlighted"
-                    showName
+                    badge="WINNER"
+                    variant="winner"
                   >
-                    <VStack gap={6} width="100%" alignItems="center">
-                      {!isWheelAnimating && (
+                    <VStack gap={2} alignItems="center">
+                      <Text
+                        fontSize="2xl"
+                        fontWeight="bold"
+                        color="green.500"
+                        textAlign="center"
+                        bg="black"
+                        px={3}
+                        py={1}
+                        borderRadius="md"
+                        boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                      >
+                        ${winnerTotal.toFixed(2)}
+                      </Text>
+                    </VStack>
+                  </PlayerCard>
+
+                  {/* Runner-up - Small, beneath winner */}
+                  {runnerUpContestant && (
+                    <PlayerCard
+                      player={{
+                        ...runnerUpContestant,
+                        id: runnerUpContestant.player_id,
+                      }}
+                      size="small"
+                      showName
+                    >
+                      <Text
+                        fontSize="md"
+                        fontWeight="bold"
+                        color="gray.500"
+                        textAlign="center"
+                        bg="black"
+                        px={3}
+                        py={1}
+                        borderRadius="md"
+                        boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                      >
+                        ${runnerUpTotal.toFixed(2)}
+                      </Text>
+                    </PlayerCard>
+                  )}
+                </VStack>
+              ) : needsSpinoff && tiedPlayers.length > 0 ? (
+                <VStack gap={16} alignItems="center">
+                  {/* Show all tied players - extra gap for badge spacing */}
+                  {tiedPlayers.map((player) => (
+                    <PlayerCard
+                      key={player.player_id}
+                      player={{ ...player, id: player.player_id }}
+                      size="medium"
+                      showName
+                      badge="TIE"
+                    >
+                      <VStack gap={2} alignItems="center">
                         <Text
                           fontSize="2xl"
                           fontWeight="bold"
-                          color="blue.500"
+                          color="yellow.500"
                           textAlign="center"
                         >
-                          ${currentPlayerTotal.toFixed(2)}
+                          ${leaderTotal.toFixed(2)}
                         </Text>
-                      )}
-
-                      {/* Player Controls (Stay/Spin Again buttons) */}
-                      {showPlayerControls && (
-                        <HStack gap={2} justifyContent="center">
-                          <Button
-                            onClick={handleStay}
-                            colorPalette="green"
-                            size="md"
-                            disabled={isWheelAnimating}
-                          >
-                            Stay
-                          </Button>
-                          <Button
-                            onClick={handleSpinAgain}
-                            colorPalette="blue"
-                            size="md"
-                            disabled={isWheelAnimating}
-                          >
-                            Spin Again
-                          </Button>
-                        </HStack>
-                      )}
+                      </VStack>
+                    </PlayerCard>
+                  ))}
+                </VStack>
+              ) : leaderContestant ? (
+                <VStack gap={2} alignItems="center">
+                  <PlayerCard
+                    player={{ ...leaderContestant, id: leaderContestant.player_id }}
+                    size="medium"
+                    showName={false}
+                    badge="LEADER"
+                  >
+                    <VStack gap={2} alignItems="center">
+                      <Text
+                        fontSize="2xl"
+                        fontWeight="bold"
+                        color="green.500"
+                        textAlign="center"
+                        bg="black"
+                        px={3}
+                        py={1}
+                        borderRadius="md"
+                        boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                      >
+                        ${leaderTotal.toFixed(2)}
+                      </Text>
                     </VStack>
                   </PlayerCard>
                 </VStack>
-              )}
+              ) : null}
+            </Box>
+          </HStack>
 
-              {/* Waiting Spinners */}
-              {waitingSpinners.map((spinner) => (
-                <Box key={spinner.player_id}>
-                  <PlayerCard
-                    player={{ ...spinner, id: spinner.player_id }}
-                    size="small"
-                    showName
-                  />
-                </Box>
-              ))}
-            </HStack>
-          </Box>
-        )}
-      </HStack>
-
-      {/* Host Controls (Conditional) - Only show spin-off and winner controls here */}
-      {showHostControls && (
-        <VStack gap={2} width="100%">
-          {needsSpinoff && !wheelWinner && (
-            <Button
-              onClick={handleStartSpinOff}
-              colorPalette="orange"
-              size="md"
-              disabled={isWheelAnimating}
-            >
-              Start Spin-Off (Tie-Breaker)
-            </Button>
+          {/* Host Controls (Conditional) - Only show spin-off and winner controls here */}
+          {showHostControls && needsSpinoff && !wheelWinner && (
+            <Box position="absolute" bottom="120px" left="50%" transform="translateX(-50%)">
+              <Button
+                onClick={handleStartSpinOff}
+                colorPalette="orange"
+                size="md"
+                disabled={isWheelAnimating}
+              >
+                Start Spin-Off (Tie-Breaker)
+              </Button>
+            </Box>
           )}
-        </VStack>
-      )}
+        </Box>
+      </PhaseBackground>
 
       {/* Fixed Control Strip at Bottom */}
       <GameControlStrip
@@ -671,6 +699,6 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
         onRefreshGameState={handleRefreshGameState}
         showNextSpinnerButton={!!showNextSpinnerButton}
       />
-    </VStack>
+    </>
   );
 }

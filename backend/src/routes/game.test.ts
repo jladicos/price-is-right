@@ -2942,4 +2942,147 @@ describe("Game API Routes", () => {
       expect(body.error).toContain("no tie");
     });
   });
+
+  describe("POST /api/game/officially-start", () => {
+    it("should mark game as officially started", async () => {
+      // Start game first
+      await app.inject({
+        method: "POST",
+        url: "/api/game/start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/officially-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.state).toBeDefined();
+      expect(body.state.workflow.officially_started).toBe(1);
+    });
+
+    it("should persist officially_started in database", async () => {
+      // Start game first
+      await app.inject({
+        method: "POST",
+        url: "/api/game/start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      // Officially start
+      await app.inject({
+        method: "POST",
+        url: "/api/game/officially-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      // Verify in database
+      const workflow = db
+        .prepare("SELECT officially_started FROM game_workflow WHERE id = 1")
+        .get() as { officially_started: number };
+      expect(workflow.officially_started).toBe(1);
+    });
+
+    it("should return updated game state", async () => {
+      // Start game first
+      await app.inject({
+        method: "POST",
+        url: "/api/game/start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/officially-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      // Should have full state
+      expect(body.state.workflow).toBeDefined();
+      expect(body.state.contestantsRow).toBeDefined();
+    });
+
+    it("should be idempotent - calling multiple times is safe", async () => {
+      // Start game first
+      await app.inject({
+        method: "POST",
+        url: "/api/game/start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      // Call officially-start multiple times
+      for (let i = 0; i < 3; i++) {
+        const response = await app.inject({
+          method: "POST",
+          url: "/api/game/officially-start",
+          headers: {
+            Authorization: `Bearer ${hostToken}`,
+          },
+        });
+
+        expect(response.statusCode).toBe(200);
+        const body = JSON.parse(response.body);
+        expect(body.success).toBe(true);
+        expect(body.state.workflow.officially_started).toBe(1);
+      }
+    });
+
+    it("should require authentication", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/officially-start",
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should require host role", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/officially-start",
+        headers: {
+          Authorization: `Bearer ${playerToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it("should work even before game is started", async () => {
+      // Call officially-start without starting game first
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/game/officially-start",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      // Should succeed (sets the flag regardless of game state)
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+    });
+  });
 });

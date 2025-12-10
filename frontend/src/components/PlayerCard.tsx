@@ -86,15 +86,27 @@ export function PlayerCard({
     <VStack gap={2} align="center" data-testid="player-card">
       {/* Name - displayed above photo if enabled */}
       {showName && (
-        <Text
-          fontSize={sizeConfig.fontSize}
-          fontWeight="bold"
-          textAlign="center"
+        <Box
+          bg="white"
+          px={3}
+          py={1}
+          borderRadius="md"
+          boxShadow="sm"
           minHeight="32px"
-          data-testid="player-card-name"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
         >
-          {player.first_name}
-        </Text>
+          <Text
+            fontSize={sizeConfig.fontSize}
+            fontWeight="bold"
+            textAlign="center"
+            color="gray.800"
+            data-testid="player-card-name"
+          >
+            {player.first_name}
+          </Text>
+        </Box>
       )}
 
       {/* Badge - floats above photo */}
@@ -108,7 +120,7 @@ export function PlayerCard({
         >
           <Box
             position="absolute"
-            top={showName ? "-80px" : "-45px"}
+            top={showName ? "-80px" : "-70px"}
             left="50%"
             transform="translateX(-50%)"
             bg={

@@ -8,6 +8,8 @@ export interface GameWorkflow {
   phase_metadata: string | null;
   created_at: string;
   updated_at: string;
+  // Game start flag
+  officially_started: number; // 0 = not started, 1 = started
   // Finale fields (Phase 7)
   finale_player1_id?: number | null;
   finale_player2_id?: number | null;
@@ -26,6 +28,7 @@ export interface GameWorkflowUpdate {
   current_segment_index?: number;
   phase_type?: string;
   phase_metadata?: string | null;
+  officially_started?: number;
 }
 
 /**
@@ -99,6 +102,11 @@ export function updateGameWorkflow(updates: GameWorkflowUpdate): GameWorkflow {
     values.push(updates.phase_metadata);
   }
 
+  if (updates.officially_started !== undefined) {
+    fields.push("officially_started = ?");
+    values.push(updates.officially_started);
+  }
+
   if (fields.length === 0) {
     // No updates, just return current state
     return getGameWorkflow();
@@ -148,6 +156,7 @@ export function resetGame(): void {
           current_segment_index = 0,
           phase_type = 'not_started',
           phase_metadata = NULL,
+          officially_started = 0,
           finale_player1_id = NULL,
           finale_player2_id = NULL,
           finale_player1_product_value = NULL,

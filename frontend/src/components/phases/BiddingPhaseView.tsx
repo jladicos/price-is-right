@@ -5,6 +5,7 @@ import { ProductModal } from "../ProductModal";
 import { ProductInsetCard } from "../ProductInsetCard";
 import { GameControlStrip } from "../GameControlStrip";
 import { ManualSelectContestantModal } from "../ManualSelectContestantModal";
+import { PhaseBackground } from "../PhaseBackground";
 import { useGameStore } from "../../store/gameStore";
 import { useAuthStore } from "../../store/authStore";
 import { showToast } from "../../utils/toast";
@@ -396,50 +397,105 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
   };
 
   return (
-    <VStack gap={8} width="100%" p={4} pt="200px" pb="120px">
-      {/* Add top padding to position podiums lower, and bottom padding for fixed control strip */}
-      {/* Main Game Area: Podiums + Product Card */}
-      <HStack
-        align="start"
-        justify="center"
-        gap={8}
-        width="100%"
-        maxWidth="1600px"
-      >
-        {/* Podiums */}
-        <Box flex="1">
-          <PodiumsRow
-            contestants={contestants}
-            bids={currentBids}
-            currentBidderPosition={currentBidderPosition}
-            winnerPosition={winnerPosition}
-            role={role}
-            currentPlayerId={currentPlayer?.id}
-            allContestantsRevealed={allContestantsRevealed}
-            productHasBeenShown={productHasBeenShown}
-            canReplaceContestants={!hasWinnerBeenRevealed}
-            onBidSubmit={handleBidSubmit}
-            onUpdateBid={handleUpdateBid}
-            onUnlockBid={handleUnlockBid}
-            onRevealContestant={handleRevealContestant}
-            onReplaceContestantRandom={handleReplaceContestantRandom}
-            onReplaceContestantManual={handleReplaceContestantManual}
-          />
-        </Box>
+    <>
+      <PhaseBackground phase="bidding">
+        {/* Black bar behind podiums - full width, 10.5em tall, at bottom of PhaseBackground */}
+        <Box
+          position="absolute"
+          left={0}
+          right={0}
+          bottom={0}
+          height="10.5em"
+          bg="black"
+        />
+        <VStack
+          gap={8}
+          width="100%"
+          height="100%"
+          p={4}
+          pb="1em"
+          justify="flex-end"
+          position="relative"
+        >
+          {/* Use flex-end to position content at bottom, with 1em padding above control strip */}
+          {/* Main Game Area: Podiums + Product Card */}
+          <HStack
+            align="start"
+            justify="center"
+            gap={8}
+            width="100%"
+            maxWidth="1600px"
+          >
+            {/* Podiums */}
+            <Box flex="1">
+              <PodiumsRow
+                contestants={contestants}
+                bids={currentBids}
+                currentBidderPosition={currentBidderPosition}
+                winnerPosition={winnerPosition}
+                role={role}
+                currentPlayerId={currentPlayer?.id}
+                allContestantsRevealed={allContestantsRevealed}
+                productHasBeenShown={productHasBeenShown}
+                canReplaceContestants={!hasWinnerBeenRevealed}
+                onBidSubmit={handleBidSubmit}
+                onUpdateBid={handleUpdateBid}
+                onUnlockBid={handleUnlockBid}
+                onRevealContestant={handleRevealContestant}
+                onReplaceContestantRandom={handleReplaceContestantRandom}
+                onReplaceContestantManual={handleReplaceContestantManual}
+              />
+            </Box>
 
-        {/* Product Inset Card */}
-        {productInsetVisible && (
-          <Box width="250px" flexShrink={0}>
-            <ProductInsetCard
-              product={product}
-              productId={productId}
-              isVisible={productInsetVisible}
-              showPrice={productPriceVisible}
-              price={productPrice}
-            />
-          </Box>
-        )}
-      </HStack>
+            {/* Product Inset Card */}
+            {productInsetVisible && (
+              <Box width="250px" flexShrink={0}>
+                <ProductInsetCard
+                  product={product}
+                  productId={productId}
+                  isVisible={productInsetVisible}
+                  showPrice={productPriceVisible}
+                  price={productPrice}
+                />
+              </Box>
+            )}
+          </HStack>
+
+          {/* All Over Toast */}
+          {showAllOverToast && (
+            <Box
+              position="fixed"
+              top="50%"
+              left="50%"
+              transform="translate(-50%, -50%)"
+              bg="red.500"
+              color="white"
+              px={8}
+              py={6}
+              borderRadius="xl"
+              boxShadow="2xl"
+              zIndex={9999}
+              textAlign="center"
+              minWidth="400px"
+            >
+              <VStack gap={4}>
+                <Box fontSize="2xl" fontWeight="bold">
+                  Everyone Overbid!
+                </Box>
+                <Box fontSize="lg">Try again with lower bids</Box>
+                <Button
+                  colorPalette="white"
+                  variant="outline"
+                  onClick={handleDismissAllOverToast}
+                  size="sm"
+                >
+                  Dismiss
+                </Button>
+              </VStack>
+            </Box>
+          )}
+        </VStack>
+      </PhaseBackground>
 
       {/* Fixed Control Strip at Bottom */}
       <GameControlStrip
@@ -478,40 +534,6 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
         currentSegment={gameState.workflow.current_segment}
         initialPosition={manualSelectPosition || 1}
       />
-
-      {/* All Over Toast */}
-      {showAllOverToast && (
-        <Box
-          position="fixed"
-          top="50%"
-          left="50%"
-          transform="translate(-50%, -50%)"
-          bg="red.500"
-          color="white"
-          px={8}
-          py={6}
-          borderRadius="xl"
-          boxShadow="2xl"
-          zIndex={9999}
-          textAlign="center"
-          minWidth="400px"
-        >
-          <VStack gap={4}>
-            <Box fontSize="2xl" fontWeight="bold">
-              Everyone Overbid!
-            </Box>
-            <Box fontSize="lg">Try again with lower bids</Box>
-            <Button
-              colorPalette="white"
-              variant="outline"
-              onClick={handleDismissAllOverToast}
-              size="sm"
-            >
-              Dismiss
-            </Button>
-          </VStack>
-        </Box>
-      )}
-    </VStack>
+    </>
   );
 }

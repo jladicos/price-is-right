@@ -427,6 +427,64 @@ const playersRoutes: FastifyPluginAsync = async (fastify) => {
       };
     },
   );
+
+  // GET /api/players/online - Get all players with active sessions (host only)
+  fastify.get(
+    "/players/online",
+    { preHandler: [authenticateRequest, requireHost] },
+    async () => {
+      const db = getDatabase();
+
+      // Query players with non-null session tokens
+      const rows = db
+        .prepare(
+          `SELECT id, first_name, last_name, email, role, photo_filename, active, created_at
+           FROM players
+           WHERE session_token IS NOT NULL
+           ORDER BY role ASC, first_name ASC, last_name ASC`,
+        )
+        .all() as Array<{
+        id: number;
+        first_name: string;
+        last_name: string;
+        email: string;
+        role: string;
+        photo_filename: string;
+        active: number;
+        created_at: string;
+      }>;
+
+      // Count by role
+      const byRole = {
+        host: 0,
+        player: 0,
+        audience: 0,
+      };
+
+      const players = rows.map((row) => {
+        if (row.role === "host") byRole.host++;
+        else if (row.role === "player") byRole.player++;
+        else byRole.audience++;
+
+        return {
+          id: row.id,
+          firstName: row.first_name,
+          lastName: row.last_name,
+          email: row.email,
+          role: row.role,
+          photoFilename: row.photo_filename,
+          active: row.active === 1,
+          createdAt: row.created_at,
+        };
+      });
+
+      return {
+        total: players.length,
+        byRole,
+        players,
+      };
+    },
+  );
 };
 
 export default playersRoutes;

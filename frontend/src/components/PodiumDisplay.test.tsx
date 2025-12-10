@@ -52,7 +52,7 @@ describe("PodiumDisplay", () => {
       );
 
       expect(screen.getByTestId("podium-1-empty")).toBeInTheDocument();
-      expect(screen.getByText("Position 1")).toBeInTheDocument();
+      // Position numbers were removed from podiums
     });
   });
 

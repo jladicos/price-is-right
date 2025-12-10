@@ -294,17 +294,14 @@ describe("Bidding Service Functions", () => {
       }
     });
 
-    it("should break tie using created_at timestamp (first bid wins)", () => {
-      // Create bids directly to control timestamps
+    it("should reject duplicate bid amounts due to unique constraint", () => {
+      // First bid succeeds
       createBid(1, "product-001", 1, "section_1", 14000, 0);
-      createBid(2, "product-001", 1, "section_1", 14000, 0); // Same amount
 
-      const result = calculateWinner("section_1", 1, 15000);
-
-      expect("winner" in result).toBe(true);
-      if ("winner" in result) {
-        expect(result.winner.player_id).toBe(1); // First to submit
-      }
+      // Second bid with same amount should fail
+      expect(() => {
+        createBid(2, "product-001", 1, "section_1", 14000, 0);
+      }).toThrow("Bid amount already taken");
     });
 
     it("should throw error when no bids submitted", () => {

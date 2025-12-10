@@ -103,6 +103,57 @@ describe("Bids Database Functions", () => {
         createBid(999, "product-001", 1, "section_1", 1200, 0);
       }).toThrow();
     });
+
+    it("should enforce unique constraint on bid amount within same round", () => {
+      // First bid succeeds
+      createBid(1, "product-001", 1, "section_1", 1200, 0);
+
+      // Second bid with same amount in same round/segment/retry should fail
+      expect(() => {
+        createBid(2, "product-001", 1, "section_1", 1200, 0);
+      }).toThrow("Bid amount already taken");
+    });
+
+    it("should allow same bid amount in different rounds", () => {
+      createBid(1, "product-001", 1, "section_1", 1200, 0);
+      // Same amount in different round should succeed
+      const bid2 = createBid(2, "product-002", 2, "section_1", 1200, 0);
+      expect(bid2.bid_amount).toBe(1200);
+    });
+
+    it("should allow same bid amount in different retry numbers", () => {
+      createBid(1, "product-001", 1, "section_1", 1200, 0);
+      // Same amount in different retry should succeed (after "all over")
+      const bid2 = createBid(2, "product-001", 1, "section_1", 1200, 1);
+      expect(bid2.bid_amount).toBe(1200);
+    });
+
+    it("should allow same bid amount in different segments", () => {
+      createBid(1, "product-001", 1, "section_1", 1200, 0);
+      // Same amount in different segment should succeed
+      const bid2 = createBid(2, "product-002", 1, "section_2", 1200, 0);
+      expect(bid2.bid_amount).toBe(1200);
+    });
+
+    it("should catch race condition via database constraint (direct INSERT)", () => {
+      // This simulates a race condition where two requests pass the app-level
+      // checkDuplicateBid() check but then both try to INSERT
+      const db = getDatabase();
+
+      // First insert succeeds
+      db.prepare(
+        `INSERT INTO bids (player_id, product_id, round_number, game_segment, bid_amount, retry_number)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(1, "product-001", 1, "section_1", 999, 0);
+
+      // Second insert with same amount should fail at database level
+      expect(() => {
+        db.prepare(
+          `INSERT INTO bids (player_id, product_id, round_number, game_segment, bid_amount, retry_number)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        ).run(2, "product-001", 1, "section_1", 999, 0);
+      }).toThrow(/UNIQUE constraint failed/);
+    });
   });
 
   describe("getBidsForRound", () => {

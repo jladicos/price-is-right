@@ -167,6 +167,22 @@ export default function WelcomePage() {
                   >
                     Admin Tools
                   </Button>
+                  <Button
+                    colorPalette="teal"
+                    width="100%"
+                    size="lg"
+                    onClick={() => navigate("/host/dashboard")}
+                  >
+                    Player Dashboard
+                  </Button>
+                  <Button
+                    colorPalette="orange"
+                    width="100%"
+                    size="lg"
+                    onClick={() => navigate("/host/ui-test")}
+                  >
+                    UI Test
+                  </Button>
                 </>
               )}
 

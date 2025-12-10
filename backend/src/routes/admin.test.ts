@@ -757,4 +757,243 @@ describe("Admin API Routes", () => {
       expect(gameState.value).toBe("false");
     });
   });
+
+  describe("GET /api/admin/ui-test-data", () => {
+    beforeEach(() => {
+      // Add more active players for test data generation
+      for (let i = 0; i < 5; i++) {
+        db.prepare(
+          "INSERT INTO players (first_name, last_name, access_code, role, active) VALUES (?, ?, ?, ?, ?)",
+        ).run(`Test${i}`, `Player${i}`, `TEST${i}`, "audience", 1);
+      }
+    });
+
+    it("should return test data for bidding phase", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=bidding",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      expect(body.phase).toBe("bidding");
+      expect(body.testState).toBeDefined();
+      expect(body.players).toBeDefined();
+      expect(body.players.length).toBeGreaterThanOrEqual(2);
+
+      // Verify testState structure for bidding
+      expect(body.testState.workflow).toBeDefined();
+      expect(body.testState.workflow.phase_type).toBe("bidding");
+      expect(body.testState.contestantsRow).toBeDefined();
+      expect(body.testState.currentBids).toBeDefined();
+    });
+
+    it("should return test data for wheel phase", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=wheel",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      expect(body.phase).toBe("wheel");
+      expect(body.testState).toBeDefined();
+
+      // Verify testState structure for wheel
+      expect(body.testState.workflow).toBeDefined();
+      expect(body.testState.workflow.phase_type).toBe("wheel");
+      expect(body.testState.contestantsRow).toBeDefined();
+      expect(body.testState.playerTotals).toBeDefined();
+    });
+
+    it("should return test data for showcase phase", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=showcase",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      expect(body.phase).toBe("showcase");
+      expect(body.testState).toBeDefined();
+
+      // Verify testState structure for showcase
+      expect(body.testState.workflow).toBeDefined();
+      expect(body.testState.workflow.phase_type).toBe("showcase");
+      expect(body.testState.contestantsRow).toBeDefined();
+      // showcaseState contains the full showcase info
+      expect(body.testState.showcaseState).toBeDefined();
+      expect(body.testState.showcaseState.showcase1).toBeDefined();
+      expect(body.testState.showcaseState.showcase2).toBeDefined();
+      expect(body.testState.showcaseState.showcase1Value).toBeGreaterThan(0);
+      expect(body.testState.showcaseState.showcase2Value).toBeGreaterThan(0);
+
+      // Verify showcase products have correct nested structure: { id, product: { name, price, images } }
+      const product1 = body.testState.showcaseState.showcase1[0];
+      expect(product1).toHaveProperty("id");
+      expect(product1).toHaveProperty("product");
+      expect(product1.product).toHaveProperty("name");
+      expect(product1.product).toHaveProperty("price");
+      expect(product1.product).toHaveProperty("images");
+      expect(Array.isArray(product1.product.images)).toBe(true);
+    });
+
+    it("should return players with camelCase field names", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=bidding",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      // Players array should have camelCase
+      expect(body.players[0]).toHaveProperty("firstName");
+      expect(body.players[0]).toHaveProperty("lastName");
+      expect(body.players[0]).toHaveProperty("photoFilename");
+      expect(body.players[0]).not.toHaveProperty("first_name");
+    });
+
+    it("should return 400 for missing phase parameter", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain("phase");
+    });
+
+    it("should return 400 for invalid phase parameter", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=invalid",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain("phase must be one of");
+    });
+
+    it("should return 400 when insufficient players in database", async () => {
+      // Delete most players so we have less than 2
+      db.prepare("DELETE FROM players WHERE role != 'host'").run();
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=bidding",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      const body = JSON.parse(response.body);
+      expect(body.error).toContain("at least 2 active players");
+    });
+
+    it("should require authentication", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=bidding",
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should require host role", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=bidding",
+        headers: {
+          Authorization: `Bearer ${playerToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(403);
+    });
+
+    it("should include mock bids for bidding phase", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=bidding",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      // Check mock bids exist
+      expect(body.testState.currentBids).toBeDefined();
+      expect(body.testState.currentBids.length).toBeGreaterThan(0);
+
+      // Verify bid structure
+      const bid = body.testState.currentBids[0];
+      expect(bid).toHaveProperty("player_id");
+      expect(bid).toHaveProperty("bid_amount");
+      expect(bid).toHaveProperty("first_name");
+    });
+
+    it("should include player totals for wheel phase", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=wheel",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      // Check player totals exist
+      expect(body.testState.playerTotals).toBeDefined();
+      expect(body.testState.playerTotals.length).toBeGreaterThan(0);
+
+      // Verify total structure
+      const total = body.testState.playerTotals[0];
+      expect(total).toHaveProperty("player_id");
+      expect(total).toHaveProperty("total");
+      expect(total).toHaveProperty("first_name");
+    });
+
+    it("should set officially_started to 1 in test state", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/admin/ui-test-data?phase=bidding",
+        headers: {
+          Authorization: `Bearer ${hostToken}`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+
+      expect(body.testState.workflow.officially_started).toBe(1);
+    });
+  });
 });

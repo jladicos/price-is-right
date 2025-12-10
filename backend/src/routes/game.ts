@@ -909,6 +909,39 @@ const gameRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   /**
+   * POST /api/game/officially-start
+   * Mark the game as officially started
+   * This triggers non-host players to transition from waiting screen to game view
+   * Host only
+   */
+  fastify.post(
+    "/game/officially-start",
+    {
+      preHandler: [authenticateRequest, requireHost],
+    },
+    async (request, reply) => {
+      try {
+        updateGameWorkflow({ officially_started: 1 });
+        const state = getCurrentState();
+
+        return reply.status(200).send({
+          success: true,
+          state,
+        });
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to officially start game",
+        });
+      }
+    },
+  );
+
+  /**
    * POST /api/game/wheel-reset
    * DEBUGGING: Reset wheel phase to first player
    * Clears all spins for current segment and resets to first spinner

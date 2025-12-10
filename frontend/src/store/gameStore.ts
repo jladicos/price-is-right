@@ -9,6 +9,7 @@ export interface GameWorkflow {
   phase_metadata: string | null;
   created_at: string;
   updated_at: string;
+  officially_started: number; // 0 = not started, 1 = started
 }
 
 export interface ContestantWithPlayer {
@@ -153,6 +154,7 @@ interface GameStore {
   // Actions
   fetchGameState: () => Promise<void>;
   startNewGame: () => Promise<void>;
+  officiallyStartGame: () => Promise<void>;
   advancePhase: () => Promise<void>;
   revealContestant: (contestantRowId: number) => Promise<void>;
   manualSelectContestant: (
@@ -324,6 +326,30 @@ export const useGameStore = create<GameStore>((set) => ({
       });
     } else {
       const errorMessage = result.error || "Failed to start game";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Officially start the game (triggers non-host players to leave waiting screen)
+  officiallyStartGame: async () => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall<{ state: GameState }>("/game/officially-start", {
+      method: "POST",
+    });
+
+    if (result.success && result.data) {
+      set({
+        gameState: result.data.state,
+        isLoading: false,
+        lastUpdated: Date.now(),
+      });
+    } else {
+      const errorMessage = result.error || "Failed to officially start game";
       set({
         error: errorMessage,
         isLoading: false,

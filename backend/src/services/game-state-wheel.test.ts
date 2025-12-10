@@ -704,20 +704,20 @@ describe("Game State - Wheel Integration", () => {
         );
       }
 
-      // Add bids for section_1
-      section1Players.forEach((playerId) => {
+      // Add bids for section_1 (unique amounts per player)
+      section1Players.forEach((playerId, index) => {
         db.prepare(
           `INSERT INTO bids (player_id, game_segment, round_number, retry_number, bid_amount, product_id, is_winner)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        ).run(playerId, "section_1", 1, 0, 1000, "product_1", 1);
+        ).run(playerId, "section_1", 1, 0, 1000 + index, "product_1", 1);
       });
 
-      // Add bids for section_2
-      section2Players.forEach((playerId) => {
+      // Add bids for section_2 (unique amounts per player)
+      section2Players.forEach((playerId, index) => {
         db.prepare(
           `INSERT INTO bids (player_id, game_segment, round_number, retry_number, bid_amount, product_id, is_winner)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        ).run(playerId, "section_2", 1, 0, 2000, "product_2", 1);
+        ).run(playerId, "section_2", 1, 0, 2000 + index, "product_2", 1);
       });
 
       updateGameWorkflow({
