@@ -47,8 +47,11 @@ const start = async () => {
     }
 
     // Register CORS
+    // In production, set CORS_ORIGIN to the frontend URL (e.g., https://your-frontend.awsapprunner.com)
+    // In development, allows all origins
+    const corsOrigin = process.env.CORS_ORIGIN || (process.env.NODE_ENV === "production" ? false : "*");
     await fastify.register(cors, {
-      origin: process.env.NODE_ENV === "production" ? false : "*",
+      origin: corsOrigin,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     });
 
