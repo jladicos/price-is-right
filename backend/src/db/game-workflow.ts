@@ -167,6 +167,11 @@ export function resetGame(): void {
           finale_player1_passed = 0,
           finale_winner_id = NULL,
           finale_bonus_won = 0,
+          showcase1_revealed = 0,
+          showcase2_revealed = 0,
+          showcase_modal_open = 0,
+          showcase_modal_product_index = 0,
+          showcase_modal_image_index = 0,
           updated_at = datetime('now')
       WHERE id = 1
     `,

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   DialogRoot,
   DialogContent,
@@ -15,6 +14,9 @@ interface ShowcaseModalProps {
   isOpen: boolean;
   onClose?: () => void; // Host only can close
   role: string; // 'host', 'player', or 'audience'
+  currentProductIndex: number; // Synced from backend
+  currentImageIndex: number; // Synced from backend
+  onNavigate?: (productIndex: number, imageIndex: number) => void; // Host only
 }
 
 export function ShowcaseModal({
@@ -23,48 +25,47 @@ export function ShowcaseModal({
   isOpen,
   onClose,
   role,
+  currentProductIndex,
+  currentImageIndex,
+  onNavigate,
 }: ShowcaseModalProps) {
-  const [currentProductIndex, setCurrentProductIndex] = useState(0);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
   if (!showcaseProducts || showcaseProducts.length === 0) {
     return null;
   }
 
-  const currentProduct = showcaseProducts[currentProductIndex];
+  // Ensure indices are within bounds
+  const safeProductIndex = Math.min(currentProductIndex, showcaseProducts.length - 1);
+  const currentProduct = showcaseProducts[safeProductIndex];
   const imageUrls = getProductImageUrls(currentProduct.product.images);
+  const safeImageIndex = Math.min(currentImageIndex, imageUrls.length - 1);
 
   const handlePrevProduct = () => {
-    setCurrentProductIndex((prev) =>
-      prev > 0 ? prev - 1 : showcaseProducts.length - 1,
-    );
-    setCurrentImageIndex(0); // Reset to first image when changing products
+    if (role !== "host" || !onNavigate) return;
+    const newProductIndex = safeProductIndex > 0 ? safeProductIndex - 1 : showcaseProducts.length - 1;
+    onNavigate(newProductIndex, 0); // Reset to first image when changing products
   };
 
   const handleNextProduct = () => {
-    setCurrentProductIndex((prev) =>
-      prev < showcaseProducts.length - 1 ? prev + 1 : 0,
-    );
-    setCurrentImageIndex(0); // Reset to first image when changing products
+    if (role !== "host" || !onNavigate) return;
+    const newProductIndex = safeProductIndex < showcaseProducts.length - 1 ? safeProductIndex + 1 : 0;
+    onNavigate(newProductIndex, 0); // Reset to first image when changing products
   };
 
   const handlePrevImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev > 0 ? prev - 1 : imageUrls.length - 1,
-    );
+    if (role !== "host" || !onNavigate) return;
+    const newImageIndex = safeImageIndex > 0 ? safeImageIndex - 1 : imageUrls.length - 1;
+    onNavigate(safeProductIndex, newImageIndex);
   };
 
   const handleNextImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev < imageUrls.length - 1 ? prev + 1 : 0,
-    );
+    if (role !== "host" || !onNavigate) return;
+    const newImageIndex = safeImageIndex < imageUrls.length - 1 ? safeImageIndex + 1 : 0;
+    onNavigate(safeProductIndex, newImageIndex);
   };
 
   const handleClose = () => {
     if (role === "host" && onClose) {
       onClose();
-      setCurrentProductIndex(0);
-      setCurrentImageIndex(0);
     }
   };
 
@@ -104,7 +105,7 @@ export function ShowcaseModal({
               color="gray.600"
               fontWeight="medium"
             >
-              Product {currentProductIndex + 1} of {showcaseProducts.length}
+              Product {safeProductIndex + 1} of {showcaseProducts.length}
             </Text>
 
             {/* Product Name */}
@@ -138,8 +139,8 @@ export function ShowcaseModal({
                 bg="gray.100"
               >
                 <Image
-                  src={imageUrls[currentImageIndex]}
-                  alt={`${currentProduct.product.name} - Image ${currentImageIndex + 1}`}
+                  src={imageUrls[safeImageIndex]}
+                  alt={`${currentProduct.product.name} - Image ${safeImageIndex + 1}`}
                   width="100%"
                   height="100%"
                   objectFit="contain"
@@ -147,8 +148,8 @@ export function ShowcaseModal({
                 />
               </Box>
 
-              {/* Image Navigation Arrows (if multiple images) */}
-              {imageUrls.length > 1 && (
+              {/* Image Navigation Arrows (if multiple images) - Host only */}
+              {imageUrls.length > 1 && role === "host" && (
                 <>
                   <Button
                     position="absolute"
@@ -196,32 +197,34 @@ export function ShowcaseModal({
                   fontSize="sm"
                   data-testid="showcase-modal-image-counter"
                 >
-                  Image {currentImageIndex + 1} / {imageUrls.length}
+                  Image {safeImageIndex + 1} / {imageUrls.length}
                 </Box>
               )}
             </Box>
 
-            {/* Product Navigation Buttons */}
-            <HStack gap={4} justify="center">
-              <Button
-                onClick={handlePrevProduct}
-                size="lg"
-                colorPalette="blue"
-                variant="outline"
-                data-testid="showcase-modal-prev-product"
-              >
-                ← Previous Product
-              </Button>
-              <Button
-                onClick={handleNextProduct}
-                size="lg"
-                colorPalette="blue"
-                variant="outline"
-                data-testid="showcase-modal-next-product"
-              >
-                Next Product →
-              </Button>
-            </HStack>
+            {/* Product Navigation Buttons - Host only */}
+            {role === "host" && (
+              <HStack gap={4} justify="center">
+                <Button
+                  onClick={handlePrevProduct}
+                  size="lg"
+                  colorPalette="blue"
+                  variant="outline"
+                  data-testid="showcase-modal-prev-product"
+                >
+                  ← Previous Product
+                </Button>
+                <Button
+                  onClick={handleNextProduct}
+                  size="lg"
+                  colorPalette="blue"
+                  variant="outline"
+                  data-testid="showcase-modal-next-product"
+                >
+                  Next Product →
+                </Button>
+              </HStack>
+            )}
           </VStack>
         </DialogBody>
       </DialogContent>

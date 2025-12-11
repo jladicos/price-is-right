@@ -71,12 +71,17 @@ export function PodiumDisplay({
     return `0 0 25px rgba(${r}, ${g}, ${b}, 0.8), 0 0 50px rgba(${r}, ${g}, ${b}, 0.4)`;
   };
 
+  // Responsive sizes (width only - height stays the same)
+  const podiumWidth = { base: "120px", lg: "180px" };
+  const photoSize = { base: "80px", lg: "150px" };
+  const podiumBodyWidth = { base: "110px", lg: "160px" };
+
   // Empty podium case
   if (!contestant) {
     return (
       <VStack
         gap={4}
-        width="180px"
+        width={podiumWidth}
         align="stretch"
         opacity={0.4}
         data-testid={`podium-${position}-empty`}
@@ -85,15 +90,15 @@ export function PodiumDisplay({
         <Box minHeight="32px" />
 
         <Box
-          width="150px"
-          height="150px"
+          width={photoSize}
+          height={photoSize}
           bg="gray.200"
           borderRadius="md"
           alignSelf="center"
         />
 
         {/* Podium with overlapping display */}
-        <Box position="relative" alignSelf="center" width="160px">
+        <Box position="relative" alignSelf="center" width={podiumBodyWidth}>
           {/* Podium Body */}
           <Box
             bg="gray.300"
@@ -132,7 +137,7 @@ export function PodiumDisplay({
     return (
       <VStack
         gap={4}
-        width="180px"
+        width={podiumWidth}
         align="stretch"
         data-testid={`podium-${position}-pending`}
       >
@@ -140,13 +145,13 @@ export function PodiumDisplay({
         <Box minHeight="32px" />
 
         {/* Blank photo space */}
-        <Box width="150px" height="150px" alignSelf="center" />
+        <Box width={photoSize} height={photoSize} alignSelf="center" />
 
         {/* Podium with overlapping display */}
         <Box
           position="relative"
           alignSelf="center"
-          width="160px"
+          width={podiumBodyWidth}
           boxShadow={
             shouldShowRevealButton ? getGlowShadow(colors.primary) : "none"
           }
@@ -250,7 +255,7 @@ export function PodiumDisplay({
   return (
     <VStack
       gap={4}
-      width="180px"
+      width={podiumWidth}
       align="stretch"
       position="relative"
       data-testid={`podium-${position}`}
@@ -273,7 +278,7 @@ export function PodiumDisplay({
           alignSelf="center"
         >
           <Text
-            fontSize="xl"
+            fontSize={{ base: "sm", lg: "xl" }}
             fontWeight="bold"
             textAlign="center"
             color="gray.800"
@@ -285,22 +290,22 @@ export function PodiumDisplay({
       {/* Empty space for winner to maintain layout */}
       {isWinner && <Box minHeight="32px" />}
 
-      {/* Profile Photo - maintains 150px space but winner image floats above */}
-      <Box width="150px" height="150px" alignSelf="center" position="relative">
+      {/* Profile Photo - maintains space but winner image floats above */}
+      <Box width={photoSize} height={photoSize} alignSelf="center" position="relative">
         {/* Winner Badge - floats completely above photo */}
         {isWinner && (
           <Box
             position="absolute"
-            bottom="calc(100% + 100px)"
+            bottom={{ base: "calc(100% + 50px)", lg: "calc(100% + 100px)" }}
             left="50%"
             transform="translateX(-50%)"
             bg="green.500"
             color="white"
-            px={6}
-            py={3}
+            px={{ base: 3, lg: 6 }}
+            py={{ base: 1, lg: 3 }}
             borderRadius="full"
             fontWeight="bold"
-            fontSize="xl"
+            fontSize={{ base: "sm", lg: "xl" }}
             boxShadow="lg"
             animation="pulse 2s ease-in-out infinite"
             data-testid={`winner-label-${position}`}
@@ -317,8 +322,8 @@ export function PodiumDisplay({
           bottom={isWinner ? 0 : "auto"}
           left={isWinner ? "50%" : "auto"}
           transform={isWinner ? "translateX(-50%)" : "none"}
-          width={isWinner ? "240px" : "150px"}
-          height={isWinner ? "240px" : "150px"}
+          width={isWinner ? { base: "120px", lg: "240px" } : photoSize}
+          height={isWinner ? { base: "120px", lg: "240px" } : photoSize}
           zIndex={isWinner ? 15 : 1}
         >
           <PlayerCard
@@ -329,6 +334,7 @@ export function PodiumDisplay({
               photo_filename: contestant.photo_filename,
             }}
             size={isWinner ? "large" : "medium"}
+            fillContainer={true}
             showName={false} // Name handled separately above
             badge={undefined} // Badge handled separately for winners
             variant={
@@ -348,7 +354,7 @@ export function PodiumDisplay({
       <Box
         position="relative"
         alignSelf="center"
-        width="160px"
+        width={podiumBodyWidth}
         boxShadow={
           isWinner
             ? getGlowShadow(colors.primary)

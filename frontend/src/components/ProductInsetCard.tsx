@@ -103,13 +103,13 @@ export function ProductInsetCard({
   return (
     <Box
       position="fixed"
-      top="20px"
-      {...(position === "left" ? { left: "20px" } : { right: "20px" })}
-      width="250px"
+      top={{ base: "10px", lg: "20px" }}
+      {...(position === "left" ? { left: { base: "10px", lg: "20px" } } : { right: { base: "10px", lg: "20px" } })}
+      width={{ base: "125px", lg: "250px" }}
       bg="white"
       borderRadius="lg"
       boxShadow="2xl"
-      border="3px solid"
+      border={{ base: "2px solid", lg: "3px solid" }}
       borderColor="blue.500"
       overflow="hidden"
       zIndex={100}
@@ -119,10 +119,10 @@ export function ProductInsetCard({
         {/* Product Image with Navigation Arrows */}
         <Box
           width="100%"
-          height="200px"
+          height={{ base: "100px", lg: "200px" }}
           bg="gray.100"
           overflow="hidden"
-          borderBottom="3px solid"
+          borderBottom={{ base: "2px solid", lg: "3px solid" }}
           borderColor="blue.500"
           position="relative"
         >
@@ -175,14 +175,15 @@ export function ProductInsetCard({
         </Box>
 
         {/* Product Name */}
-        <Box bg="blue.500" p={3}>
+        <Box bg="blue.500" p={{ base: 1, lg: 3 }}>
           <Text
-            fontSize="lg"
+            fontSize={{ base: "xs", lg: "lg" }}
             fontWeight="bold"
             textAlign="center"
             color="white"
             textTransform="uppercase"
             letterSpacing="wide"
+            lineClamp={2}
             data-testid="product-inset-name"
           >
             {currentProduct.name}
@@ -208,9 +209,9 @@ export function ProductInsetCard({
           price != null &&
           typeof price === "number" &&
           isFinite(price) && (
-            <Box bg="green.500" p={4}>
+            <Box bg="green.500" p={{ base: 2, lg: 4 }}>
               <Text
-                fontSize="2xl"
+                fontSize={{ base: "md", lg: "2xl" }}
                 fontWeight="bold"
                 textAlign="center"
                 color="white"
@@ -224,7 +225,7 @@ export function ProductInsetCard({
               </Text>
               {isShowcaseMode && (
                 <Text
-                  fontSize="sm"
+                  fontSize={{ base: "xs", lg: "sm" }}
                   textAlign="center"
                   color="white"
                   mt={1}

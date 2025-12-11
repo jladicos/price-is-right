@@ -145,22 +145,28 @@ export function WheelDisplay({
 
   return (
     <VStack gap={4} align="center" data-testid="wheel-display">
-      {/* Wheel Container */}
+      {/* Scaling wrapper for responsive sizing */}
       <Box
-        position="relative"
-        width="200px"
-        height={`${CONTAINER_HEIGHT}px`}
-        bg="gray.800"
-        borderRadius="lg"
-        overflow="hidden"
-        border="4px solid"
-        borderColor="yellow.600"
-        boxShadow="0 0 30px rgba(0, 0, 0, 0.8)"
-        cursor={isClickable ? "pointer" : "default"}
-        onClick={handleSpin}
-        data-testid="wheel-container"
-        data-clickable={isClickable}
+        transform={{ base: "scale(0.6)", lg: "scale(1)" }}
+        transformOrigin="top center"
+        height={{ base: `${CONTAINER_HEIGHT * 0.6}px`, lg: `${CONTAINER_HEIGHT}px` }}
       >
+        {/* Wheel Container */}
+        <Box
+          position="relative"
+          width="200px"
+          height={`${CONTAINER_HEIGHT}px`}
+          bg="gray.800"
+          borderRadius="lg"
+          overflow="hidden"
+          border="4px solid"
+          borderColor="yellow.600"
+          boxShadow="0 0 30px rgba(0, 0, 0, 0.8)"
+          cursor={isClickable ? "pointer" : "default"}
+          onClick={handleSpin}
+          data-testid="wheel-container"
+          data-clickable={isClickable}
+        >
         {/* Pointer/Indicator - Fixed on right side at vertical center */}
         <Box
           position="absolute"
@@ -222,6 +228,7 @@ export function WheelDisplay({
             }),
           )}
         </Box>
+        </Box>
       </Box>
 
       {/* Accessibility Button */}
@@ -230,8 +237,8 @@ export function WheelDisplay({
           onClick={handleSpin}
           disabled={disabled || isSpinning}
           colorPalette="yellow"
-          size="lg"
-          width="200px"
+          size={{ base: "md", lg: "lg" }}
+          width={{ base: "100px", lg: "200px" }}
           data-testid="spin-wheel-button"
         >
           {isSpinning ? "Spinning..." : "Spin Wheel"}

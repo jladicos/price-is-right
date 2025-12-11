@@ -32,12 +32,11 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
     advancePhase,
     startNewGame,
     fetchGameState,
+    setShowcaseRevealed,
+    setShowcaseModalOpen,
+    setShowcaseModalNavigate,
   } = useGameStore();
 
-  const [showcase1Revealed, setShowcase1Revealed] = useState(false);
-  const [showcase2Revealed, setShowcase2Revealed] = useState(false);
-  const [isShowcase1ModalOpen, setIsShowcase1ModalOpen] = useState(false);
-  const [isShowcase2ModalOpen, setIsShowcase2ModalOpen] = useState(false);
   const [showPassBidButtons, setShowPassBidButtons] = useState(false);
   const initializeAttemptedRef = useRef(false);
 
@@ -47,6 +46,17 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   // Parse showcase state
   const showcaseState = gameState.showcaseState;
   const showcaseBids = gameState.showcaseBids || [];
+
+  // Get reveal state from backend (synced across all clients)
+  const showcase1Revealed = showcaseState?.state?.showcase1_revealed === 1;
+  const showcase2Revealed = showcaseState?.state?.showcase2_revealed === 1;
+
+  // Get modal state from backend (synced across all clients)
+  const showcaseModalOpen = showcaseState?.state?.showcase_modal_open || 0;
+  const isShowcase1ModalOpen = showcaseModalOpen === 1;
+  const isShowcase2ModalOpen = showcaseModalOpen === 2;
+  const modalProductIndex = showcaseState?.state?.showcase_modal_product_index || 0;
+  const modalImageIndex = showcaseState?.state?.showcase_modal_image_index || 0;
 
   // Initialize showcase if not already initialized - only once on mount
   useEffect(() => {
@@ -214,13 +224,22 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
 
   // Handlers
   // Handlers for revealing showcases
-  const handleRevealShowcase1 = () => {
-    setIsShowcase1ModalOpen(true);
+  const handleRevealShowcase1 = async () => {
+    try {
+      await setShowcaseModalOpen(1);
+    } catch (error) {
+      console.error("Failed to open showcase 1 modal:", error);
+    }
   };
 
-  const handleCloseShowcase1Modal = () => {
-    setIsShowcase1ModalOpen(false);
-    setShowcase1Revealed(true);
+  const handleCloseShowcase1Modal = async () => {
+    try {
+      // Close modal and mark as revealed
+      await setShowcaseModalOpen(0);
+      await setShowcaseRevealed(1, true);
+    } catch (error) {
+      console.error("Failed to close showcase 1 modal:", error);
+    }
     // Show pass/bid buttons after revealing showcase 1
     // If showcases not yet assigned, player1 makes the decision
     if (!player1Passed && !player1Bid && player1) {
@@ -228,13 +247,22 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
     }
   };
 
-  const handleRevealShowcase2 = () => {
-    setIsShowcase2ModalOpen(true);
+  const handleRevealShowcase2 = async () => {
+    try {
+      await setShowcaseModalOpen(2);
+    } catch (error) {
+      console.error("Failed to open showcase 2 modal:", error);
+    }
   };
 
-  const handleCloseShowcase2Modal = () => {
-    setIsShowcase2ModalOpen(false);
-    setShowcase2Revealed(true);
+  const handleCloseShowcase2Modal = async () => {
+    try {
+      // Close modal and mark as revealed
+      await setShowcaseModalOpen(0);
+      await setShowcaseRevealed(2, true);
+    } catch (error) {
+      console.error("Failed to close showcase 2 modal:", error);
+    }
   };
 
   const handlePass = async () => {
@@ -420,13 +448,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
     }
     try {
       // Reset local UI state
-      setShowcase1Revealed(false);
-      setShowcase2Revealed(false);
-      setIsShowcase1ModalOpen(false);
-      setIsShowcase2ModalOpen(false);
       setShowPassBidButtons(false);
 
-      // Re-initialize showcase on backend
+      // Re-initialize showcase on backend (this resets modal and reveal states)
       await initializeShowcase();
 
       // Fetch updated state
@@ -473,8 +497,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
             {/* Left Inset - Showcase for player on left */}
             <Box width="300px" flexShrink={0}>
               {player1Showcase &&
-                (role !== "host" ||
-                  (player1Showcase === 1 && showcase1Revealed) ||
+                ((player1Showcase === 1 && showcase1Revealed) ||
                   (player1Showcase === 2 && showcase2Revealed)) && (
                   <ProductInsetCard
                     products={player1Showcase === 1 ? showcase1 : showcase2}
@@ -540,8 +563,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
             {/* Right Inset - Showcase for player on right */}
             <Box width="300px" flexShrink={0}>
               {player2Showcase &&
-                (role !== "host" ||
-                  (player2Showcase === 1 && showcase1Revealed) ||
+                ((player2Showcase === 1 && showcase1Revealed) ||
                   (player2Showcase === 2 && showcase2Revealed)) && (
                   <ProductInsetCard
                     products={player2Showcase === 1 ? showcase1 : showcase2}
@@ -601,6 +623,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
         isOpen={isShowcase1ModalOpen}
         onClose={handleCloseShowcase1Modal}
         role={role}
+        currentProductIndex={modalProductIndex}
+        currentImageIndex={modalImageIndex}
+        onNavigate={setShowcaseModalNavigate}
       />
       <ShowcaseModal
         showcaseProducts={showcase2}
@@ -608,6 +633,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
         isOpen={isShowcase2ModalOpen}
         onClose={handleCloseShowcase2Modal}
         role={role}
+        currentProductIndex={modalProductIndex}
+        currentImageIndex={modalImageIndex}
+        onNavigate={setShowcaseModalNavigate}
       />
     </>
   );

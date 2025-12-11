@@ -111,6 +111,11 @@ export interface ShowcaseState {
   finale_player1_passed: number; // 0 or 1
   finale_winner_id: number | null;
   finale_bonus_won: number; // 0 or 1
+  showcase1_revealed: number; // 0 or 1
+  showcase2_revealed: number; // 0 or 1
+  showcase_modal_open: number; // 0 = none, 1 = showcase1, 2 = showcase2
+  showcase_modal_product_index: number; // Current product index in modal
+  showcase_modal_image_index: number; // Current image index for product
 }
 
 export interface ShowcaseStateWithProducts {
@@ -215,6 +220,9 @@ interface GameStore {
   }>;
   retryShowcase: () => Promise<void>;
   fetchShowcaseState: () => Promise<void>;
+  setShowcaseRevealed: (showcaseNumber: 1 | 2, revealed: boolean) => Promise<void>;
+  setShowcaseModalOpen: (showcaseNumber: 0 | 1 | 2) => Promise<void>;
+  setShowcaseModalNavigate: (productIndex: number, imageIndex: number) => Promise<void>;
 
   clearError: () => void;
 }
@@ -1051,6 +1059,64 @@ export const useGameStore = create<GameStore>((set) => ({
       });
       throw new Error(errorMessage);
     }
+  },
+
+  // Set showcase reveal state (host only)
+  setShowcaseRevealed: async (showcaseNumber: 1 | 2, revealed: boolean) => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall("/showcase/reveal", {
+      method: "POST",
+      body: JSON.stringify({ showcase_number: showcaseNumber, revealed }),
+    });
+
+    if (result.success) {
+      // Fetch updated state after setting reveal state
+      await useGameStore.getState().fetchShowcaseState();
+    } else {
+      const errorMessage = result.error || "Failed to set showcase reveal state";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Set showcase modal open state (host only)
+  setShowcaseModalOpen: async (showcaseNumber: 0 | 1 | 2) => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall("/showcase/modal", {
+      method: "POST",
+      body: JSON.stringify({ showcase_number: showcaseNumber }),
+    });
+
+    if (result.success) {
+      // Fetch updated state after setting modal state
+      await useGameStore.getState().fetchShowcaseState();
+    } else {
+      const errorMessage = result.error || "Failed to set showcase modal state";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Set showcase modal navigation indices (host only)
+  setShowcaseModalNavigate: async (productIndex: number, imageIndex: number) => {
+    // Don't set loading state for navigation to keep it responsive
+    const result = await apiCall("/showcase/modal-navigate", {
+      method: "POST",
+      body: JSON.stringify({ product_index: productIndex, image_index: imageIndex }),
+    });
+
+    if (!result.success) {
+      console.error("Failed to set showcase modal navigation:", result.error);
+    }
+    // Don't fetch state - let polling handle it to avoid flickering
   },
 
   // Fetch showcase state with products

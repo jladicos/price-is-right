@@ -14,7 +14,7 @@ import {
   determineFinalists,
   calculateWinner,
 } from "../services/showcase.js";
-import { getShowcaseBids } from "../db/showcase.js";
+import { getShowcaseBids, updateFinaleState } from "../db/showcase.js";
 import { getGameWorkflow } from "../db/game-workflow.js";
 
 const showcaseRoutes: FastifyPluginAsync = async (fastify) => {
@@ -458,6 +458,146 @@ const showcaseRoutes: FastifyPluginAsync = async (fastify) => {
             error instanceof Error
               ? error.message
               : "Failed to determine finalists",
+        });
+      }
+    },
+  );
+
+  /**
+   * POST /api/showcase/reveal
+   * Set showcase reveal state (which showcase has been revealed to players)
+   * Host only
+   */
+  fastify.post<{
+    Body: {
+      showcase_number: number; // 1 or 2
+      revealed: boolean;
+    };
+  }>(
+    "/showcase/reveal",
+    {
+      preHandler: [authenticateRequest, requireHost],
+    },
+    async (request, reply) => {
+      try {
+        const { showcase_number, revealed } = request.body;
+
+        // Validate showcase_number
+        if (showcase_number !== 1 && showcase_number !== 2) {
+          return reply.status(400).send({
+            success: false,
+            error: "showcase_number must be 1 or 2",
+          });
+        }
+
+        // Update the reveal state
+        if (showcase_number === 1) {
+          updateFinaleState(GAME_ID, { showcase1_revealed: revealed ? 1 : 0 });
+        } else {
+          updateFinaleState(GAME_ID, { showcase2_revealed: revealed ? 1 : 0 });
+        }
+
+        return reply.status(200).send({
+          success: true,
+        });
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(400).send({
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to update reveal state",
+        });
+      }
+    },
+  );
+
+  /**
+   * POST /api/showcase/modal
+   * Set which showcase modal is currently open (synced across all clients)
+   * Host only
+   */
+  fastify.post<{
+    Body: {
+      showcase_number: number; // 0 = none, 1 = showcase1, 2 = showcase2
+    };
+  }>(
+    "/showcase/modal",
+    {
+      preHandler: [authenticateRequest, requireHost],
+    },
+    async (request, reply) => {
+      try {
+        const { showcase_number } = request.body;
+
+        // Validate showcase_number
+        if (showcase_number !== 0 && showcase_number !== 1 && showcase_number !== 2) {
+          return reply.status(400).send({
+            success: false,
+            error: "showcase_number must be 0, 1, or 2",
+          });
+        }
+
+        // Update the modal state and reset indices when opening a new modal
+        updateFinaleState(GAME_ID, {
+          showcase_modal_open: showcase_number,
+          showcase_modal_product_index: 0,
+          showcase_modal_image_index: 0,
+        });
+
+        return reply.status(200).send({
+          success: true,
+        });
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(400).send({
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to update modal state",
+        });
+      }
+    },
+  );
+
+  /**
+   * POST /api/showcase/modal-navigate
+   * Update modal navigation indices (product and image)
+   * Host only
+   */
+  fastify.post<{
+    Body: {
+      product_index: number;
+      image_index: number;
+    };
+  }>(
+    "/showcase/modal-navigate",
+    {
+      preHandler: [authenticateRequest, requireHost],
+    },
+    async (request, reply) => {
+      try {
+        const { product_index, image_index } = request.body;
+
+        // Update the navigation indices
+        updateFinaleState(GAME_ID, {
+          showcase_modal_product_index: product_index,
+          showcase_modal_image_index: image_index,
+        });
+
+        return reply.status(200).send({
+          success: true,
+        });
+      } catch (error) {
+        request.log.error(error);
+        return reply.status(400).send({
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to update modal navigation",
         });
       }
     },

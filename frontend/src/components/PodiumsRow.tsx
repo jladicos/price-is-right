@@ -71,7 +71,7 @@ export function PodiumsRow({
 
   return (
     <HStack
-      gap={6}
+      gap={{ base: 2, lg: 6 }}
       justify="center"
       wrap="nowrap"
       align="start"

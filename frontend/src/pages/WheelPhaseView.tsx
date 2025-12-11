@@ -459,21 +459,22 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
           {/* Wheel positioned 10em from right edge */}
           <HStack
             position="absolute"
-            right="3em"
+            right={{ base: "1em", lg: "3em" }}
             top="50%"
             transform="translateY(-50%)"
-            gap={4}
+            gap={{ base: 2, lg: 4 }}
             alignItems="center"
           >
             {/* Waiting Spinners (leftmost) - Hidden when winner is determined */}
             {!showWinnerCelebration && waitingSpinners.length > 0 && (
-              <HStack gap={4} alignItems="center">
+              <HStack gap={{ base: 2, lg: 4 }} alignItems="center">
                 {waitingSpinners.map((spinner) => (
-                  <Box key={spinner.player_id}>
+                  <Box key={spinner.player_id} width={{ base: "86px", lg: "120px" }} height={{ base: "86px", lg: "120px" }}>
                     <PlayerCard
                       player={{ ...spinner, id: spinner.player_id }}
                       size="small"
-                      showName
+                      fillContainer
+                      showName={false}
                     />
                   </Box>
                 ))}
@@ -482,67 +483,70 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
 
             {/* Current Spinner (left of wheel) - Hidden when winner is determined */}
             {!showWinnerCelebration && currentSpinnerContestant && (
-              <VStack gap={2} marginRight="-14em">
-                <PlayerCard
-                  player={{
-                    ...currentSpinnerContestant,
-                    id: currentSpinnerContestant.player_id,
-                  }}
-                  size="large"
-                  variant="highlighted"
-                  showName
-                >
-                  <VStack gap={6} width="100%" alignItems="center">
-                    {!isWheelAnimating && (
-                      <Text
-                        fontSize="2xl"
-                        fontWeight="bold"
-                        color="blue.500"
-                        textAlign="center"
-                        bg="black"
-                        px={3}
-                        py={1}
-                        borderRadius="md"
-                        boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
-                      >
-                        ${currentPlayerTotal.toFixed(2)}
-                      </Text>
-                    )}
+              <VStack gap={2} marginRight={{ base: "-7em", lg: "-14em" }}>
+                <Box width={{ base: "173px", lg: "240px" }} height={{ base: "173px", lg: "240px" }}>
+                  <PlayerCard
+                    player={{
+                      ...currentSpinnerContestant,
+                      id: currentSpinnerContestant.player_id,
+                    }}
+                    size="large"
+                    fillContainer
+                    variant="highlighted"
+                    showName={false}
+                  >
+                    <VStack gap={{ base: 2, lg: 6 }} width="100%" alignItems="center">
+                      {!isWheelAnimating && (
+                        <Text
+                          fontSize={{ base: "md", lg: "2xl" }}
+                          fontWeight="bold"
+                          color="blue.500"
+                          textAlign="center"
+                          bg="black"
+                          px={{ base: 2, lg: 3 }}
+                          py={1}
+                          borderRadius="md"
+                          boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                        >
+                          ${currentPlayerTotal.toFixed(2)}
+                        </Text>
+                      )}
 
-                    {/* Player Controls (Stay/Spin Again buttons) */}
-                    {showPlayerControls && (
-                      <HStack gap={2} justifyContent="center">
-                        <Button
-                          onClick={handleStay}
-                          colorPalette="green"
-                          size="md"
-                          disabled={isWheelAnimating}
-                        >
-                          Stay
-                        </Button>
-                        <Button
-                          onClick={handleSpinAgain}
-                          colorPalette="blue"
-                          size="md"
-                          disabled={isWheelAnimating}
-                        >
-                          Spin Again
-                        </Button>
-                      </HStack>
-                    )}
-                  </VStack>
-                </PlayerCard>
+                      {/* Player Controls (Stay/Spin Again buttons) */}
+                      {showPlayerControls && (
+                        <HStack gap={2} justifyContent="center">
+                          <Button
+                            onClick={handleStay}
+                            colorPalette="green"
+                            size={{ base: "sm", lg: "md" }}
+                            disabled={isWheelAnimating}
+                          >
+                            Stay
+                          </Button>
+                          <Button
+                            onClick={handleSpinAgain}
+                            colorPalette="blue"
+                            size={{ base: "sm", lg: "md" }}
+                            disabled={isWheelAnimating}
+                          >
+                            Spin Again
+                          </Button>
+                        </HStack>
+                      )}
+                    </VStack>
+                  </PlayerCard>
+                </Box>
               </VStack>
             )}
 
             {/* Wheel Display */}
             <Box
               id="wheel"
-              width="600px"
+              width={{ base: "300px", lg: "600px" }}
               flexShrink={0}
               position="relative"
-              right="-15em"
-              top="-2em"
+              right={{ base: "-7.5em", lg: "-15em" }}
+              top={{ base: "-1em", lg: "-2em" }}
             >
               <WheelDisplay
                 currentValue={currentWheelPosition}
@@ -564,108 +568,119 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
             </Box>
 
             {/* Leader/Winner Section (right of wheel) */}
-            <Box width={showWinnerCelebration ? "300px" : "200px"} flexShrink={0} marginLeft="1em">
+            <Box width={showWinnerCelebration ? { base: "210px", lg: "300px" } : { base: "144px", lg: "200px" }} flexShrink={0} marginLeft={{ base: "0.5em", lg: "1em" }}>
               {/* Show winner (large) + runner-up if wheel round is complete, otherwise show leader */}
               {showWinnerCelebration && winnerContestant ? (
-                <VStack gap={6} alignItems="center">
+                <VStack gap={{ base: 3, lg: 6 }} alignItems="center">
                   {/* Winner - Large, no name shown (badge identifies them) */}
-                  <PlayerCard
-                    player={{ ...winnerContestant, id: winnerContestant.player_id }}
-                    size="large"
-                    badge="WINNER"
-                    variant="winner"
-                  >
-                    <VStack gap={2} alignItems="center">
-                      <Text
-                        fontSize="2xl"
-                        fontWeight="bold"
-                        color="green.500"
-                        textAlign="center"
-                        bg="black"
-                        px={3}
-                        py={1}
-                        borderRadius="md"
-                        boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
-                      >
-                        ${winnerTotal.toFixed(2)}
-                      </Text>
-                    </VStack>
-                  </PlayerCard>
-
-                  {/* Runner-up - Small, beneath winner */}
-                  {runnerUpContestant && (
+                  <Box width={{ base: "173px", lg: "240px" }} height={{ base: "173px", lg: "240px" }}>
                     <PlayerCard
-                      player={{
-                        ...runnerUpContestant,
-                        id: runnerUpContestant.player_id,
-                      }}
-                      size="small"
-                      showName
-                    >
-                      <Text
-                        fontSize="md"
-                        fontWeight="bold"
-                        color="gray.500"
-                        textAlign="center"
-                        bg="black"
-                        px={3}
-                        py={1}
-                        borderRadius="md"
-                        boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
-                      >
-                        ${runnerUpTotal.toFixed(2)}
-                      </Text>
-                    </PlayerCard>
-                  )}
-                </VStack>
-              ) : needsSpinoff && tiedPlayers.length > 0 ? (
-                <VStack gap={16} alignItems="center">
-                  {/* Show all tied players - extra gap for badge spacing */}
-                  {tiedPlayers.map((player) => (
-                    <PlayerCard
-                      key={player.player_id}
-                      player={{ ...player, id: player.player_id }}
-                      size="medium"
-                      showName
-                      badge="TIE"
+                      player={{ ...winnerContestant, id: winnerContestant.player_id }}
+                      size="large"
+                      fillContainer
+                      badge="WINNER"
+                      variant="winner"
                     >
                       <VStack gap={2} alignItems="center">
                         <Text
-                          fontSize="2xl"
+                          fontSize={{ base: "md", lg: "2xl" }}
                           fontWeight="bold"
-                          color="yellow.500"
+                          color="green.500"
                           textAlign="center"
+                          bg="black"
+                          px={{ base: 2, lg: 3 }}
+                          py={1}
+                          borderRadius="md"
+                          boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                        >
+                          ${winnerTotal.toFixed(2)}
+                        </Text>
+                      </VStack>
+                    </PlayerCard>
+                  </Box>
+
+                  {/* Runner-up - Small, beneath winner */}
+                  {runnerUpContestant && (
+                    <Box width={{ base: "86px", lg: "120px" }} height={{ base: "86px", lg: "120px" }}>
+                      <PlayerCard
+                        player={{
+                          ...runnerUpContestant,
+                          id: runnerUpContestant.player_id,
+                        }}
+                        size="small"
+                        fillContainer
+                        showName={false}
+                      >
+                        <Text
+                          fontSize={{ base: "xs", lg: "md" }}
+                          fontWeight="bold"
+                          color="gray.500"
+                          textAlign="center"
+                          bg="black"
+                          px={{ base: 1, lg: 3 }}
+                          py={1}
+                          borderRadius="md"
+                          boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                        >
+                          ${runnerUpTotal.toFixed(2)}
+                        </Text>
+                      </PlayerCard>
+                    </Box>
+                  )}
+                </VStack>
+              ) : needsSpinoff && tiedPlayers.length > 0 ? (
+                <VStack gap={{ base: 8, lg: 16 }} alignItems="center">
+                  {/* Show all tied players - extra gap for badge spacing */}
+                  {tiedPlayers.map((player) => (
+                    <Box key={player.player_id} width={{ base: "108px", lg: "150px" }} height={{ base: "108px", lg: "150px" }}>
+                      <PlayerCard
+                        player={{ ...player, id: player.player_id }}
+                        size="medium"
+                        fillContainer
+                        showName={false}
+                        badge="TIE"
+                      >
+                        <VStack gap={2} alignItems="center">
+                          <Text
+                            fontSize={{ base: "md", lg: "2xl" }}
+                            fontWeight="bold"
+                            color="yellow.500"
+                            textAlign="center"
+                          >
+                            ${leaderTotal.toFixed(2)}
+                          </Text>
+                        </VStack>
+                      </PlayerCard>
+                    </Box>
+                  ))}
+                </VStack>
+              ) : leaderContestant ? (
+                <VStack gap={2} alignItems="center">
+                  <Box width={{ base: "108px", lg: "150px" }} height={{ base: "108px", lg: "150px" }}>
+                    <PlayerCard
+                      player={{ ...leaderContestant, id: leaderContestant.player_id }}
+                      size="medium"
+                      fillContainer
+                      showName={false}
+                      badge="LEADER"
+                    >
+                      <VStack gap={2} alignItems="center">
+                        <Text
+                          fontSize={{ base: "md", lg: "2xl" }}
+                          fontWeight="bold"
+                          color="green.500"
+                          textAlign="center"
+                          bg="black"
+                          px={{ base: 2, lg: 3 }}
+                          py={1}
+                          borderRadius="md"
+                          boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
                         >
                           ${leaderTotal.toFixed(2)}
                         </Text>
                       </VStack>
                     </PlayerCard>
-                  ))}
-                </VStack>
-              ) : leaderContestant ? (
-                <VStack gap={2} alignItems="center">
-                  <PlayerCard
-                    player={{ ...leaderContestant, id: leaderContestant.player_id }}
-                    size="medium"
-                    showName={false}
-                    badge="LEADER"
-                  >
-                    <VStack gap={2} alignItems="center">
-                      <Text
-                        fontSize="2xl"
-                        fontWeight="bold"
-                        color="green.500"
-                        textAlign="center"
-                        bg="black"
-                        px={3}
-                        py={1}
-                        borderRadius="md"
-                        boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
-                      >
-                        ${leaderTotal.toFixed(2)}
-                      </Text>
-                    </VStack>
-                  </PlayerCard>
+                  </Box>
                 </VStack>
               ) : null}
             </Box>

@@ -422,7 +422,7 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
           <HStack
             align="start"
             justify="center"
-            gap={8}
+            gap={{ base: 2, lg: 8 }}
             width="100%"
             maxWidth="1600px"
           >
@@ -447,9 +447,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
               />
             </Box>
 
-            {/* Product Inset Card */}
+            {/* Product Inset Card - space reservation (actual card is fixed position) */}
             {productInsetVisible && (
-              <Box width="250px" flexShrink={0}>
+              <Box width={{ base: "135px", lg: "250px" }} flexShrink={0}>
                 <ProductInsetCard
                   product={product}
                   productId={productId}

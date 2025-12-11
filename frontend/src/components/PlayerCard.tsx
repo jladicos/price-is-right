@@ -9,6 +9,7 @@ export interface PlayerCardProps {
     photo_filename: string;
   };
   size?: "small" | "medium" | "large";
+  fillContainer?: boolean; // If true, photo fills parent container instead of using fixed size
   showName?: boolean;
   badge?: string;
   badgeTestId?: string; // Custom test ID for badge (useful for position-specific badges)
@@ -72,6 +73,7 @@ const VARIANT_CONFIG = {
 export function PlayerCard({
   player,
   size = "medium",
+  fillContainer = false,
   showName = false,
   badge,
   badgeTestId,
@@ -81,6 +83,9 @@ export function PlayerCard({
   const photoUrl = getPlayerPhotoUrl(player.photo_filename);
   const sizeConfig = SIZE_CONFIG[size];
   const variantConfig = VARIANT_CONFIG[variant];
+
+  // Use 100% if fillContainer, otherwise use fixed size
+  const photoSize = fillContainer ? "100%" : sizeConfig.photo;
 
   return (
     <VStack gap={2} align="center" data-testid="player-card">
@@ -113,7 +118,7 @@ export function PlayerCard({
       {badge && (
         <Box
           position="relative"
-          width={sizeConfig.photo}
+          width={photoSize}
           height="0"
           mb={badge ? "-40px" : "0"}
           zIndex={10}
@@ -151,8 +156,8 @@ export function PlayerCard({
 
       {/* Photo */}
       <Box
-        width={sizeConfig.photo}
-        height={sizeConfig.photo}
+        width={photoSize}
+        height={photoSize}
         borderRadius="md"
         overflow="hidden"
         border="3px solid"

@@ -29,6 +29,11 @@ export interface ShowcaseState {
   finale_player1_passed: number; // 0 or 1
   finale_winner_id: number | null;
   finale_bonus_won: number; // 0 or 1
+  showcase1_revealed: number; // 0 or 1
+  showcase2_revealed: number; // 0 or 1
+  showcase_modal_open: number; // 0 = none, 1 = showcase1, 2 = showcase2
+  showcase_modal_product_index: number; // Current product index in modal
+  showcase_modal_image_index: number; // Current image index for product
 }
 
 export interface FinaleStateUpdates {
@@ -42,6 +47,11 @@ export interface FinaleStateUpdates {
   finale_player1_passed?: number;
   finale_winner_id?: number;
   finale_bonus_won?: number;
+  showcase1_revealed?: number;
+  showcase2_revealed?: number;
+  showcase_modal_open?: number;
+  showcase_modal_product_index?: number;
+  showcase_modal_image_index?: number;
 }
 
 /**
@@ -94,7 +104,12 @@ export function getShowcaseState(gameId: number): ShowcaseState | null {
       finale_retry_number,
       finale_player1_passed,
       finale_winner_id,
-      finale_bonus_won
+      finale_bonus_won,
+      COALESCE(showcase1_revealed, 0) as showcase1_revealed,
+      COALESCE(showcase2_revealed, 0) as showcase2_revealed,
+      COALESCE(showcase_modal_open, 0) as showcase_modal_open,
+      COALESCE(showcase_modal_product_index, 0) as showcase_modal_product_index,
+      COALESCE(showcase_modal_image_index, 0) as showcase_modal_image_index
     FROM game_workflow
     WHERE id = ?
   `,
@@ -134,6 +149,11 @@ export function getShowcaseStateWithPlayers(gameId: number):
       gw.finale_player1_passed,
       gw.finale_winner_id,
       gw.finale_bonus_won,
+      COALESCE(gw.showcase1_revealed, 0) as showcase1_revealed,
+      COALESCE(gw.showcase2_revealed, 0) as showcase2_revealed,
+      COALESCE(gw.showcase_modal_open, 0) as showcase_modal_open,
+      COALESCE(gw.showcase_modal_product_index, 0) as showcase_modal_product_index,
+      COALESCE(gw.showcase_modal_image_index, 0) as showcase_modal_image_index,
       p1.first_name as finale_player1_first_name,
       p1.last_name as finale_player1_last_name,
       p1.photo_filename as finale_player1_photo,
@@ -327,6 +347,31 @@ export function updateFinaleState(
   if (updates.finale_bonus_won !== undefined) {
     fields.push("finale_bonus_won = ?");
     values.push(updates.finale_bonus_won);
+  }
+
+  if (updates.showcase1_revealed !== undefined) {
+    fields.push("showcase1_revealed = ?");
+    values.push(updates.showcase1_revealed);
+  }
+
+  if (updates.showcase2_revealed !== undefined) {
+    fields.push("showcase2_revealed = ?");
+    values.push(updates.showcase2_revealed);
+  }
+
+  if (updates.showcase_modal_open !== undefined) {
+    fields.push("showcase_modal_open = ?");
+    values.push(updates.showcase_modal_open);
+  }
+
+  if (updates.showcase_modal_product_index !== undefined) {
+    fields.push("showcase_modal_product_index = ?");
+    values.push(updates.showcase_modal_product_index);
+  }
+
+  if (updates.showcase_modal_image_index !== undefined) {
+    fields.push("showcase_modal_image_index = ?");
+    values.push(updates.showcase_modal_image_index);
   }
 
   if (fields.length === 0) {

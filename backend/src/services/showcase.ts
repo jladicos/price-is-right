@@ -129,6 +129,11 @@ export async function initializeShowcase(
     finale_player2_showcase: null, // Not assigned yet
     finale_retry_number: 0,
     finale_player1_passed: 0,
+    showcase1_revealed: 0, // Reset reveal state
+    showcase2_revealed: 0, // Reset reveal state
+    showcase_modal_open: 0, // Reset modal state
+    showcase_modal_product_index: 0, // Reset modal navigation
+    showcase_modal_image_index: 0, // Reset modal navigation
   });
 
   return dbGetShowcaseState(gameId)!;
