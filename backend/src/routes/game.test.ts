@@ -1763,8 +1763,9 @@ describe("Game API Routes", () => {
       });
 
       // Advance through all section_1 phases
-      // products.json has 2 bidding phases in section_1
-      for (let i = 0; i < 2; i++) {
+      // products.json has 6 phases in section_1 (3 bidding + 3 audience_bid)
+      // Need 6 advances to get from index 0 through all phases to section_1_finale
+      for (let i = 0; i < 6; i++) {
         await app.inject({
           method: "POST",
           url: "/api/game/advance",
@@ -1837,8 +1838,9 @@ describe("Game API Routes", () => {
         },
       });
 
-      // Advance through all section_2 phases (2 bidding phases)
-      for (let i = 0; i < 2; i++) {
+      // Advance through all section_2 phases (6 phases: 3 bidding + 3 audience_bid)
+      // Need 6 advances to get from index 0 through all phases to section_2_finale
+      for (let i = 0; i < 6; i++) {
         await app.inject({
           method: "POST",
           url: "/api/game/advance",
@@ -1875,13 +1877,13 @@ describe("Game API Routes", () => {
         "INSERT INTO contestants_row (player_id, position, game_segment, status) VALUES (?, ?, ?, ?)",
       ).run(4, 1, "section_2", "won");
 
-      // Add bidding wins for both sections
+      // Add bidding wins for both sections (use valid product IDs from products.json)
       db.prepare(
         "INSERT INTO bids (player_id, product_id, round_number, game_segment, bid_amount, retry_number, is_winner) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      ).run(3, "lemon-juice", 1, "section_1", 1200, 0, 1);
+      ).run(3, "003-Mug", 1, "section_1", 150, 0, 1);
       db.prepare(
         "INSERT INTO bids (player_id, product_id, round_number, game_segment, bid_amount, retry_number, is_winner) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      ).run(4, "apple-juice", 1, "section_2", 1500, 0, 1);
+      ).run(4, "008-Fryer", 1, "section_2", 100, 0, 1);
 
       // Add wheel winners for both sections
       db.prepare(

@@ -7,7 +7,7 @@ export interface Product {
 /**
  * Game phase types
  */
-export type PhaseType = "bidding" | "mini_game" | "wheel" | "showcase";
+export type PhaseType = "bidding" | "mini_game" | "wheel" | "showcase" | "audience_bid";
 
 /**
  * Bidding phase configuration
@@ -24,6 +24,16 @@ export interface MiniGamePhase {
   type: "mini_game";
   game_type: string; // e.g., "plinko", "price_tags", etc.
   product_id: string;
+}
+
+/**
+ * Audience bid phase configuration
+ * Displays a product for audience to bid on (outside the game)
+ */
+export interface AudienceBidPhase {
+  type: "audience_bid";
+  product_id: string;
+  url?: string; // Optional clickable URL for audience bidding
 }
 
 /**
@@ -58,6 +68,7 @@ export interface ShowcasePhase {
 export type GamePhase =
   | BiddingPhase
   | MiniGamePhase
+  | AudienceBidPhase
   | WheelPhase
   | ShowcasePhase;
 

@@ -2,7 +2,7 @@ import { Box, Text } from "@chakra-ui/react";
 
 /**
  * WaitingScreen - Displayed to non-host players before the game officially starts
- * Shows "The product value is correct" in Pricedown font
+ * Shows "The Cost is Accurate" in Pricedown font
  */
 export default function WaitingScreen() {
   return (
@@ -24,7 +24,7 @@ export default function WaitingScreen() {
         textAlign="center"
         px={4}
       >
-        The product value is correct
+        The Cost is Accurate
       </Text>
     </Box>
   );

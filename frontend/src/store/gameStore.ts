@@ -140,6 +140,13 @@ export interface GameState {
   // Showcase phase state (populated when phase_type === 'showcase')
   showcaseState?: ShowcaseStateWithProducts;
   showcaseBids?: ShowcaseBidWithPlayer[];
+  // Audience bid phase state (populated when phase_type === 'audience_bid')
+  audienceBidProduct?: {
+    id: string;
+    name: string;
+    images: string[];
+    url?: string; // Optional clickable URL for audience bidding
+  };
 }
 
 interface GameStore {

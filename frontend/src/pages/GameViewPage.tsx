@@ -12,6 +12,7 @@ import { useGameState } from "../hooks/useGameState";
 import { useGameStore } from "../store/gameStore";
 import { useAuthStore } from "../store/authStore";
 import { BiddingPhaseView } from "../components/phases/BiddingPhaseView";
+import { AudienceBidPhaseView } from "../components/phases/AudienceBidPhaseView";
 import { WheelPhaseView } from "./WheelPhaseView";
 import { ShowcasePhaseView } from "../components/phases/ShowcasePhaseView";
 import WaitingScreen from "./WaitingScreen";
@@ -153,6 +154,9 @@ export default function GameViewPage() {
   switch (phaseType) {
     case "bidding":
       return <BiddingPhaseView gameState={gameState} />;
+
+    case "audience_bid":
+      return <AudienceBidPhaseView gameState={gameState} />;
 
     case "contestant_selection":
       // TODO: Implement ContestantSelectionPhaseView

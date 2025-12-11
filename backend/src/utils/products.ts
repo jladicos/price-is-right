@@ -57,7 +57,7 @@ function getProductsJsonPath(): string {
 function extractProductIdsFromPhases(phases: GamePhase[]): string[] {
   const ids: string[] = [];
   for (const phase of phases) {
-    if (phase.type === "bidding" || phase.type === "mini_game") {
+    if (phase.type === "bidding" || phase.type === "mini_game" || phase.type === "audience_bid") {
       ids.push(phase.product_id);
     } else if (phase.type === "showcase") {
       ids.push(...phase.products);

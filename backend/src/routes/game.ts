@@ -18,7 +18,7 @@ import {
 } from "../services/game-state.js";
 import { updateGameWorkflow, getGameWorkflow } from "../db/game-workflow.js";
 import { getGameStructure } from "../utils/products.js";
-import type { GamePhase, WheelPhase, ShowcasePhase } from "../types/product.js";
+import type { GamePhase, WheelPhase, ShowcasePhase, AudienceBidPhase } from "../types/product.js";
 
 const gameRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /api/game/status - Get game status (authenticated users only)

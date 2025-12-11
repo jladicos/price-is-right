@@ -7,14 +7,14 @@ describe("WaitingScreen", () => {
     render(<WaitingScreen />);
 
     expect(
-      screen.getByText("The product value is correct"),
+      screen.getByText("The Cost is Accurate"),
     ).toBeInTheDocument();
   });
 
   it("should display text in Pricedown font", () => {
     render(<WaitingScreen />);
 
-    const text = screen.getByText("The product value is correct");
+    const text = screen.getByText("The Cost is Accurate");
     const style = window.getComputedStyle(text);
 
     // Font family should include Pricedown
@@ -63,7 +63,7 @@ describe("WaitingScreen", () => {
   it("should have white text color", () => {
     render(<WaitingScreen />);
 
-    const text = screen.getByText("The product value is correct");
+    const text = screen.getByText("The Cost is Accurate");
     const style = window.getComputedStyle(text);
 
     // Chakra uses CSS variables, so check for the variable or the resolved color
@@ -77,7 +77,7 @@ describe("WaitingScreen", () => {
   it("should center text alignment", () => {
     render(<WaitingScreen />);
 
-    const text = screen.getByText("The product value is correct");
+    const text = screen.getByText("The Cost is Accurate");
     const style = window.getComputedStyle(text);
 
     expect(style.textAlign).toBe("center");

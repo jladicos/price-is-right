@@ -71,6 +71,7 @@ export function GameControlStrip({
   const navigate = useNavigate();
   const workflow = gameState.workflow;
   const isBiddingPhase = workflow.phase_type === "bidding";
+  const isAudienceBidPhase = workflow.phase_type === "audience_bid";
   const isWheelPhase = workflow.phase_type === "wheel";
   const isShowcasePhase = workflow.phase_type === "showcase";
 
@@ -242,6 +243,57 @@ export function GameControlStrip({
                     ({5 - currentBids.length} left)
                   </Text>
                 )}
+              </Button>
+            )}
+
+            {/* Advance Phase Button */}
+            <Button
+              onClick={onAdvancePhase}
+              colorPalette="cyan"
+              size="lg"
+              variant="solid"
+              disabled={isLoading}
+            >
+              Next Phase →
+            </Button>
+          </HStack>
+        )}
+
+        {/* Audience Bid Phase Controls */}
+        {role === "host" && isAudienceBidPhase && (
+          <HStack gap={4} justify="center" flex="1" wrap="wrap">
+            {/* Phase Info */}
+            <Box bg="teal.600" px={4} py={2} borderRadius="md" minWidth="200px">
+              <Text
+                fontSize="sm"
+                fontWeight="bold"
+                color="white"
+                textAlign="center"
+                textTransform="uppercase"
+                letterSpacing="wide"
+              >
+                {workflow.current_segment} - Audience Bid
+              </Text>
+            </Box>
+
+            {/* Product Display Controls */}
+            {!isProductModalOpen ? (
+              <Button
+                onClick={onShowProduct}
+                colorPalette="green"
+                size="lg"
+                disabled={isLoading}
+              >
+                Show Product
+              </Button>
+            ) : (
+              <Button
+                onClick={onHideProduct}
+                colorPalette="orange"
+                size="lg"
+                disabled={isLoading}
+              >
+                Hide Product
               </Button>
             )}
 

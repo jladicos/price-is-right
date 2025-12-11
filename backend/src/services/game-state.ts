@@ -42,6 +42,7 @@ import {
 } from "../db/wheel-spins.js";
 import { getShowcaseStateWithProducts } from "./showcase.js";
 import { getShowcaseBids, getShowcaseState } from "../db/showcase.js";
+import { getProduct, type Product } from "../utils/products.js";
 
 export interface GameState {
   workflow: GameWorkflow;
@@ -69,6 +70,13 @@ export interface GameState {
   // Showcase phase state (populated when phase_type === 'showcase')
   showcaseState?: ReturnType<typeof getShowcaseStateWithProducts>;
   showcaseBids?: ReturnType<typeof getShowcaseBids>;
+  // Audience bid phase state (populated when phase_type === 'audience_bid')
+  audienceBidProduct?: {
+    id: string;
+    name: string;
+    images: string[];
+    url?: string; // Optional clickable URL for audience bidding
+  };
 }
 
 /**
@@ -131,6 +139,25 @@ export function getCurrentState(): GameState {
     state.currentBidderPosition = getCurrentBidderPosition(segment);
   }
 
+  // If in audience_bid phase, include product info for display
+  if (workflow.phase_type === "audience_bid") {
+    const metadata = workflow.phase_metadata
+      ? JSON.parse(workflow.phase_metadata)
+      : {};
+    const productId = metadata.product_id;
+    if (productId) {
+      const product = getProduct(productId);
+      if (product) {
+        state.audienceBidProduct = {
+          id: productId,
+          name: product.name,
+          images: product.images,
+          url: metadata.url, // Optional URL from config
+        };
+      }
+    }
+  }
+
   // If in wheel phase, include wheel-specific state
   if (workflow.phase_type === "wheel") {
     const segment = workflow.current_segment;
@@ -148,8 +175,15 @@ export function getCurrentState(): GameState {
     state.spinoffNumber = metadata.spinoffNumber || 0;
 
     // Calculate player totals
+    // During spinoff, only include the tied players
     const eligibleSpinners = getEligibleSpinners(segment);
-    state.playerTotals = eligibleSpinners.map((spinner) => ({
+    const tiedPlayerIds: number[] = metadata.tiedPlayerIds || [];
+    const spinnersToInclude =
+      state.spinoffNumber > 0 && tiedPlayerIds.length > 0
+        ? eligibleSpinners.filter((s) => tiedPlayerIds.includes(s.player_id))
+        : eligibleSpinners;
+
+    state.playerTotals = spinnersToInclude.map((spinner) => ({
       ...spinner, // Include all player details (first_name, last_name, photo_filename, position)
       player_id: spinner.player_id,
       total: getPlayerTotal(spinner.player_id, segment, state.spinoffNumber),
@@ -1044,6 +1078,7 @@ export function advancePhase(nextPhase: string): GameWorkflow {
     "mini_game",
     "wheel",
     "showcase",
+    "audience_bid",
   ];
 
   if (!validPhases.includes(nextPhase)) {

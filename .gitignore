@@ -57,3 +57,12 @@ data/*.json
 data/~$*
 !data/*.example.xlsx
 !data/*.example.json
+
+# Script outputs
+scripts/output/
+
+# PDF files
+*.pdf
+
+# Products folder (working files)
+/products/
