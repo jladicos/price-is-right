@@ -5,6 +5,8 @@ import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "./ui/menu";
 import { ExportDatabaseModal } from "./ExportDatabaseModal";
 import { ImportDatabaseModal } from "./ImportDatabaseModal";
 import { StartGameConfirmModal } from "./StartGameConfirmModal";
+import { useAuthStore } from "../store/authStore";
+import { showToast } from "../utils/toast";
 import type { GameState } from "../store/gameStore";
 
 interface GameControlStripProps {
@@ -69,6 +71,7 @@ export function GameControlStrip({
   _hasWinner = false,
 }: GameControlStripProps) {
   const navigate = useNavigate();
+  const sessionToken = useAuthStore((state) => state.sessionToken);
   const workflow = gameState.workflow;
   const isBiddingPhase = workflow.phase_type === "bidding";
   const isAudienceBidPhase = workflow.phase_type === "audience_bid";
@@ -114,6 +117,46 @@ export function GameControlStrip({
     setIsImportModalOpen(false);
     if (onRefreshGameState) {
       onRefreshGameState();
+    }
+  };
+
+  const handleExportWinners = async () => {
+    try {
+      if (!sessionToken) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await fetch("http://localhost:3001/api/admin/export-winners", {
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Export failed");
+      }
+
+      const result = await response.json();
+
+      // Log winners to browser console for easy access
+      console.log("=== GAME WINNERS ===");
+      console.log("Section 1 Bidding Winners:", result.winners?.section1BiddingWinners || []);
+      console.log("Section 2 Bidding Winners:", result.winners?.section2BiddingWinners || []);
+      console.log("Showcase Winner:", result.winners?.showcaseWinner || "Not yet determined");
+      console.log("====================");
+
+      showToast({
+        title: "Winners exported",
+        description: `Saved to ${result.filePath} (also logged to console)`,
+        type: "success",
+      });
+    } catch (err) {
+      showToast({
+        title: "Export failed",
+        description: err instanceof Error ? err.message : "An error occurred",
+        type: "error",
+      });
     }
   };
 
@@ -175,6 +218,12 @@ export function GameControlStrip({
                   onClick={() => setIsExportModalOpen(true)}
                 >
                   Export Game State
+                </MenuItem>
+                <MenuItem
+                  value="export-winners"
+                  onClick={handleExportWinners}
+                >
+                  Export Winners
                 </MenuItem>
                 <MenuItem
                   value="import"

@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { writeFileSync } from "node:fs";
 import { getDatabase } from "../db/connection.js";
 import {
   exportDatabase,
@@ -7,6 +8,7 @@ import {
 } from "../db/export-import.js";
 import { authenticateRequest } from "../middleware/auth.js";
 import { requireHost } from "../middleware/requireHost.js";
+import { getGameWinners, formatWinnersAsMarkdown } from "../services/winners.js";
 
 const adminRoutes: FastifyPluginAsync = async (fastify) => {
   // Export database
@@ -91,6 +93,38 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
         const error = err as Error;
         return reply.status(400).send({
           error: error.message,
+        });
+      }
+    },
+  );
+
+  // Export winners to markdown file
+  fastify.get(
+    "/admin/export-winners",
+    { preHandler: [authenticateRequest, requireHost] },
+    async (_request, reply) => {
+      try {
+        // Get all winners
+        const winners = getGameWinners();
+
+        // Format as markdown
+        const markdown = formatWinnersAsMarkdown(winners);
+
+        // Write to data directory (mounted volume accessible from host)
+        const filePath = "/app/data/winners.md";
+
+        writeFileSync(filePath, markdown, "utf-8");
+
+        return {
+          success: true,
+          message: "Winners exported successfully",
+          filePath: "data/winners.md",
+          winners, // Include winners data for console logging
+        };
+      } catch (err) {
+        const error = err as Error;
+        return reply.status(500).send({
+          error: `Failed to export winners: ${error.message}`,
         });
       }
     },
