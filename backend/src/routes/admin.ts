@@ -393,6 +393,100 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       };
     },
   );
+
+  // Go back to previous phase
+  fastify.post(
+    "/admin/previous-phase",
+    { preHandler: [authenticateRequest, requireHost] },
+    async (_request, reply) => {
+      const db = getDatabase();
+
+      try {
+        // Get current workflow state
+        const workflow = db
+          .prepare("SELECT * FROM game_workflow WHERE id = 1")
+          .get() as {
+          phase_type: string;
+          current_segment: string;
+          current_segment_index: number;
+        };
+
+        if (!workflow) {
+          return reply.status(400).send({ error: "No game in progress" });
+        }
+
+        const { phase_type, current_segment, current_segment_index } = workflow;
+
+        // Determine previous phase based on current state
+        if (phase_type === "showcase") {
+          // From showcase -> wheel (section_2_finale)
+          db.prepare(
+            `UPDATE game_workflow
+             SET phase_type = 'wheel',
+                 current_segment = 'section_2_finale',
+                 phase_metadata = NULL,
+                 finale_winner_id = NULL,
+                 updated_at = datetime('now')
+             WHERE id = 1`
+          ).run();
+        } else if (phase_type === "wheel") {
+          // From wheel -> last bidding round of current section
+          // Get the game structure to find the last bidding phase index
+          const lastBiddingIndex = current_segment_index > 0 ? current_segment_index - 1 : 0;
+
+          db.prepare(
+            `UPDATE game_workflow
+             SET phase_type = 'bidding',
+                 current_segment_index = ?,
+                 phase_metadata = NULL,
+                 updated_at = datetime('now')
+             WHERE id = 1`
+          ).run(lastBiddingIndex);
+        } else if (phase_type === "bidding" || phase_type === "audience_bid") {
+          if (current_segment_index > 0) {
+            // Go to previous round in current segment
+            db.prepare(
+              `UPDATE game_workflow
+               SET current_segment_index = ?,
+                   phase_metadata = NULL,
+                   updated_at = datetime('now')
+               WHERE id = 1`
+            ).run(current_segment_index - 1);
+          } else if (current_segment === "section_2") {
+            // At start of section_2, go back to section_1_finale wheel
+            db.prepare(
+              `UPDATE game_workflow
+               SET phase_type = 'wheel',
+                   current_segment = 'section_1_finale',
+                   phase_metadata = NULL,
+                   updated_at = datetime('now')
+               WHERE id = 1`
+            ).run();
+          }
+          // If at section_1 index 0, can't go back further
+        }
+
+        // Get updated workflow
+        const updatedWorkflow = db
+          .prepare("SELECT * FROM game_workflow WHERE id = 1")
+          .get();
+
+        // Broadcast state update
+        fastify.io?.emit("game_state_changed", { workflow: updatedWorkflow });
+
+        return {
+          success: true,
+          message: "Moved to previous phase",
+          workflow: updatedWorkflow,
+        };
+      } catch (err) {
+        const error = err as Error;
+        return reply.status(500).send({
+          error: `Failed to go to previous phase: ${error.message}`,
+        });
+      }
+    }
+  );
 };
 
 export default adminRoutes;

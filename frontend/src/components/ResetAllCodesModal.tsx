@@ -13,6 +13,9 @@ import { Checkbox } from "./ui/checkbox";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../utils/toast";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
 interface ResetAllCodesModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,7 +37,7 @@ export function ResetAllCodesModal({
     setIsResetting(true);
     try {
       const response = await fetch(
-        "http://localhost:3001/api/players/bulk/reset-codes",
+        `${API_BASE_URL}/players/bulk/reset-codes`,
         {
           method: "POST",
           headers: {

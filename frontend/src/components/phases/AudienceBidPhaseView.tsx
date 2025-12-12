@@ -21,6 +21,7 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
   const { currentPlayer } = useAuthStore();
   const {
     advancePhase,
+    goToPreviousPhase,
     showProduct,
     hideProductModal,
     startNewGame,
@@ -97,11 +98,6 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
 
     try {
       await startNewGame();
-      showToast({
-        title: "Game Restarted",
-        description: "New game started. 5 contestants selected.",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -115,11 +111,6 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
   const handleStartNewGame = async () => {
     try {
       await startNewGame();
-      showToast({
-        title: "Game Started",
-        description: "New game started. 5 contestants selected.",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -244,6 +235,7 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
         onRestartGame={handleRestartGame}
         onStartNewGame={handleStartNewGame}
         onRefreshGameState={handleRefreshGameState}
+        onGoToPreviousPhase={goToPreviousPhase}
       />
     </>
   );

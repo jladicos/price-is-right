@@ -14,6 +14,9 @@ import { Field } from "./ui/field";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../utils/toast";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
 interface DeleteAllPlayersModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -38,7 +41,7 @@ export function DeleteAllPlayersModal({
     setIsDeleting(true);
     try {
       const response = await fetch(
-        "http://localhost:3001/api/players/bulk/delete-all",
+        `${API_BASE_URL}/players/bulk/delete-all`,
         {
           method: "DELETE",
           headers: {

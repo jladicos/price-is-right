@@ -11,6 +11,11 @@ import {
 import { Field } from "./ui/field";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../utils/toast";
+import { getPlayerPhotoUrl } from "../utils/imageUrls";
+
+// API base URL for uploads
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 interface PhotoUploadProps {
   playerId: number;
@@ -30,8 +35,8 @@ export function PhotoUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentPhotoUrl = currentPhoto
-    ? `http://localhost:3001/images/players/${currentPhoto}`
-    : "http://localhost:3001/images/players/default.jpg";
+    ? getPlayerPhotoUrl(currentPhoto)
+    : getPlayerPhotoUrl("default.jpg");
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -76,7 +81,7 @@ export function PhotoUpload({
       formData.append("file", selectedFile);
 
       const response = await fetch(
-        `http://localhost:3001/api/players/${playerId}/photo`,
+        `${API_BASE_URL}/players/${playerId}/photo`,
         {
           method: "POST",
           headers: {

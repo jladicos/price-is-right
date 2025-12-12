@@ -9,6 +9,9 @@ import { useAuthStore } from "../store/authStore";
 import { showToast } from "../utils/toast";
 import type { GameState } from "../store/gameStore";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
 interface GameControlStripProps {
   gameState: GameState;
   role: string;
@@ -25,6 +28,7 @@ interface GameControlStripProps {
   onRefreshGameState?: () => void;
   onRefreshContestantsRow?: () => void;
   onRestartShowcase?: () => void; // Debug: restart showcase phase
+  onGoToPreviousPhase?: () => void; // Go back to previous phase
   isLoading?: boolean;
   showNextSpinnerButton?: boolean;
   // Showcase phase controls
@@ -56,6 +60,7 @@ export function GameControlStrip({
   onRefreshGameState,
   onRefreshContestantsRow,
   onRestartShowcase,
+  onGoToPreviousPhase,
   isLoading = false,
   showNextSpinnerButton = false,
   // Showcase phase controls
@@ -126,7 +131,7 @@ export function GameControlStrip({
         throw new Error("Not authenticated");
       }
 
-      const response = await fetch("http://localhost:3001/api/admin/export-winners", {
+      const response = await fetch(`${API_BASE_URL}/admin/export-winners`, {
         headers: {
           Authorization: `Bearer ${sessionToken}`,
         },
@@ -197,12 +202,25 @@ export function GameControlStrip({
                 <MenuItem value="start-new" onClick={handleStartNewGameClick}>
                   Start New Game
                 </MenuItem>
+                {onGoToPreviousPhase && (
+                  <MenuItem value="previous-phase" onClick={onGoToPreviousPhase}>
+                    ← Previous Phase
+                  </MenuItem>
+                )}
                 {isBiddingPhase && !hasWinnerBeenRevealed && (
                   <MenuItem
                     value="refresh-row"
                     onClick={onRefreshContestantsRow}
                   >
                     Refresh Entire Row
+                  </MenuItem>
+                )}
+                {isWheelPhase && onResetWheel && (
+                  <MenuItem
+                    value="reset-wheel"
+                    onClick={onResetWheel}
+                  >
+                    Reset to First Player
                   </MenuItem>
                 )}
                 {isShowcasePhase && onRestartShowcase && (
@@ -242,21 +260,6 @@ export function GameControlStrip({
         {/* Center: Phase-specific controls */}
         {role === "host" && isBiddingPhase && (
           <HStack gap={4} justify="center" flex="1" wrap="wrap">
-            {/* Phase Info */}
-            <Box bg="blue.600" px={4} py={2} borderRadius="md" minWidth="200px">
-              <Text
-                fontSize="sm"
-                fontWeight="bold"
-                color="white"
-                textAlign="center"
-                textTransform="uppercase"
-                letterSpacing="wide"
-              >
-                {workflow.current_segment} - Round{" "}
-                {workflow.current_segment_index + 1}
-              </Text>
-            </Box>
-
             {/* Product Display Controls */}
             {!isProductModalOpen ? (
               <Button
@@ -382,17 +385,6 @@ export function GameControlStrip({
               </Text>
             </Box>
 
-            {/* Debug: Reset to First Player */}
-            <Button
-              onClick={onResetWheel}
-              colorPalette="orange"
-              size="md"
-              variant="solid"
-              disabled={isLoading}
-            >
-              🔄 Reset to First Player
-            </Button>
-
             {/* Next Spinner Button */}
             {showNextSpinnerButton && (
               <Button
@@ -492,19 +484,6 @@ export function GameControlStrip({
           </HStack>
         )}
 
-        {/* Right: Status info */}
-        {isBiddingPhase && (
-          <Box bg="gray.700" px={4} py={2} borderRadius="md" minWidth="120px">
-            <Text fontSize="sm" color="white" textAlign="center">
-              Bids: {currentBids.length} / 5
-            </Text>
-            {allBidsSubmitted && (
-              <Text fontSize="xs" color="green.300" textAlign="center" mt={1}>
-                All bids in!
-              </Text>
-            )}
-          </Box>
-        )}
       </HStack>
 
       {/* Modals */}

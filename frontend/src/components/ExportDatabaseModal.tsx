@@ -47,6 +47,9 @@ import {
 import { Button, Text, VStack } from "@chakra-ui/react";
 import { Alert } from "./ui/alert";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
 interface ExportDatabaseModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -66,7 +69,7 @@ export function ExportDatabaseModal({
         throw new Error("Not authenticated");
       }
 
-      const response = await fetch("http://localhost:3001/api/admin/export", {
+      const response = await fetch(`${API_BASE_URL}/admin/export`, {
         headers: {
           Authorization: `Bearer ${sessionToken}`,
         },

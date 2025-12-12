@@ -13,6 +13,9 @@ import type { Player } from "../../../backend/src/types/player";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../utils/toast";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
 interface ResetCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,7 +37,7 @@ export function ResetCodeModal({
     setIsResetting(true);
     try {
       const response = await fetch(
-        `http://localhost:3001/api/players/${player.id}/reset-code`,
+        `${API_BASE_URL}/players/${player.id}/reset-code`,
         {
           method: "PUT",
           headers: {

@@ -13,7 +13,7 @@ export interface PlayerCardProps {
   showName?: boolean;
   badge?: string;
   badgeTestId?: string; // Custom test ID for badge (useful for position-specific badges)
-  variant?: "default" | "highlighted" | "eliminated" | "winner";
+  variant?: "default" | "highlighted" | "eliminated" | "winner" | "noBorder";
   children?: React.ReactNode;
 }
 
@@ -37,21 +37,31 @@ const VARIANT_CONFIG = {
     borderColor: "gray.300",
     boxShadow: "sm",
     bgColor: "transparent",
+    showBorder: true,
   },
   highlighted: {
     borderColor: "blue.500",
     boxShadow: "0 0 20px rgba(59, 130, 246, 0.6)",
     bgColor: "transparent",
+    showBorder: true,
   },
   eliminated: {
     borderColor: "red.500",
     boxShadow: "0 0 15px rgba(239, 68, 68, 0.5)",
     bgColor: "red.900",
+    showBorder: true,
   },
   winner: {
     borderColor: "green.500",
     boxShadow: "0 0 20px rgba(34, 197, 94, 0.6)",
     bgColor: "transparent",
+    showBorder: true,
+  },
+  noBorder: {
+    borderColor: "transparent",
+    boxShadow: "none",
+    bgColor: "transparent",
+    showBorder: false,
   },
 };
 
@@ -160,7 +170,7 @@ export function PlayerCard({
         height={photoSize}
         borderRadius="md"
         overflow="hidden"
-        border="3px solid"
+        border={variantConfig.showBorder ? "3px solid" : "none"}
         borderColor={variantConfig.borderColor}
         boxShadow={variantConfig.boxShadow}
         bg={variantConfig.bgColor}
@@ -168,16 +178,15 @@ export function PlayerCard({
         transition="all 0.3s ease"
         data-testid="player-card-photo"
       >
-        <Image
+        <img
           src={photoUrl}
           alt={`${player.first_name} ${player.last_name}`}
           title={player.first_name}
-          position="absolute"
-          top="0"
-          left="0"
-          width="100%"
-          height="100%"
-          objectFit="cover"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
         />
 
         {/* Eliminated overlay */}

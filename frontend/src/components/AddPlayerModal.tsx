@@ -24,6 +24,9 @@ import type { PlayerRole } from "../../../backend/src/types/player";
 import { useAuthStore } from "../store/authStore";
 import { showToast } from "../utils/toast";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
 interface AddPlayerModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -110,7 +113,7 @@ export function AddPlayerModal({
         formData.append("photo", selectedFile);
       }
 
-      const response = await fetch("http://localhost:3001/api/players", {
+      const response = await fetch(`${API_BASE_URL}/players`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${sessionToken}`,

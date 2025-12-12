@@ -168,6 +168,7 @@ interface GameStore {
   startNewGame: () => Promise<void>;
   officiallyStartGame: () => Promise<void>;
   advancePhase: () => Promise<void>;
+  goToPreviousPhase: () => Promise<void>;
   revealContestant: (contestantRowId: number) => Promise<void>;
   manualSelectContestant: (
     playerId: number,
@@ -389,6 +390,28 @@ export const useGameStore = create<GameStore>((set) => ({
       });
     } else {
       const errorMessage = result.error || "Failed to advance phase";
+      set({
+        error: errorMessage,
+        isLoading: false,
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  // Go back to previous phase
+  goToPreviousPhase: async () => {
+    set({ isLoading: true, error: null });
+
+    const result = await apiCall<{ workflow: unknown }>("/admin/previous-phase", {
+      method: "POST",
+    });
+
+    if (result.success) {
+      // Fetch updated state after going back
+      await get().fetchGameState();
+      set({ isLoading: false });
+    } else {
+      const errorMessage = result.error || "Failed to go to previous phase";
       set({
         error: errorMessage,
         isLoading: false,

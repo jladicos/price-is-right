@@ -30,6 +30,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
     revealShowcaseWinner,
     retryShowcase,
     advancePhase,
+    goToPreviousPhase,
     startNewGame,
     fetchGameState,
     setShowcaseRevealed,
@@ -624,6 +625,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
         onStartNewGame={handleStartNewGame}
         onRestartShowcase={handleRestartShowcase}
         onRefreshGameState={handleRefreshGameState}
+        onGoToPreviousPhase={goToPreviousPhase}
       />
 
       {/* Showcase Modals */}

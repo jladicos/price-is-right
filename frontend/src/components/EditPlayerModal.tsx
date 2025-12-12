@@ -16,6 +16,9 @@ import { useAuthStore } from "../store/authStore";
 import { PhotoUpload } from "./PhotoUpload";
 import { showToast } from "../utils/toast";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
 interface EditPlayerModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -56,7 +59,7 @@ export function EditPlayerModal({
     setIsUpdating(true);
     try {
       const response = await fetch(
-        `http://localhost:3001/api/players/${player.id}`,
+        `${API_BASE_URL}/players/${player.id}`,
         {
           method: "PUT",
           headers: {

@@ -38,6 +38,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     stayOnWheelSpin,
     startSpinOff,
     advancePhase,
+    goToPreviousPhase,
     isWheelAnimating,
     pendingSpinTarget,
     startNewGame,
@@ -320,11 +321,6 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
 
     try {
       await startNewGame();
-      showToast({
-        title: "Game Restarted",
-        description: "New game started.",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -338,11 +334,6 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
   const handleStartNewGame = async () => {
     try {
       await startNewGame();
-      showToast({
-        title: "Game Started",
-        description: "New game started.",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -399,21 +390,23 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
   const showPlayerControls =
     currentSpinnerHasSpunOnce && (isCurrentSpinner || role === "host");
 
-  // Show "Next Spinner" button if current spinner is done (either stayed or completed max spins or eliminated)
-  // A spinner is done when they:
-  // 1. Have 2 or more spins (max spins reached)
-  // 2. Are eliminated (total >= 100)
-  // 3. Have stayed (we need a way to detect this - for now, if they have spins and the Stay/Spin Again buttons aren't showing)
+  // Current spinner is "done" when they've used both spins or are eliminated
   const currentSpinnerIsDone =
     currentSpinnerId &&
-    !currentSpinnerHasSpunOnce && // If the Stay/Spin Again buttons would show, they're NOT done yet
-    currentPlayerSpins > 0 && // They must have at least one spin
-    !wheelWinner && // No winner yet
-    !needsSpinoff; // No tie yet
+    !currentSpinnerHasSpunOnce &&
+    currentPlayerSpins > 0 &&
+    !wheelWinner &&
+    !needsSpinoff;
 
-  // Show "Next Spinner" button when current spinner is done and there are more spinners waiting
+  // Show "Next Spinner" button for host when current spinner has spun at least once
+  // and there are more players waiting to spin
   const showNextSpinnerButton =
-    role === "host" && currentSpinnerIsDone && waitingSpinners.length > 0;
+    role === "host" &&
+    currentSpinnerId &&
+    currentPlayerSpins > 0 &&
+    waitingSpinners.length > 0 &&
+    !wheelWinner &&
+    !needsSpinoff;
 
   // Show host controls if user is host
   const showHostControls = role === "host";
@@ -463,28 +456,88 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
             top="50%"
             transform="translateY(-50%)"
             gap={{ base: 2, lg: 4 }}
-            alignItems="center"
+            alignItems="flex-start"
           >
             {/* Waiting Spinners (leftmost) - Hidden when winner is determined */}
+            {/* Reversed so next-to-spin is closest to current player */}
             {!showWinnerCelebration && waitingSpinners.length > 0 && (
-              <HStack gap={{ base: 2, lg: 4 }} alignItems="center">
-                {waitingSpinners.map((spinner) => (
-                  <Box key={spinner.player_id} width={{ base: "86px", lg: "120px" }} height={{ base: "86px", lg: "120px" }}>
-                    <PlayerCard
-                      player={{ ...spinner, id: spinner.player_id }}
-                      size="small"
-                      fillContainer
-                      showName={false}
-                    />
-                  </Box>
+              <HStack gap={{ base: 2, lg: 4 }} alignItems="flex-start">
+                {[...waitingSpinners].reverse().map((spinner) => (
+                  <VStack key={spinner.player_id} gap={{ base: 1, lg: 2 }}>
+                    <Box
+                      bg="white"
+                      px={{ base: 1, lg: 2 }}
+                      borderRadius="md"
+                      boxShadow="sm"
+                      border="5px solid black"
+                      height={{ base: "40px", lg: "54px" }}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Text
+                        fontSize={{ base: "xs", lg: "md" }}
+                        fontWeight="bold"
+                        textAlign="center"
+                        color="gray.800"
+                      >
+                        {spinner.first_name}
+                      </Text>
+                    </Box>
+                    <Box
+                      width={{ base: "86px", lg: "120px" }}
+                      height={{ base: "86px", lg: "120px" }}
+                      overflow="hidden"
+                      borderRadius="md"
+                      border="3px solid"
+                      borderColor="gray.300"
+                      boxShadow="sm"
+                    >
+                      <PlayerCard
+                        player={{ ...spinner, id: spinner.player_id }}
+                        size="small"
+                        fillContainer
+                        showName={false}
+                        variant="noBorder"
+                      />
+                    </Box>
+                  </VStack>
                 ))}
               </HStack>
             )}
 
             {/* Current Spinner (left of wheel) - Hidden when winner is determined */}
             {!showWinnerCelebration && currentSpinnerContestant && (
-              <VStack gap={2} marginRight={{ base: "-7em", lg: "-14em" }}>
-                <Box width={{ base: "173px", lg: "240px" }} height={{ base: "173px", lg: "240px" }}>
+              <VStack gap={{ base: 1, lg: 2 }} marginRight={{ base: "-7em", lg: "-14em" }}>
+                <Box
+                  bg="white"
+                  px={{ base: 2, lg: 3 }}
+                  borderRadius="md"
+                  boxShadow="sm"
+                  border="5px solid black"
+                  height={{ base: "36px", lg: "48px" }}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Text
+                    fontSize={{ base: "sm", lg: "xl" }}
+                    fontWeight="bold"
+                    textAlign="center"
+                    color="gray.800"
+                  >
+                    {currentSpinnerContestant.first_name}
+                  </Text>
+                </Box>
+                <Box
+                  width={{ base: "173px", lg: "240px" }}
+                  height={{ base: "173px", lg: "240px" }}
+                  overflow="hidden"
+                  borderRadius="md"
+                  border="3px solid"
+                  borderColor="blue.500"
+                  boxShadow="0 0 20px rgba(59, 130, 246, 0.6)"
+                >
                   <PlayerCard
                     player={{
                       ...currentSpinnerContestant,
@@ -492,50 +545,49 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                     }}
                     size="large"
                     fillContainer
-                    variant="highlighted"
+                    variant="noBorder"
                     showName={false}
-                  >
-                    <VStack gap={{ base: 2, lg: 6 }} width="100%" alignItems="center">
-                      {!isWheelAnimating && (
-                        <Text
-                          fontSize={{ base: "md", lg: "2xl" }}
-                          fontWeight="bold"
-                          color="blue.500"
-                          textAlign="center"
-                          bg="black"
-                          px={{ base: 2, lg: 3 }}
-                          py={1}
-                          borderRadius="md"
-                          boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
-                        >
-                          ${currentPlayerTotal.toFixed(2)}
-                        </Text>
-                      )}
-
-                      {/* Player Controls (Stay/Spin Again buttons) */}
-                      {showPlayerControls && (
-                        <HStack gap={2} justifyContent="center">
-                          <Button
-                            onClick={handleStay}
-                            colorPalette="green"
-                            size={{ base: "sm", lg: "md" }}
-                            disabled={isWheelAnimating}
-                          >
-                            Stay
-                          </Button>
-                          <Button
-                            onClick={handleSpinAgain}
-                            colorPalette="blue"
-                            size={{ base: "sm", lg: "md" }}
-                            disabled={isWheelAnimating}
-                          >
-                            Spin Again
-                          </Button>
-                        </HStack>
-                      )}
-                    </VStack>
-                  </PlayerCard>
+                  />
                 </Box>
+
+                {/* Total and controls - OUTSIDE overflow:hidden so they're not clipped */}
+                {!isWheelAnimating && (
+                  <Text
+                    fontSize={{ base: "md", lg: "2xl" }}
+                    fontWeight="bold"
+                    color="blue.500"
+                    textAlign="center"
+                    bg="black"
+                    px={{ base: 2, lg: 3 }}
+                    py={1}
+                    borderRadius="md"
+                    boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                  >
+                    ${currentPlayerTotal.toFixed(2)}
+                  </Text>
+                )}
+
+                {/* Player Controls (Stay/Spin Again buttons) */}
+                {showPlayerControls && (
+                  <HStack gap={2} justifyContent="center">
+                    <Button
+                      onClick={handleStay}
+                      colorPalette="green"
+                      size={{ base: "sm", lg: "md" }}
+                      disabled={isWheelAnimating}
+                    >
+                      Stay
+                    </Button>
+                    <Button
+                      onClick={handleSpinAgain}
+                      colorPalette="blue"
+                      size={{ base: "sm", lg: "md" }}
+                      disabled={isWheelAnimating}
+                    >
+                      Spin Again
+                    </Button>
+                  </HStack>
+                )}
               </VStack>
             )}
 
@@ -572,115 +624,182 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
               {/* Show winner (large) + runner-up if wheel round is complete, otherwise show leader */}
               {showWinnerCelebration && winnerContestant ? (
                 <VStack gap={{ base: 3, lg: 6 }} alignItems="center">
-                  {/* Winner - Large, no name shown (badge identifies them) */}
-                  <Box width={{ base: "173px", lg: "240px" }} height={{ base: "173px", lg: "240px" }}>
-                    <PlayerCard
-                      player={{ ...winnerContestant, id: winnerContestant.player_id }}
-                      size="large"
-                      fillContainer
-                      badge="WINNER"
-                      variant="winner"
+                  {/* Winner - Large */}
+                  <VStack gap={2} alignItems="center">
+                    {/* Badge outside overflow wrapper */}
+                    <Box
+                      bg="green.500"
+                      color="white"
+                      px={3}
+                      py={1}
+                      borderRadius="full"
+                      fontWeight="bold"
+                      fontSize="sm"
+                      boxShadow="md"
                     >
-                      <VStack gap={2} alignItems="center">
-                        <Text
-                          fontSize={{ base: "md", lg: "2xl" }}
-                          fontWeight="bold"
-                          color="green.500"
-                          textAlign="center"
-                          bg="black"
-                          px={{ base: 2, lg: 3 }}
-                          py={1}
-                          borderRadius="md"
-                          boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
-                        >
-                          ${winnerTotal.toFixed(2)}
-                        </Text>
-                      </VStack>
-                    </PlayerCard>
-                  </Box>
+                      WINNER
+                    </Box>
+                    <Box
+                      width={{ base: "173px", lg: "240px" }}
+                      height={{ base: "173px", lg: "240px" }}
+                      overflow="hidden"
+                      borderRadius="md"
+                      border="3px solid"
+                      borderColor="green.500"
+                      boxShadow="0 0 20px rgba(34, 197, 94, 0.6)"
+                    >
+                      <PlayerCard
+                        player={{ ...winnerContestant, id: winnerContestant.player_id }}
+                        size="large"
+                        fillContainer
+                        variant="noBorder"
+                      />
+                    </Box>
+                    <Text
+                      fontSize={{ base: "md", lg: "2xl" }}
+                      fontWeight="bold"
+                      color="green.500"
+                      textAlign="center"
+                      bg="black"
+                      px={{ base: 2, lg: 3 }}
+                      py={1}
+                      borderRadius="md"
+                      boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                    >
+                      ${winnerTotal.toFixed(2)}
+                    </Text>
+                  </VStack>
 
                   {/* Runner-up - Small, beneath winner */}
                   {runnerUpContestant && (
-                    <Box width={{ base: "86px", lg: "120px" }} height={{ base: "86px", lg: "120px" }}>
-                      <PlayerCard
-                        player={{
-                          ...runnerUpContestant,
-                          id: runnerUpContestant.player_id,
-                        }}
-                        size="small"
-                        fillContainer
-                        showName={false}
+                    <VStack gap={1} alignItems="center">
+                      <Box
+                        width={{ base: "86px", lg: "120px" }}
+                        height={{ base: "86px", lg: "120px" }}
+                        overflow="hidden"
+                        borderRadius="md"
+                        border="3px solid"
+                        borderColor="gray.300"
+                        boxShadow="sm"
                       >
-                        <Text
-                          fontSize={{ base: "xs", lg: "md" }}
-                          fontWeight="bold"
-                          color="gray.500"
-                          textAlign="center"
-                          bg="black"
-                          px={{ base: 1, lg: 3 }}
-                          py={1}
-                          borderRadius="md"
-                          boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
-                        >
-                          ${runnerUpTotal.toFixed(2)}
-                        </Text>
-                      </PlayerCard>
-                    </Box>
+                        <PlayerCard
+                          player={{
+                            ...runnerUpContestant,
+                            id: runnerUpContestant.player_id,
+                          }}
+                          size="small"
+                          fillContainer
+                          showName={false}
+                          variant="noBorder"
+                        />
+                      </Box>
+                      <Text
+                        fontSize={{ base: "xs", lg: "md" }}
+                        fontWeight="bold"
+                        color="gray.500"
+                        textAlign="center"
+                        bg="black"
+                        px={{ base: 1, lg: 3 }}
+                        py={1}
+                        borderRadius="md"
+                        boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                      >
+                        ${runnerUpTotal.toFixed(2)}
+                      </Text>
+                    </VStack>
                   )}
                 </VStack>
               ) : needsSpinoff && tiedPlayers.length > 0 ? (
-                <VStack gap={{ base: 8, lg: 16 }} alignItems="center">
-                  {/* Show all tied players - extra gap for badge spacing */}
+                <VStack gap={{ base: 6, lg: 12 }} alignItems="center">
+                  {/* Show all tied players */}
                   {tiedPlayers.map((player) => (
-                    <Box key={player.player_id} width={{ base: "108px", lg: "150px" }} height={{ base: "108px", lg: "150px" }}>
-                      <PlayerCard
-                        player={{ ...player, id: player.player_id }}
-                        size="medium"
-                        fillContainer
-                        showName={false}
-                        badge="TIE"
+                    <VStack key={player.player_id} gap={2} alignItems="center">
+                      {/* Badge outside overflow wrapper */}
+                      <Box
+                        bg="orange.500"
+                        color="white"
+                        px={3}
+                        py={1}
+                        borderRadius="full"
+                        fontWeight="bold"
+                        fontSize="sm"
+                        boxShadow="md"
                       >
-                        <VStack gap={2} alignItems="center">
-                          <Text
-                            fontSize={{ base: "md", lg: "2xl" }}
-                            fontWeight="bold"
-                            color="yellow.500"
-                            textAlign="center"
-                          >
-                            ${leaderTotal.toFixed(2)}
-                          </Text>
-                        </VStack>
-                      </PlayerCard>
-                    </Box>
+                        TIE
+                      </Box>
+                      <Box
+                        width={{ base: "108px", lg: "150px" }}
+                        height={{ base: "108px", lg: "150px" }}
+                        overflow="hidden"
+                        borderRadius="md"
+                        border="3px solid"
+                        borderColor="yellow.400"
+                        boxShadow="0 0 15px rgba(250, 204, 21, 0.5)"
+                      >
+                        <PlayerCard
+                          player={{ ...player, id: player.player_id }}
+                          size="medium"
+                          fillContainer
+                          showName={false}
+                          variant="noBorder"
+                        />
+                      </Box>
+                      <Text
+                        fontSize={{ base: "md", lg: "2xl" }}
+                        fontWeight="bold"
+                        color="yellow.500"
+                        textAlign="center"
+                      >
+                        ${leaderTotal.toFixed(2)}
+                      </Text>
+                    </VStack>
                   ))}
                 </VStack>
               ) : leaderContestant ? (
                 <VStack gap={2} alignItems="center">
-                  <Box width={{ base: "108px", lg: "150px" }} height={{ base: "108px", lg: "150px" }}>
+                  {/* Badge outside overflow wrapper */}
+                  <Box
+                    bg="yellow.500"
+                    color="white"
+                    px={3}
+                    py={1}
+                    borderRadius="full"
+                    fontWeight="bold"
+                    fontSize="sm"
+                    boxShadow="md"
+                  >
+                    LEADER
+                  </Box>
+                  <Box
+                    width={{ base: "108px", lg: "150px" }}
+                    height={{ base: "108px", lg: "150px" }}
+                    overflow="hidden"
+                    borderRadius="md"
+                    border="3px solid"
+                    borderColor="green.500"
+                    boxShadow="0 0 15px rgba(34, 197, 94, 0.5)"
+                  >
                     <PlayerCard
                       player={{ ...leaderContestant, id: leaderContestant.player_id }}
                       size="medium"
                       fillContainer
                       showName={false}
-                      badge="LEADER"
-                    >
-                      <VStack gap={2} alignItems="center">
-                        <Text
-                          fontSize={{ base: "md", lg: "2xl" }}
-                          fontWeight="bold"
-                          color="green.500"
-                          textAlign="center"
-                          bg="black"
-                          px={{ base: 2, lg: 3 }}
-                          py={1}
-                          borderRadius="md"
-                          boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
-                        >
-                          ${leaderTotal.toFixed(2)}
-                        </Text>
-                      </VStack>
-                    </PlayerCard>
+                      variant="noBorder"
+                    />
                   </Box>
+                  <Text
+                    fontSize={{ base: "md", lg: "2xl" }}
+                    fontWeight="bold"
+                    color="green.500"
+                    textAlign="center"
+                    bg="black"
+                    px={{ base: 2, lg: 3 }}
+                    py={1}
+                    borderRadius="md"
+                    boxShadow="0 0 10px rgba(255, 255, 255, 0.5)"
+                  >
+                    ${leaderTotal.toFixed(2)}
+                  </Text>
                 </VStack>
               ) : null}
             </Box>
@@ -712,6 +831,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
         onRestartGame={handleRestartGame}
         onStartNewGame={handleStartNewGame}
         onRefreshGameState={handleRefreshGameState}
+        onGoToPreviousPhase={goToPreviousPhase}
         showNextSpinnerButton={!!showNextSpinnerButton}
       />
     </>

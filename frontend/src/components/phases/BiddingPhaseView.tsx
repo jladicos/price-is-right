@@ -31,6 +31,7 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
     unlockBid,
     updateBidAmount,
     advancePhase,
+    goToPreviousPhase,
     revealContestant,
     replaceContestantRandom,
     manualSelectContestant,
@@ -157,12 +158,6 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
         setTimeout(() => {
           setShowAllOverToast(false);
         }, 5000);
-      } else if (result.winner) {
-        showToast({
-          title: "Winner!",
-          description: `${result.winner.first_name} ${result.winner.last_name} wins with $${result.winner.bid_amount}!`,
-          type: "success",
-        });
       }
     } catch (error) {
       showToast({
@@ -321,11 +316,6 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
 
     try {
       await startNewGame();
-      showToast({
-        title: "Game Restarted",
-        description: "New game started. 5 contestants selected.",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -339,11 +329,6 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
   const handleStartNewGame = async () => {
     try {
       await startNewGame();
-      showToast({
-        title: "Game Started",
-        description: "New game started. 5 contestants selected.",
-        type: "success",
-      });
     } catch (error) {
       showToast({
         title: "Error",
@@ -511,6 +496,7 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
         onStartNewGame={handleStartNewGame}
         onRefreshGameState={handleRefreshGameState}
         onRefreshContestantsRow={handleRefreshContestantsRow}
+        onGoToPreviousPhase={goToPreviousPhase}
         isLoading={isRevealingWinner}
       />
 

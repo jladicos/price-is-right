@@ -60,6 +60,9 @@ import { Button, Text, VStack, Input } from "@chakra-ui/react";
 import { Alert } from "./ui/alert";
 import { Field } from "./ui/field";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+
 interface ImportDatabaseModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -111,7 +114,7 @@ export function ImportDatabaseModal({
         throw new Error("Not authenticated");
       }
 
-      const response = await fetch("http://localhost:3001/api/admin/import", {
+      const response = await fetch(`${API_BASE_URL}/admin/import`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

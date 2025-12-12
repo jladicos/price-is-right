@@ -82,12 +82,6 @@ export default function GameViewPage() {
                 onClick={async () => {
                   try {
                     await startNewGame();
-                    showToast({
-                      title: "Game Started",
-                      description:
-                        "5 contestants have been selected. Reveal them to begin!",
-                      type: "success",
-                    });
                   } catch (err) {
                     showToast({
                       title: "Error",
@@ -126,11 +120,6 @@ export default function GameViewPage() {
             onClick={async () => {
               try {
                 await officiallyStartGame();
-                showToast({
-                  title: "Game Started",
-                  description: "Players can now see the game!",
-                  type: "success",
-                });
               } catch (err) {
                 showToast({
                   title: "Error",

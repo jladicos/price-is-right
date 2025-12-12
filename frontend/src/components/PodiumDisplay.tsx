@@ -90,8 +90,8 @@ export function PodiumDisplay({
         opacity={0.4}
         data-testid={`podium-${position}-empty`}
       >
-        {/* Empty name space */}
-        <Box minHeight="32px" />
+        {/* Empty name space - matches revealed state height */}
+        <Box height={{ base: "42px", lg: "52px" }} />
 
         <Box
           width={photoSize}
@@ -145,8 +145,8 @@ export function PodiumDisplay({
         align="stretch"
         data-testid={`podium-${position}-pending`}
       >
-        {/* Blank name space */}
-        <Box minHeight="32px" />
+        {/* Blank name space - matches revealed state height */}
+        <Box height={{ base: "42px", lg: "52px" }} />
 
         {/* Blank photo space */}
         <Box width={photoSize} height={photoSize} alignSelf="center" />
@@ -275,7 +275,7 @@ export function PodiumDisplay({
           borderRadius="md"
           boxShadow="sm"
           border="5px solid black"
-          minHeight="32px"
+          height={{ base: "42px", lg: "52px" }}
           display="flex"
           alignItems="center"
           justifyContent="center"
@@ -292,7 +292,7 @@ export function PodiumDisplay({
         </Box>
       )}
       {/* Empty space for winner to maintain layout */}
-      {isWinner && <Box minHeight="32px" />}
+      {isWinner && <Box height={{ base: "42px", lg: "52px" }} />}
 
       {/* Profile Photo - maintains space but winner image floats above */}
       <Box width={photoSize} height={photoSize} alignSelf="center" position="relative">
@@ -329,6 +329,23 @@ export function PodiumDisplay({
           width={isWinner ? { base: "120px", lg: "240px" } : photoSize}
           height={isWinner ? { base: "120px", lg: "240px" } : photoSize}
           zIndex={isWinner ? 15 : 1}
+          overflow="hidden"
+          borderRadius="md"
+          border="3px solid"
+          borderColor={
+            isWinner
+              ? "green.500"
+              : isCurrentBidder && allContestantsRevealed && productHasBeenShown
+                ? "yellow.400"
+                : "gray.300"
+          }
+          boxShadow={
+            isWinner
+              ? "0 0 20px rgba(34, 197, 94, 0.6)"
+              : isCurrentBidder && allContestantsRevealed && productHasBeenShown
+                ? "0 0 15px rgba(250, 204, 21, 0.5)"
+                : "sm"
+          }
         >
           <PlayerCard
             player={{
@@ -341,15 +358,7 @@ export function PodiumDisplay({
             fillContainer={true}
             showName={false} // Name handled separately above
             badge={undefined} // Badge handled separately for winners
-            variant={
-              isWinner
-                ? "winner"
-                : isCurrentBidder &&
-                    allContestantsRevealed &&
-                    productHasBeenShown
-                  ? "highlighted"
-                  : "default"
-            }
+            variant="noBorder"
           />
         </Box>
       </Box>
