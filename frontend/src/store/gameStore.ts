@@ -127,6 +127,13 @@ export interface ShowcaseStateWithProducts {
   bonusThreshold: number;
 }
 
+// Pending spin for animation sync across clients
+export interface PendingSpin {
+  targetValue: number; // in cents (5-100)
+  timestamp: number; // Date.now() when spin was recorded
+  playerId: number;
+}
+
 export interface GameState {
   workflow: GameWorkflow;
   contestantsRow: ContestantWithPlayer[];
@@ -142,6 +149,7 @@ export interface GameState {
   playerTotals?: PlayerTotal[];
   wheelWinner?: number | null; // player_id of winner
   needsSpinoff?: boolean;
+  pendingSpin?: PendingSpin; // For syncing wheel animation across clients
   // Showcase phase state (populated when phase_type === 'showcase')
   showcaseState?: ShowcaseStateWithProducts;
   showcaseBids?: ShowcaseBidWithPlayer[];
@@ -162,6 +170,7 @@ interface GameStore {
   lastUpdated: number;
   isWheelAnimating: boolean; // UI-only animation state
   pendingSpinTarget: number | null; // Target value for wheel animation (in cents)
+  lastProcessedSpinTimestamp: number | null; // Track which spin we've already animated
 
   // Actions
   fetchGameState: () => Promise<void>;
@@ -206,6 +215,7 @@ interface GameStore {
   stayOnWheelSpin: (playerId: number) => Promise<void>;
   startSpinOff: (spinoffNumber: number) => Promise<void>;
   resetWheelPhase: () => Promise<void>; // Debug: reset to first player
+  triggerWheelAnimation: (targetValue: number, timestamp: number) => void; // Trigger animation from external source
 
   // Showcase actions
   initializeShowcase: () => Promise<void>;
@@ -305,6 +315,7 @@ export const useGameStore = create<GameStore>((set) => ({
   lastUpdated: 0,
   isWheelAnimating: false,
   pendingSpinTarget: null,
+  lastProcessedSpinTimestamp: null,
 
   // Fetch current game state
   fetchGameState: async () => {
@@ -791,7 +802,12 @@ export const useGameStore = create<GameStore>((set) => ({
     if (result.success && result.data) {
       // Store spin result for animation target (convert to cents)
       const spinTargetCents = Math.round(result.data.spin.result * 100);
-      set({ pendingSpinTarget: spinTargetCents, isLoading: false });
+      // Mark this spin as processed so polling won't re-trigger animation
+      set({
+        pendingSpinTarget: spinTargetCents,
+        isLoading: false,
+        lastProcessedSpinTimestamp: Date.now(),
+      });
 
       // Wait for animation to complete + pause, THEN fetch state
       // This ensures winner/tie/elimination only shows after wheel stops
@@ -891,6 +907,22 @@ export const useGameStore = create<GameStore>((set) => ({
       });
       throw new Error(errorMessage);
     }
+  },
+
+  // Trigger wheel animation from external source (e.g., when polling detects a new spin)
+  triggerWheelAnimation: (targetValue: number, timestamp: number) => {
+    set({
+      isWheelAnimating: true,
+      pendingSpinTarget: targetValue,
+      lastProcessedSpinTimestamp: timestamp,
+    });
+
+    // Wait for animation to complete + pause, THEN fetch state
+    // Total: 2.5s animation + 0.5s pause = 3s
+    setTimeout(async () => {
+      await useGameStore.getState().fetchGameState();
+      set({ isWheelAnimating: false, pendingSpinTarget: null });
+    }, 3000);
   },
 
   // Initialize showcase showdown (host only)

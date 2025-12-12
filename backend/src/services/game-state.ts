@@ -67,6 +67,11 @@ export interface GameState {
   wheelWinner?: number | null;
   needsSpinoff?: boolean;
   spinoffNumber?: number;
+  pendingSpin?: {
+    targetValue: number; // in cents (5-100)
+    timestamp: number;
+    playerId: number;
+  };
   // Showcase phase state (populated when phase_type === 'showcase')
   showcaseState?: ReturnType<typeof getShowcaseStateWithProducts>;
   showcaseBids?: ReturnType<typeof getShowcaseBids>;
@@ -197,6 +202,11 @@ export function getCurrentState(): GameState {
     // Get winner/tie info from metadata
     state.wheelWinner = metadata.winnerId || null;
     state.needsSpinoff = metadata.needsSpinoff || false;
+
+    // Include pending spin for animation sync across clients
+    if (metadata.pendingSpin) {
+      state.pendingSpin = metadata.pendingSpin;
+    }
 
     // Determine current wheel position for display
     // Priority: current spinner's last spin > last spin overall > default
@@ -778,6 +788,14 @@ export function processWheelSpin(
     value: spin.result,
     total,
     eliminated,
+  };
+
+  // Add pendingSpin for animation sync across all clients
+  // Other clients polling will see this and trigger their animation
+  metadata.pendingSpin = {
+    targetValue: Math.round(spin.result * 100), // in cents for wheel display
+    timestamp: Date.now(),
+    playerId,
   };
 
   updateGameWorkflow({

@@ -523,12 +523,14 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
                 contestant={player1Contestant}
                 bid={player1BidAdapted}
                 isCurrentBidder={
-                  role === "host" &&
+                  // Player 1 can bid when:
+                  // - No bid yet, not showing pass/bid buttons
+                  // - Their showcase has been revealed
+                  // - Either host or the player themselves can see the controls (handled in PodiumDisplay)
                   !player1Bid &&
                   !showPassBidButtons &&
-                  showcase1Revealed &&
-                  (player1Showcase === 1 || // Player 1 chose to bid on showcase 1
-                    (player1Passed && player1Showcase === 2 && showcase2Revealed)) // Or passed and now bids on showcase 2
+                  ((player1Showcase === 1 && showcase1Revealed) || // Player 1 bids on showcase 1
+                    (player1Showcase === 2 && showcase2Revealed)) // Or player 1 bids on showcase 2 (if they passed)
                 }
                 isWinner={winnerId === player1?.id}
                 role={role}
@@ -551,7 +553,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
                 contestant={player2Contestant}
                 bid={player2BidAdapted}
                 isCurrentBidder={
-                  role === "host" &&
+                  // Player 2 can bid when:
+                  // - No bid yet, not showing pass/bid buttons
+                  // - Their showcase has been revealed
                   !player2Bid &&
                   !showPassBidButtons &&
                   ((player2Showcase === 1 && showcase1Revealed) || // Player 2 bids on showcase 1 (if player 1 passed)

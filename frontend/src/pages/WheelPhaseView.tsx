@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Box, HStack, VStack, Button, Text } from "@chakra-ui/react";
 import { WheelDisplay } from "../components/WheelDisplay";
 import { PlayerCard } from "../components/PlayerCard";
@@ -44,6 +44,8 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     startNewGame,
     fetchGameState,
     resetWheelPhase,
+    triggerWheelAnimation,
+    lastProcessedSpinTimestamp,
   } = useGameStore();
 
   const role = currentPlayer?.role || "audience";
@@ -54,6 +56,30 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     () => gameState.wheelSpins || [],
     [gameState.wheelSpins],
   );
+
+  // Detect pending spins from other clients and trigger local animation
+  // This syncs the wheel animation across all connected clients
+  useEffect(() => {
+    const pendingSpin = gameState.pendingSpin;
+
+    if (!pendingSpin) return;
+
+    // Skip if we're already animating
+    if (isWheelAnimating) return;
+
+    // Skip if we've already processed this spin (or a newer one)
+    if (lastProcessedSpinTimestamp && pendingSpin.timestamp <= lastProcessedSpinTimestamp) {
+      return;
+    }
+
+    // Skip if the spin is too old (more than 4 seconds) - stale data
+    const spinAge = Date.now() - pendingSpin.timestamp;
+    if (spinAge > 4000) return;
+
+    // Trigger the animation locally
+    triggerWheelAnimation(pendingSpin.targetValue, pendingSpin.timestamp);
+  }, [gameState.pendingSpin, isWheelAnimating, lastProcessedSpinTimestamp, triggerWheelAnimation]);
+
   const currentSpinnerId = gameState.currentSpinner;
   const currentWheelPosition = gameState.currentWheelPosition || 100; // Backend provides position
   const playerTotals = gameState.playerTotals || [];
