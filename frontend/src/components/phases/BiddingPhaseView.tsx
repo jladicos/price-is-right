@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
-import { Box, HStack, VStack, Button } from "@chakra-ui/react";
-import { PodiumsRow } from "../PodiumsRow";
-import { ProductModal } from "../ProductModal";
-import { ProductInsetCard } from "../ProductInsetCard";
-import { GameControlStrip } from "../GameControlStrip";
-import { ManualSelectContestantModal } from "../ManualSelectContestantModal";
-import { PhaseBackground } from "../PhaseBackground";
-import { useGameStore } from "../../store/gameStore";
-import { useAuthStore } from "../../store/authStore";
-import { showToast } from "../../utils/toast";
-import { apiRequest } from "../../utils/api";
-import type { GameState } from "../../store/gameStore";
+import { useState, useEffect } from 'react';
+import { Box, HStack, VStack, Button } from '@chakra-ui/react';
+import { PodiumsRow } from '../PodiumsRow';
+import { ProductModal } from '../ProductModal';
+import { ProductInsetCard } from '../ProductInsetCard';
+import { GameControlStrip } from '../GameControlStrip';
+import { ManualSelectContestantModal } from '../ManualSelectContestantModal';
+import { PhaseBackground } from '../PhaseBackground';
+import { useGameStore } from '../../store/gameStore';
+import { useAuthStore } from '../../store/authStore';
+import { showToast } from '../../utils/toast';
+import { apiRequest } from '../../utils/api';
+import type { GameState } from '../../store/gameStore';
 
 interface BiddingPhaseViewProps {
   gameState: GameState;
@@ -45,11 +45,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
   const [showAllOverToast, setShowAllOverToast] = useState(false);
   const [isRevealingWinner, setIsRevealingWinner] = useState(false);
   const [isManualSelectModalOpen, setIsManualSelectModalOpen] = useState(false);
-  const [manualSelectPosition, setManualSelectPosition] = useState<
-    number | null
-  >(null);
+  const [manualSelectPosition, setManualSelectPosition] = useState<number | null>(null);
 
-  const role = currentPlayer?.role || "audience";
+  const role = currentPlayer?.role || 'audience';
   // Backend now filters contestants by current segment, so we can use them directly
   const contestants = gameState.contestantsRow;
   const currentBids = gameState.currentBids || [];
@@ -66,7 +64,7 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
   const productPrice = metadata.product_price;
   const winnerInfo = metadata.winner_info;
   const hasWinnerBeenRevealed =
-    winnerInfo && typeof winnerInfo === "object" && winnerInfo.player_id;
+    winnerInfo && typeof winnerInfo === 'object' && winnerInfo.player_id;
 
   // Fetch product data when productId changes
   useEffect(() => {
@@ -81,11 +79,11 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
 
         setProduct(data.product);
       } catch (error) {
-        console.error("Error fetching product:", error);
+        console.error('Error fetching product:', error);
         showToast({
-          title: "Error",
-          description: "Failed to load product information",
-          type: "error",
+          title: 'Error',
+          description: 'Failed to load product information',
+          type: 'error',
         });
       }
     };
@@ -100,13 +98,11 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
 
   // Calculate derived state
   const winnerPosition = winnerInfo ? winnerInfo.position : null;
-  const allContestantsRevealed = contestants.every(
-    (c) => c.status === "active",
-  );
+  const allContestantsRevealed = contestants.every((c) => c.status === 'active');
   const productHasBeenShown = productModalVisible || productInsetVisible;
   const allBidsSubmitted =
-    contestants.filter((c) => c.status === "active").length ===
-      currentBids.length && currentBids.length === 5;
+    contestants.filter((c) => c.status === 'active').length === currentBids.length &&
+    currentBids.length === 5;
 
   // Handlers
   const handleShowProduct = async () => {
@@ -118,10 +114,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
       // Revert on error
       setIsProductModalOpen(false);
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to show product",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to show product',
+        type: 'error',
       });
     }
   };
@@ -135,12 +130,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
       // Revert on error
       setIsProductModalOpen(true);
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to hide product modal",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to hide product modal',
+        type: 'error',
       });
     }
   };
@@ -161,10 +153,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
       }
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to reveal winner",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to reveal winner',
+        type: 'error',
       });
     } finally {
       setIsRevealingWinner(false);
@@ -180,10 +171,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
       await submitBid(amount, playerId);
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to submit bid",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to submit bid',
+        type: 'error',
       });
     }
   };
@@ -193,10 +183,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
       await unlockBid(bidId);
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to unlock bid",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to unlock bid',
+        type: 'error',
       });
     }
   };
@@ -205,16 +194,15 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
     try {
       await updateBidAmount(bidId, newAmount);
       showToast({
-        title: "Bid Updated",
+        title: 'Bid Updated',
         description: `Bid updated to $${newAmount}`,
-        type: "success",
+        type: 'success',
       });
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to update bid",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update bid',
+        type: 'error',
       });
     }
   };
@@ -224,10 +212,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
       await advancePhase();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to advance phase",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to advance phase',
+        type: 'error',
       });
     }
   };
@@ -241,12 +228,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
       await revealContestant(contestantRowId);
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to reveal contestant",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to reveal contestant',
+        type: 'error',
       });
     }
   };
@@ -255,62 +239,45 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
     try {
       await replaceContestantRandom(contestantRowId);
       showToast({
-        title: "Contestant Replaced",
-        description: "Random contestant selected. Reveal them to continue!",
-        type: "success",
+        title: 'Contestant Replaced',
+        description: 'Random contestant selected. Reveal them to continue!',
+        type: 'success',
       });
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to replace contestant",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to replace contestant',
+        type: 'error',
       });
     }
   };
 
-  const handleReplaceContestantManual = async (
-    _contestantRowId: number,
-    position: number,
-  ) => {
+  const handleReplaceContestantManual = async (_contestantRowId: number, position: number) => {
     setManualSelectPosition(position);
     setIsManualSelectModalOpen(true);
   };
 
-  const handleManualSelectConfirm = async (
-    playerId: number,
-    position: number,
-    segment: string,
-  ) => {
+  const handleManualSelectConfirm = async (playerId: number, position: number, segment: string) => {
     try {
       await manualSelectContestant(playerId, position, segment);
       setIsManualSelectModalOpen(false);
       setManualSelectPosition(null);
       showToast({
-        title: "Contestant Selected",
-        description: "Contestant manually selected. Reveal them to continue!",
-        type: "success",
+        title: 'Contestant Selected',
+        description: 'Contestant manually selected. Reveal them to continue!',
+        type: 'success',
       });
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to select contestant",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to select contestant',
+        type: 'error',
       });
     }
   };
 
   const handleRestartGame = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to restart the game? This will reset everything.",
-      )
-    ) {
+    if (!confirm('Are you sure you want to restart the game? This will reset everything.')) {
       return;
     }
 
@@ -318,10 +285,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
       await startNewGame();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to restart game",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to restart game',
+        type: 'error',
       });
     }
   };
@@ -331,10 +297,9 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
       await startNewGame();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to start new game",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to start new game',
+        type: 'error',
       });
     }
   };
@@ -344,39 +309,31 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
       await fetchGameState();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to refresh game state",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to refresh game state',
+        type: 'error',
       });
     }
   };
 
   const handleRefreshContestantsRow = async () => {
-    if (!confirm("Replace all 5 contestants with new random selections?")) {
+    if (!confirm('Replace all 5 contestants with new random selections?')) {
       return;
     }
 
     try {
-      const currentSegment = gameState.workflow.current_segment as
-        | "section_1"
-        | "section_2";
+      const currentSegment = gameState.workflow.current_segment as 'section_1' | 'section_2';
       await refreshContestantsRow(currentSegment);
       showToast({
-        title: "Row Refreshed",
-        description: "5 new contestants selected. Reveal them to continue!",
-        type: "success",
+        title: 'Row Refreshed',
+        description: '5 new contestants selected. Reveal them to continue!',
+        type: 'success',
       });
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to refresh contestants row",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to refresh contestants row',
+        type: 'error',
       });
     }
   };
@@ -385,14 +342,7 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
     <>
       <PhaseBackground phase="bidding">
         {/* Black bar behind podiums - full width, 10.5em tall, at bottom of PhaseBackground */}
-        <Box
-          position="absolute"
-          left={0}
-          right={0}
-          bottom={0}
-          height="10.5em"
-          bg="black"
-        />
+        <Box position="absolute" left={0} right={0} bottom={0} height="10.5em" bg="black" />
         <VStack
           gap={8}
           width="100%"
@@ -434,7 +384,7 @@ export function BiddingPhaseView({ gameState }: BiddingPhaseViewProps) {
 
             {/* Product Inset Card - space reservation (actual card is fixed position) */}
             {productInsetVisible && (
-              <Box width={{ base: "135px", lg: "250px" }} flexShrink={0}>
+              <Box width={{ base: '135px', lg: '250px' }} flexShrink={0}>
                 <ProductInsetCard
                   product={product}
                   productId={productId}

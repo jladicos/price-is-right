@@ -1,5 +1,5 @@
-import { HStack, VStack, Text, Box } from "@chakra-ui/react";
-import { PlayerCard } from "./PlayerCard";
+import { HStack, VStack, Text, Box } from '@chakra-ui/react';
+import { PlayerCard } from './PlayerCard';
 
 interface Contestant {
   player_id: number;
@@ -113,12 +113,7 @@ export function WheelPlayers({
             showName
           >
             {!hideSpinValue && (
-              <Text
-                fontSize="2xl"
-                fontWeight="bold"
-                color="green.500"
-                data-testid="leader-total"
-              >
+              <Text fontSize="2xl" fontWeight="bold" color="green.500" data-testid="leader-total">
                 ${(leaderTotal || 0).toFixed(2)}
               </Text>
             )}

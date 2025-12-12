@@ -1,7 +1,7 @@
-import { Box } from "@chakra-ui/react";
-import type { ReactNode } from "react";
+import { Box } from '@chakra-ui/react';
+import type { ReactNode } from 'react';
 
-type PhaseType = "bidding" | "wheel" | "showcase";
+type PhaseType = 'bidding' | 'wheel' | 'showcase';
 
 interface PhaseBackgroundProps {
   phase: PhaseType;
@@ -9,9 +9,9 @@ interface PhaseBackgroundProps {
 }
 
 const BACKGROUND_IMAGES: Record<PhaseType, string> = {
-  bidding: "/images/phases/bidding-background.png",
-  wheel: "/images/phases/spin-the-wheel.png",
-  showcase: "/images/phases/showcase-showdown.png",
+  bidding: '/images/phases/bidding-background.png',
+  wheel: '/images/phases/spin-the-wheel.png',
+  showcase: '/images/phases/showcase-showdown.png',
 };
 
 // Opacity for background images (1 = full opacity)
@@ -23,9 +23,9 @@ const BACKGROUND_OPACITY: Record<PhaseType, number> = {
 
 // Background position for each phase
 const BACKGROUND_POSITION: Record<PhaseType, string> = {
-  bidding: "center",
-  wheel: "top right",
-  showcase: "center",
+  bidding: 'center',
+  wheel: 'top right',
+  showcase: 'center',
 };
 
 /**

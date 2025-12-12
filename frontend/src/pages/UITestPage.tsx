@@ -1,24 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  Container,
-  VStack,
-  HStack,
-  Heading,
-  Text,
-  Button,
-  Spinner,
-  Center,
-} from "@chakra-ui/react";
-import { BiddingPhaseView } from "../components/phases/BiddingPhaseView";
-import { WheelPhaseView } from "./WheelPhaseView";
-import { ShowcasePhaseView } from "../components/phases/ShowcasePhaseView";
-import { apiRequest } from "../utils/api";
-import { showToast } from "../utils/toast";
-import type { GameState } from "../store/gameStore";
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Box, VStack, HStack, Heading, Text, Button, Spinner, Center } from '@chakra-ui/react';
+import { BiddingPhaseView } from '../components/phases/BiddingPhaseView';
+import { WheelPhaseView } from './WheelPhaseView';
+import { ShowcasePhaseView } from '../components/phases/ShowcasePhaseView';
+import { apiRequest } from '../utils/api';
+import { showToast } from '../utils/toast';
+import type { GameState } from '../store/gameStore';
 
-type PhaseTab = "bidding" | "wheel" | "showcase";
+type PhaseTab = 'bidding' | 'wheel' | 'showcase';
 
 interface TestDataResponse {
   phase: PhaseTab;
@@ -33,7 +23,7 @@ interface TestDataResponse {
 
 export default function UITestPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<PhaseTab>("bidding");
+  const [activeTab, setActiveTab] = useState<PhaseTab>('bidding');
   const [testData, setTestData] = useState<TestDataResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,18 +33,15 @@ export default function UITestPage() {
     setError(null);
 
     try {
-      const response = await apiRequest<TestDataResponse>(
-        `/admin/ui-test-data?phase=${phase}`
-      );
+      const response = await apiRequest<TestDataResponse>(`/admin/ui-test-data?phase=${phase}`);
       setTestData(response);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to fetch test data";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch test data';
       setError(errorMessage);
       showToast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        type: "error",
+        type: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -83,7 +70,7 @@ export default function UITestPage() {
       return (
         <Center h="400px">
           <VStack gap={4}>
-            <Text color="red.500">{error || "No test data available"}</Text>
+            <Text color="red.500">{error || 'No test data available'}</Text>
             <Button onClick={() => fetchTestData(activeTab)}>Retry</Button>
           </VStack>
         </Center>
@@ -92,11 +79,11 @@ export default function UITestPage() {
 
     // Render the appropriate phase view with test data
     switch (activeTab) {
-      case "bidding":
+      case 'bidding':
         return <BiddingPhaseView gameState={testData.testState} />;
-      case "wheel":
+      case 'wheel':
         return <WheelPhaseView gameState={testData.testState} />;
-      case "showcase":
+      case 'showcase':
         return <ShowcasePhaseView gameState={testData.testState} />;
       default:
         return null;
@@ -130,43 +117,35 @@ export default function UITestPage() {
             {/* Tab buttons */}
             <Button
               size="sm"
-              colorPalette={activeTab === "bidding" ? "blue" : "gray"}
-              variant={activeTab === "bidding" ? "solid" : "outline"}
-              onClick={() => handleTabChange("bidding")}
+              colorPalette={activeTab === 'bidding' ? 'blue' : 'gray'}
+              variant={activeTab === 'bidding' ? 'solid' : 'outline'}
+              onClick={() => handleTabChange('bidding')}
             >
               Bidding
             </Button>
             <Button
               size="sm"
-              colorPalette={activeTab === "wheel" ? "blue" : "gray"}
-              variant={activeTab === "wheel" ? "solid" : "outline"}
-              onClick={() => handleTabChange("wheel")}
+              colorPalette={activeTab === 'wheel' ? 'blue' : 'gray'}
+              variant={activeTab === 'wheel' ? 'solid' : 'outline'}
+              onClick={() => handleTabChange('wheel')}
             >
               Wheel
             </Button>
             <Button
               size="sm"
-              colorPalette={activeTab === "showcase" ? "blue" : "gray"}
-              variant={activeTab === "showcase" ? "solid" : "outline"}
-              onClick={() => handleTabChange("showcase")}
+              colorPalette={activeTab === 'showcase' ? 'blue' : 'gray'}
+              variant={activeTab === 'showcase' ? 'solid' : 'outline'}
+              onClick={() => handleTabChange('showcase')}
             >
               Showcase
             </Button>
 
             <Box w="1px" h="24px" bg="gray.300" mx={2} />
 
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => fetchTestData(activeTab)}
-            >
+            <Button size="sm" variant="outline" onClick={() => fetchTestData(activeTab)}>
               Refresh Data
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => navigate("/welcome")}
-            >
+            <Button size="sm" variant="outline" onClick={() => navigate('/welcome')}>
               Exit
             </Button>
           </HStack>

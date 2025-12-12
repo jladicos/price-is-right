@@ -1,13 +1,13 @@
-import { useMemo, useEffect } from "react";
-import { Box, HStack, VStack, Button, Text } from "@chakra-ui/react";
-import { WheelDisplay } from "../components/WheelDisplay";
-import { PlayerCard } from "../components/PlayerCard";
-import { GameControlStrip } from "../components/GameControlStrip";
-import { PhaseBackground } from "../components/PhaseBackground";
-import { useGameStore } from "../store/gameStore";
-import { useAuthStore } from "../store/authStore";
-import { showToast } from "../utils/toast";
-import type { GameState } from "../store/gameStore";
+import { useMemo, useEffect } from 'react';
+import { Box, HStack, VStack, Button, Text } from '@chakra-ui/react';
+import { WheelDisplay } from '../components/WheelDisplay';
+import { PlayerCard } from '../components/PlayerCard';
+import { GameControlStrip } from '../components/GameControlStrip';
+import { PhaseBackground } from '../components/PhaseBackground';
+import { useGameStore } from '../store/gameStore';
+import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
+import type { GameState } from '../store/gameStore';
 
 interface WheelPhaseViewProps {
   gameState: GameState;
@@ -48,14 +48,11 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     lastProcessedSpinTimestamp,
   } = useGameStore();
 
-  const role = currentPlayer?.role || "audience";
+  const role = currentPlayer?.role || 'audience';
   const currentPlayerId = currentPlayer?.id;
 
   // Parse wheel state from gameState
-  const wheelSpins = useMemo(
-    () => gameState.wheelSpins || [],
-    [gameState.wheelSpins],
-  );
+  const wheelSpins = useMemo(() => gameState.wheelSpins || [], [gameState.wheelSpins]);
 
   // Detect pending spins from other clients and trigger local animation
   // This syncs the wheel animation across all connected clients
@@ -103,26 +100,17 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
   const hasAnyCompletedTurn = wheelParticipants.some((p) => {
     // Filter spins by current spinoff number
     const spins = wheelSpins.filter(
-      (s) =>
-        s.player_id === p.player_id &&
-        s.spinoff_number === currentSpinoffNumber,
+      (s) => s.player_id === p.player_id && s.spinoff_number === currentSpinoffNumber,
     );
     const pt = playerTotals.find((pt) => pt.player_id === p.player_id);
 
     // Completed if eliminated OR if they've spun and are not the current spinner
-    return (
-      pt?.eliminated || (spins.length > 0 && p.player_id !== currentSpinnerId)
-    );
+    return pt?.eliminated || (spins.length > 0 && p.player_id !== currentSpinnerId);
   });
 
   const leaderTotal = hasAnyCompletedTurn
     ? playerTotals
-        .filter(
-          (pt) =>
-            !pt.eliminated &&
-            pt.total <= 100 &&
-            pt.player_id !== currentSpinnerId,
-        )
+        .filter((pt) => !pt.eliminated && pt.total <= 100 && pt.player_id !== currentSpinnerId)
         .reduce((max, pt) => (pt.total > max ? pt.total : max), 0)
     : 0;
 
@@ -131,10 +119,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       ? wheelParticipants.find((c) => {
           const pt = playerTotals.find((p) => p.player_id === c.player_id);
           return (
-            pt &&
-            pt.total === leaderTotal &&
-            !pt.eliminated &&
-            c.player_id !== currentSpinnerId // Exclude current spinner from leader position
+            pt && pt.total === leaderTotal && !pt.eliminated && c.player_id !== currentSpinnerId // Exclude current spinner from leader position
           );
         })
       : null;
@@ -152,9 +137,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     const pt = playerTotals.find((p) => p.player_id === c.player_id);
     // Filter spins by current spinoff number
     const spins = wheelSpins.filter(
-      (s) =>
-        s.player_id === c.player_id &&
-        s.spinoff_number === currentSpinoffNumber,
+      (s) => s.player_id === c.player_id && s.spinoff_number === currentSpinoffNumber,
     );
 
     // Skip eliminated players (they disappear)
@@ -167,10 +150,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     if (c.player_id === leaderContestant?.player_id) return false;
 
     // Skip tied players when spinoff needed (shown on left)
-    if (
-      needsSpinoff &&
-      tiedPlayers.some((tp) => tp.player_id === c.player_id)
-    ) {
+    if (needsSpinoff && tiedPlayers.some((tp) => tp.player_id === c.player_id)) {
       return false;
     }
 
@@ -190,9 +170,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
   // Get current player's spin count (in current round)
   const currentPlayerSpins = currentSpinnerId
     ? wheelSpins.filter(
-        (s) =>
-          s.player_id === currentSpinnerId &&
-          s.spinoff_number === currentSpinoffNumber,
+        (s) => s.player_id === currentSpinnerId && s.spinoff_number === currentSpinoffNumber,
       ).length
     : 0;
 
@@ -203,18 +181,18 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
   const handleSpin = async () => {
     if (!currentPlayerId) {
       showToast({
-        title: "Error",
-        description: "You must be logged in to spin",
-        type: "error",
+        title: 'Error',
+        description: 'You must be logged in to spin',
+        type: 'error',
       });
       return;
     }
 
-    if (!isCurrentSpinner && role !== "host") {
+    if (!isCurrentSpinner && role !== 'host') {
       showToast({
-        title: "Not Your Turn",
-        description: "Wait for your turn to spin",
-        type: "warning",
+        title: 'Not Your Turn',
+        description: 'Wait for your turn to spin',
+        type: 'warning',
       });
       return;
     }
@@ -222,7 +200,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     try {
       // Host spins for the current spinner
       // If no current spinner or spinner is done, silently ignore (wheel should be inactive)
-      if (role === "host") {
+      if (role === 'host') {
         if (!currentSpinnerId || currentSpinnerIsDone) {
           return;
         }
@@ -234,10 +212,9 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       }
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to spin wheel",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to spin wheel',
+        type: 'error',
       });
     }
   };
@@ -246,18 +223,16 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     try {
       // Host stays for current spinner, player stays for themselves
       const playerIdToStay =
-        role === "host" && currentSpinnerId
-          ? currentSpinnerId
-          : currentPlayerId;
+        role === 'host' && currentSpinnerId ? currentSpinnerId : currentPlayerId;
 
       if (!playerIdToStay) return;
 
       await stayOnWheelSpin(playerIdToStay);
     } catch (error) {
       showToast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to stay",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to stay',
+        type: 'error',
       });
     }
   };
@@ -266,19 +241,16 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     try {
       // Host spins for current spinner, player spins for themselves
       const playerIdToSpin =
-        role === "host" && currentSpinnerId
-          ? currentSpinnerId
-          : currentPlayerId;
+        role === 'host' && currentSpinnerId ? currentSpinnerId : currentPlayerId;
 
       if (!playerIdToSpin) return;
 
       await spinWheel(playerIdToSpin);
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to spin again",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to spin again',
+        type: 'error',
       });
     }
   };
@@ -290,16 +262,15 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       // Complete the current player's turn, which advances to next spinner
       await stayOnWheelSpin(currentSpinnerId);
       showToast({
-        title: "Turn Complete",
-        description: "Moving to next spinner",
-        type: "success",
+        title: 'Turn Complete',
+        description: 'Moving to next spinner',
+        type: 'success',
       });
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to advance spinner",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to advance spinner',
+        type: 'error',
       });
     }
   };
@@ -309,16 +280,15 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       const nextSpinoffNumber = (spinoffNumber || 0) + 1;
       await startSpinOff(nextSpinoffNumber);
       showToast({
-        title: "Spin-Off Started",
-        description: "Tie-breaker round begins!",
-        type: "info",
+        title: 'Spin-Off Started',
+        description: 'Tie-breaker round begins!',
+        type: 'info',
       });
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to start spin-off",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to start spin-off',
+        type: 'error',
       });
     }
   };
@@ -328,20 +298,15 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       await advancePhase();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to advance phase",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to advance phase',
+        type: 'error',
       });
     }
   };
 
   const handleRestartGame = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to restart the game? This will reset everything.",
-      )
-    ) {
+    if (!confirm('Are you sure you want to restart the game? This will reset everything.')) {
       return;
     }
 
@@ -349,10 +314,9 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       await startNewGame();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to restart game",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to restart game',
+        type: 'error',
       });
     }
   };
@@ -362,10 +326,9 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       await startNewGame();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to start new game",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to start new game',
+        type: 'error',
       });
     }
   };
@@ -375,12 +338,9 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
       await fetchGameState();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to refresh game state",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to refresh game state',
+        type: 'error',
       });
     }
   };
@@ -389,16 +349,15 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     try {
       await resetWheelPhase();
       showToast({
-        title: "Wheel Reset",
-        description: "Wheel phase has been reset to the first player.",
-        type: "success",
+        title: 'Wheel Reset',
+        description: 'Wheel phase has been reset to the first player.',
+        type: 'success',
       });
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to reset wheel",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to reset wheel',
+        type: 'error',
       });
     }
   };
@@ -408,13 +367,9 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
   // NOTE: In spin-off rounds, players only get 1 spin - no Stay/Spin Again option
   const isInSpinoff = currentSpinoffNumber > 0;
   const currentSpinnerHasSpunOnce =
-    currentPlayerSpins === 1 &&
-    currentPlayerTotal < 100 &&
-    currentPlayerTotal > 0 &&
-    !isInSpinoff; // No second spin option in spin-offs
+    currentPlayerSpins === 1 && currentPlayerTotal < 100 && currentPlayerTotal > 0 && !isInSpinoff; // No second spin option in spin-offs
 
-  const showPlayerControls =
-    currentSpinnerHasSpunOnce && (isCurrentSpinner || role === "host");
+  const showPlayerControls = currentSpinnerHasSpunOnce && (isCurrentSpinner || role === 'host');
 
   // Current spinner is "done" when they've used both spins or are eliminated
   const currentSpinnerIsDone =
@@ -427,7 +382,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
   // Show "Next Spinner" button for host when current spinner has spun at least once
   // and there are more players waiting to spin
   const showNextSpinnerButton =
-    role === "host" &&
+    role === 'host' &&
     currentSpinnerId &&
     currentPlayerSpins > 0 &&
     waitingSpinners.length > 0 &&
@@ -435,7 +390,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     !needsSpinoff;
 
   // Show host controls if user is host
-  const showHostControls = role === "host";
+  const showHostControls = role === 'host';
 
   // Winner celebration - state won't change during animation, so we can use wheelWinner directly
   // showWinnerCelebration will only be true when animation is done AND there's a winner
@@ -450,10 +405,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
   // Find runner-up (second best score, not eliminated, not the winner)
   const runnerUpTotal = showWinnerCelebration
     ? playerTotals
-        .filter(
-          (pt) =>
-            !pt.eliminated && pt.total <= 100 && pt.player_id !== wheelWinner,
-        )
+        .filter((pt) => !pt.eliminated && pt.total <= 100 && pt.player_id !== wheelWinner)
         .reduce((max, pt) => (pt.total > max ? pt.total : max), 0)
     : 0;
 
@@ -461,12 +413,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
     runnerUpTotal > 0
       ? wheelParticipants.find((c) => {
           const pt = playerTotals.find((p) => p.player_id === c.player_id);
-          return (
-            pt &&
-            pt.total === runnerUpTotal &&
-            !pt.eliminated &&
-            c.player_id !== wheelWinner
-          );
+          return pt && pt.total === runnerUpTotal && !pt.eliminated && c.player_id !== wheelWinner;
         })
       : null;
 
@@ -478,7 +425,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
           {/* Wheel positioned 10em from right edge */}
           <HStack
             position="absolute"
-            right={{ base: "1em", lg: "3em" }}
+            right={{ base: '1em', lg: '3em' }}
             top="50%"
             transform="translateY(-50%)"
             gap={{ base: 2, lg: 4 }}
@@ -496,13 +443,13 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                       borderRadius="md"
                       boxShadow="sm"
                       border="5px solid black"
-                      height={{ base: "40px", lg: "54px" }}
+                      height={{ base: '40px', lg: '54px' }}
                       display="flex"
                       alignItems="center"
                       justifyContent="center"
                     >
                       <Text
-                        fontSize={{ base: "xs", lg: "md" }}
+                        fontSize={{ base: 'xs', lg: 'md' }}
                         fontWeight="bold"
                         textAlign="center"
                         color="gray.800"
@@ -511,8 +458,8 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                       </Text>
                     </Box>
                     <Box
-                      width={{ base: "86px", lg: "120px" }}
-                      height={{ base: "86px", lg: "120px" }}
+                      width={{ base: '86px', lg: '120px' }}
+                      height={{ base: '86px', lg: '120px' }}
                       overflow="hidden"
                       borderRadius="md"
                       border="3px solid"
@@ -534,20 +481,20 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
 
             {/* Current Spinner (left of wheel) - Hidden when winner is determined */}
             {!showWinnerCelebration && currentSpinnerContestant && (
-              <VStack gap={{ base: 1, lg: 2 }} marginRight={{ base: "-7em", lg: "-14em" }}>
+              <VStack gap={{ base: 1, lg: 2 }} marginRight={{ base: '-7em', lg: '-14em' }}>
                 <Box
                   bg="white"
                   px={{ base: 2, lg: 3 }}
                   borderRadius="md"
                   boxShadow="sm"
                   border="5px solid black"
-                  height={{ base: "36px", lg: "48px" }}
+                  height={{ base: '36px', lg: '48px' }}
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
                 >
                   <Text
-                    fontSize={{ base: "sm", lg: "xl" }}
+                    fontSize={{ base: 'sm', lg: 'xl' }}
                     fontWeight="bold"
                     textAlign="center"
                     color="gray.800"
@@ -556,8 +503,8 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                   </Text>
                 </Box>
                 <Box
-                  width={{ base: "173px", lg: "240px" }}
-                  height={{ base: "173px", lg: "240px" }}
+                  width={{ base: '173px', lg: '240px' }}
+                  height={{ base: '173px', lg: '240px' }}
                   overflow="hidden"
                   borderRadius="md"
                   border="3px solid"
@@ -579,7 +526,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                 {/* Total and controls - OUTSIDE overflow:hidden so they're not clipped */}
                 {!isWheelAnimating && (
                   <Text
-                    fontSize={{ base: "md", lg: "2xl" }}
+                    fontSize={{ base: 'md', lg: '2xl' }}
                     fontWeight="bold"
                     color="blue.500"
                     textAlign="center"
@@ -599,7 +546,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                     <Button
                       onClick={handleStay}
                       colorPalette="green"
-                      size={{ base: "sm", lg: "md" }}
+                      size={{ base: 'sm', lg: 'md' }}
                       disabled={isWheelAnimating}
                     >
                       Stay
@@ -607,7 +554,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                     <Button
                       onClick={handleSpinAgain}
                       colorPalette="blue"
-                      size={{ base: "sm", lg: "md" }}
+                      size={{ base: 'sm', lg: 'md' }}
                       disabled={isWheelAnimating}
                     >
                       Spin Again
@@ -620,18 +567,16 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
             {/* Wheel Display */}
             <Box
               id="wheel"
-              width={{ base: "300px", lg: "600px" }}
+              width={{ base: '300px', lg: '600px' }}
               flexShrink={0}
               position="relative"
-              right={{ base: "-7.5em", lg: "-15em" }}
-              top={{ base: "-1em", lg: "-2em" }}
+              right={{ base: '-7.5em', lg: '-15em' }}
+              top={{ base: '-1em', lg: '-2em' }}
             >
               <WheelDisplay
                 currentValue={currentWheelPosition}
                 targetValue={
-                  isWheelAnimating && pendingSpinTarget !== null
-                    ? pendingSpinTarget
-                    : undefined
+                  isWheelAnimating && pendingSpinTarget !== null ? pendingSpinTarget : undefined
                 }
                 isSpinning={isWheelAnimating}
                 onSpin={handleSpin}
@@ -639,14 +584,22 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                   isWheelAnimating ||
                   !currentSpinnerId ||
                   currentSpinnerIsDone ||
-                  (!isCurrentSpinner && role !== "host")
+                  (!isCurrentSpinner && role !== 'host')
                 }
-                showSpinButton={role === "host" || isCurrentSpinner}
+                showSpinButton={role === 'host' || isCurrentSpinner}
               />
             </Box>
 
             {/* Leader/Winner Section (right of wheel) */}
-            <Box width={showWinnerCelebration ? { base: "210px", lg: "300px" } : { base: "144px", lg: "200px" }} flexShrink={0} marginLeft={{ base: "0.5em", lg: "1em" }}>
+            <Box
+              width={
+                showWinnerCelebration
+                  ? { base: '210px', lg: '300px' }
+                  : { base: '144px', lg: '200px' }
+              }
+              flexShrink={0}
+              marginLeft={{ base: '0.5em', lg: '1em' }}
+            >
               {/* Show winner (large) + runner-up if wheel round is complete, otherwise show leader */}
               {showWinnerCelebration && winnerContestant ? (
                 <VStack gap={{ base: 3, lg: 6 }} alignItems="center">
@@ -666,8 +619,8 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                       WINNER
                     </Box>
                     <Box
-                      width={{ base: "173px", lg: "240px" }}
-                      height={{ base: "173px", lg: "240px" }}
+                      width={{ base: '173px', lg: '240px' }}
+                      height={{ base: '173px', lg: '240px' }}
                       overflow="hidden"
                       borderRadius="md"
                       border="3px solid"
@@ -682,7 +635,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                       />
                     </Box>
                     <Text
-                      fontSize={{ base: "md", lg: "2xl" }}
+                      fontSize={{ base: 'md', lg: '2xl' }}
                       fontWeight="bold"
                       color="green.500"
                       textAlign="center"
@@ -700,8 +653,8 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                   {runnerUpContestant && (
                     <VStack gap={1} alignItems="center">
                       <Box
-                        width={{ base: "86px", lg: "120px" }}
-                        height={{ base: "86px", lg: "120px" }}
+                        width={{ base: '86px', lg: '120px' }}
+                        height={{ base: '86px', lg: '120px' }}
                         overflow="hidden"
                         borderRadius="md"
                         border="3px solid"
@@ -720,7 +673,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                         />
                       </Box>
                       <Text
-                        fontSize={{ base: "xs", lg: "md" }}
+                        fontSize={{ base: 'xs', lg: 'md' }}
                         fontWeight="bold"
                         color="gray.500"
                         textAlign="center"
@@ -754,8 +707,8 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                         TIE
                       </Box>
                       <Box
-                        width={{ base: "108px", lg: "150px" }}
-                        height={{ base: "108px", lg: "150px" }}
+                        width={{ base: '108px', lg: '150px' }}
+                        height={{ base: '108px', lg: '150px' }}
                         overflow="hidden"
                         borderRadius="md"
                         border="3px solid"
@@ -771,7 +724,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                         />
                       </Box>
                       <Text
-                        fontSize={{ base: "md", lg: "2xl" }}
+                        fontSize={{ base: 'md', lg: '2xl' }}
                         fontWeight="bold"
                         color="yellow.500"
                         textAlign="center"
@@ -797,8 +750,8 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                     LEADER
                   </Box>
                   <Box
-                    width={{ base: "108px", lg: "150px" }}
-                    height={{ base: "108px", lg: "150px" }}
+                    width={{ base: '108px', lg: '150px' }}
+                    height={{ base: '108px', lg: '150px' }}
                     overflow="hidden"
                     borderRadius="md"
                     border="3px solid"
@@ -814,7 +767,7 @@ export function WheelPhaseView({ gameState }: WheelPhaseViewProps) {
                     />
                   </Box>
                   <Text
-                    fontSize={{ base: "md", lg: "2xl" }}
+                    fontSize={{ base: 'md', lg: '2xl' }}
                     fontWeight="bold"
                     color="green.500"
                     textAlign="center"

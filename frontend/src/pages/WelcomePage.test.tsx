@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, waitFor } from "../test/test-utils";
-import userEvent from "@testing-library/user-event";
-import { BrowserRouter } from "react-router-dom";
-import WelcomePage from "./WelcomePage";
-import { useAuthStore } from "../store/authStore";
-import { apiRequest } from "../utils/api";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, waitFor } from '../test/test-utils';
+import userEvent from '@testing-library/user-event';
+import { BrowserRouter } from 'react-router-dom';
+import WelcomePage from './WelcomePage';
+import { useAuthStore } from '../store/authStore';
+import { apiRequest } from '../utils/api';
 
 // Mock the router navigation
 const mockNavigate = vi.fn();
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -17,51 +17,51 @@ vi.mock("react-router-dom", async () => {
 });
 
 // Mock the auth store
-vi.mock("../store/authStore");
+vi.mock('../store/authStore');
 
 // Mock the API
-vi.mock("../utils/api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../utils/api")>();
+vi.mock('../utils/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../utils/api')>();
   return {
     ...actual,
     apiRequest: vi.fn(),
   };
 });
 
-describe("WelcomePage", () => {
+describe('WelcomePage', () => {
   const mockLogout = vi.fn();
 
   const mockPlayerData = {
     player: {
       id: 1,
-      firstName: "John",
-      lastName: "Doe",
-      accessCode: "TEST01",
-      role: "player" as const,
+      firstName: 'John',
+      lastName: 'Doe',
+      accessCode: 'TEST01',
+      role: 'player' as const,
       email: null,
-      photoFilename: "john-doe.jpg",
+      photoFilename: 'john-doe.jpg',
       active: true,
-      sessionToken: "test-token-123",
-      createdAt: "2025-01-01",
-      updatedAt: "2025-01-01",
+      sessionToken: 'test-token-123',
+      createdAt: '2025-01-01',
+      updatedAt: '2025-01-01',
     },
   };
 
   const mockHostData = {
     player: {
       ...mockPlayerData.player,
-      firstName: "Host",
-      lastName: "User",
-      role: "host" as const,
+      firstName: 'Host',
+      lastName: 'User',
+      role: 'host' as const,
     },
   };
 
   const mockAudienceData = {
     player: {
       ...mockPlayerData.player,
-      firstName: "Audience",
-      lastName: "Member",
-      role: "audience" as const,
+      firstName: 'Audience',
+      lastName: 'Member',
+      role: 'audience' as const,
     },
   };
 
@@ -71,10 +71,10 @@ describe("WelcomePage", () => {
     mockLogout.mockClear();
   });
 
-  describe("Loading State", () => {
-    it("should show loading spinner when loading", () => {
+  describe('Loading State', () => {
+    it('should show loading spinner when loading', () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: null,
         loading: true,
         error: null,
@@ -95,10 +95,10 @@ describe("WelcomePage", () => {
     });
   });
 
-  describe("Player Display", () => {
-    it("should display player name", () => {
+  describe('Player Display', () => {
+    it('should display player name', () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -118,9 +118,9 @@ describe("WelcomePage", () => {
       expect(screen.getByText(/Welcome, John!/i)).toBeInTheDocument();
     });
 
-    it("should display player role", () => {
+    it('should display player role', () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -140,9 +140,9 @@ describe("WelcomePage", () => {
       expect(screen.getByText(/Role: player/i)).toBeInTheDocument();
     });
 
-    it("should display player avatar with correct props", () => {
+    it('should display player avatar with correct props', () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -161,37 +161,35 @@ describe("WelcomePage", () => {
 
       // Chakra v3 Avatar.Image renders an img element
       // The Avatar snippet renders both fallback and image elements
-      const avatarImg = container.querySelector(
-        'img[src="/images/players/john-doe.jpg"]',
-      );
+      const avatarImg = container.querySelector('img[src="/images/players/john-doe.jpg"]');
       expect(avatarImg).toBeTruthy();
 
       // Check that fallback exists with correct initials
       const fallback = container.querySelector('[data-part="fallback"]');
       expect(fallback).toBeTruthy();
-      expect(fallback?.textContent).toBe("JD");
+      expect(fallback?.textContent).toBe('JD');
     });
   });
 
-  describe("Role-Specific Buttons", () => {
+  describe('Role-Specific Buttons', () => {
     beforeEach(() => {
       // Mock both API calls that WelcomePage makes
       vi.mocked(apiRequest).mockImplementation((url: string) => {
-        if (url === "/game/status") {
+        if (url === '/game/status') {
           return Promise.resolve({ enabled: true });
         }
-        if (url === "/game/state") {
+        if (url === '/game/state') {
           return Promise.resolve({
-            state: { workflow: { phase_type: "bidding" } },
+            state: { workflow: { phase_type: 'bidding' } },
           });
         }
-        return Promise.reject(new Error("Unknown endpoint"));
+        return Promise.reject(new Error('Unknown endpoint'));
       });
     });
 
-    it("should show player-specific button for player role", async () => {
+    it('should show player-specific button for player role', async () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -209,21 +207,15 @@ describe("WelcomePage", () => {
       );
 
       await waitFor(() => {
-        expect(
-          screen.getByRole("button", { name: /Enter Game/i }),
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Enter Game/i })).toBeInTheDocument();
       });
-      expect(
-        screen.queryByRole("button", { name: /Game Control/i }),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: /Admin Tools/i }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Game Control/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Admin Tools/i })).not.toBeInTheDocument();
     });
 
-    it("should show host-specific buttons for host role", () => {
+    it('should show host-specific buttons for host role', () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockHostData.player,
         loading: false,
         error: null,
@@ -240,23 +232,15 @@ describe("WelcomePage", () => {
         </BrowserRouter>,
       );
 
-      expect(
-        screen.getByRole("button", { name: /Game Control/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /Admin Tools/i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: /Enter Game/i }),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: /Watch Game/i }),
-      ).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Game Control/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Admin Tools/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Enter Game/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Watch Game/i })).not.toBeInTheDocument();
     });
 
-    it("should show audience-specific button for audience role", async () => {
+    it('should show audience-specific button for audience role', async () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockAudienceData.player,
         loading: false,
         error: null,
@@ -274,40 +258,34 @@ describe("WelcomePage", () => {
       );
 
       await waitFor(() => {
-        expect(
-          screen.getByRole("button", { name: /Enter Game/i }),
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Enter Game/i })).toBeInTheDocument();
       });
-      expect(
-        screen.queryByRole("button", { name: /Game Control/i }),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: /Admin Tools/i }),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Game Control/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Admin Tools/i })).not.toBeInTheDocument();
     });
   });
 
-  describe("Placeholder Button Interactions", () => {
+  describe('Placeholder Button Interactions', () => {
     beforeEach(() => {
       // Mock both API calls
       vi.mocked(apiRequest).mockImplementation((url: string) => {
-        if (url === "/game/status") {
+        if (url === '/game/status') {
           return Promise.resolve({ enabled: true });
         }
-        if (url === "/game/state") {
+        if (url === '/game/state') {
           return Promise.resolve({
-            state: { workflow: { phase_type: "bidding" } },
+            state: { workflow: { phase_type: 'bidding' } },
           });
         }
-        return Promise.reject(new Error("Unknown endpoint"));
+        return Promise.reject(new Error('Unknown endpoint'));
       });
     });
 
-    it("should show toast when clicking placeholder button", async () => {
+    it('should show toast when clicking placeholder button', async () => {
       const user = userEvent.setup();
 
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -325,12 +303,10 @@ describe("WelcomePage", () => {
       );
 
       await waitFor(() => {
-        expect(
-          screen.getByRole("button", { name: /Enter Game/i }),
-        ).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Enter Game/i })).toBeInTheDocument();
       });
 
-      const button = screen.getByRole("button", { name: /Enter Game/i });
+      const button = screen.getByRole('button', { name: /Enter Game/i });
       await user.click(button);
 
       // Chakra toast creates a new element, so we just verify the button was clicked
@@ -339,10 +315,10 @@ describe("WelcomePage", () => {
     });
   });
 
-  describe("Logout Functionality", () => {
-    it("should show logout button", () => {
+  describe('Logout Functionality', () => {
+    it('should show logout button', () => {
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -359,17 +335,15 @@ describe("WelcomePage", () => {
         </BrowserRouter>,
       );
 
-      expect(
-        screen.getByRole("button", { name: /Logout/i }),
-      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Logout/i })).toBeInTheDocument();
     });
 
-    it("should call logout and navigate to / on logout click", async () => {
+    it('should call logout and navigate to / on logout click', async () => {
       const user = userEvent.setup();
       mockLogout.mockResolvedValue(undefined);
 
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -386,7 +360,7 @@ describe("WelcomePage", () => {
         </BrowserRouter>,
       );
 
-      const logoutButton = screen.getByRole("button", { name: /Logout/i });
+      const logoutButton = screen.getByRole('button', { name: /Logout/i });
       await user.click(logoutButton);
 
       await waitFor(() => {
@@ -394,16 +368,16 @@ describe("WelcomePage", () => {
       });
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith("/");
+        expect(mockNavigate).toHaveBeenCalledWith('/');
       });
     });
 
-    it("should show error toast on logout failure", async () => {
+    it('should show error toast on logout failure', async () => {
       const user = userEvent.setup();
-      mockLogout.mockRejectedValue(new Error("Network error"));
+      mockLogout.mockRejectedValue(new Error('Network error'));
 
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -420,7 +394,7 @@ describe("WelcomePage", () => {
         </BrowserRouter>,
       );
 
-      const logoutButton = screen.getByRole("button", { name: /Logout/i });
+      const logoutButton = screen.getByRole('button', { name: /Logout/i });
       await user.click(logoutButton);
 
       await waitFor(() => {
@@ -432,8 +406,8 @@ describe("WelcomePage", () => {
     });
   });
 
-  describe("No Player State", () => {
-    it("should return null when no current player", () => {
+  describe('No Player State', () => {
+    it('should return null when no current player', () => {
       vi.mocked(useAuthStore).mockReturnValue({
         sessionToken: null,
         currentPlayer: null,
@@ -456,16 +430,16 @@ describe("WelcomePage", () => {
     });
   });
 
-  describe("Game Status Toggle", () => {
+  describe('Game Status Toggle', () => {
     beforeEach(() => {
       // Reset the API mock before each test
       vi.mocked(apiRequest).mockClear();
     });
 
-    it("should fetch game status on mount", async () => {
+    it('should fetch game status on mount', async () => {
       vi.mocked(apiRequest).mockResolvedValue({ enabled: true });
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -483,14 +457,14 @@ describe("WelcomePage", () => {
       );
 
       await waitFor(() => {
-        expect(apiRequest).toHaveBeenCalledWith("/game/status");
+        expect(apiRequest).toHaveBeenCalledWith('/game/status');
       });
     });
 
-    it("should show maintenance alert when game is disabled", async () => {
+    it('should show maintenance alert when game is disabled', async () => {
       vi.mocked(apiRequest).mockResolvedValue({ enabled: false });
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -508,18 +482,16 @@ describe("WelcomePage", () => {
       );
 
       await waitFor(() => {
-        expect(
-          screen.getByText(/Game Currently Disabled/i),
-        ).toBeInTheDocument();
+        expect(screen.getByText(/Game Currently Disabled/i)).toBeInTheDocument();
       });
 
       expect(screen.getByText(/maintenance mode/i)).toBeInTheDocument();
     });
 
-    it("should not show maintenance alert when game is enabled", async () => {
+    it('should not show maintenance alert when game is enabled', async () => {
       vi.mocked(apiRequest).mockResolvedValue({ enabled: true });
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -540,15 +512,13 @@ describe("WelcomePage", () => {
         expect(apiRequest).toHaveBeenCalled();
       });
 
-      expect(
-        screen.queryByText(/Game Currently Disabled/i),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/Game Currently Disabled/i)).not.toBeInTheDocument();
     });
 
-    it("should disable player button when game is disabled", async () => {
+    it('should disable player button when game is disabled', async () => {
       vi.mocked(apiRequest).mockResolvedValue({ enabled: false });
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -566,15 +536,15 @@ describe("WelcomePage", () => {
       );
 
       await waitFor(() => {
-        const button = screen.getByRole("button", { name: /Enter Game/i });
+        const button = screen.getByRole('button', { name: /Enter Game/i });
         expect(button).toBeDisabled();
       });
     });
 
-    it("should disable host Game Control button when game is disabled", async () => {
+    it('should disable host Game Control button when game is disabled', async () => {
       vi.mocked(apiRequest).mockResolvedValue({ enabled: false });
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockHostData.player,
         loading: false,
         error: null,
@@ -592,15 +562,15 @@ describe("WelcomePage", () => {
       );
 
       await waitFor(() => {
-        const button = screen.getByRole("button", { name: /Game Control/i });
+        const button = screen.getByRole('button', { name: /Game Control/i });
         expect(button).toBeDisabled();
       });
     });
 
-    it("should NOT disable Admin Tools button when game is disabled", async () => {
+    it('should NOT disable Admin Tools button when game is disabled', async () => {
       vi.mocked(apiRequest).mockResolvedValue({ enabled: false });
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockHostData.player,
         loading: false,
         error: null,
@@ -618,15 +588,15 @@ describe("WelcomePage", () => {
       );
 
       await waitFor(() => {
-        const button = screen.getByRole("button", { name: /Admin Tools/i });
+        const button = screen.getByRole('button', { name: /Admin Tools/i });
         expect(button).not.toBeDisabled();
       });
     });
 
-    it("should disable audience Watch Game button when game is disabled", async () => {
+    it('should disable audience Watch Game button when game is disabled', async () => {
       vi.mocked(apiRequest).mockResolvedValue({ enabled: false });
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockAudienceData.player,
         loading: false,
         error: null,
@@ -644,18 +614,16 @@ describe("WelcomePage", () => {
       );
 
       await waitFor(() => {
-        const button = screen.getByRole("button", { name: /Enter Game/i });
+        const button = screen.getByRole('button', { name: /Enter Game/i });
         expect(button).toBeDisabled();
       });
     });
 
-    it("should handle API error gracefully", async () => {
-      const consoleErrorSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
-      vi.mocked(apiRequest).mockRejectedValue(new Error("Network error"));
+    it('should handle API error gracefully', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(apiRequest).mockRejectedValue(new Error('Network error'));
       vi.mocked(useAuthStore).mockReturnValue({
-        sessionToken: "test-token",
+        sessionToken: 'test-token',
         currentPlayer: mockPlayerData.player,
         loading: false,
         error: null,
@@ -678,7 +646,7 @@ describe("WelcomePage", () => {
       // Should log the error
       await waitFor(() => {
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "Failed to fetch game info:",
+          'Failed to fetch game info:',
           expect.any(Error),
         );
       });

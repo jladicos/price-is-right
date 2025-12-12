@@ -1,42 +1,42 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { useGameStore, setGameStoreSessionTokenGetter } from "./gameStore";
-import type { GameState } from "./gameStore";
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { useGameStore, setGameStoreSessionTokenGetter } from './gameStore';
+import type { GameState } from './gameStore';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 // Mock session token getter
-let mockToken: string | null = "test-token-123";
+let mockToken: string | null = 'test-token-123';
 const mockGetSessionToken = vi.fn(() => mockToken);
 
-describe("gameStore", () => {
-  const testToken = "test-token-123";
+describe('gameStore', () => {
+  const testToken = 'test-token-123';
   const mockGameState: GameState = {
     workflow: {
       id: 1,
-      current_segment: "section_1",
+      current_segment: 'section_1',
       current_segment_index: 0,
-      phase_type: "bidding",
+      phase_type: 'bidding',
       phase_metadata: '{"type":"bidding","product_id":"car-001"}',
-      created_at: "2025-11-20T12:00:00Z",
-      updated_at: "2025-11-20T12:00:00Z",
+      created_at: '2025-11-20T12:00:00Z',
+      updated_at: '2025-11-20T12:00:00Z',
     },
     contestantsRow: [
       {
         id: 1,
         player_id: 10,
         position: 1,
-        game_segment: "section_1",
-        status: "pending_reveal",
-        added_at: "2025-11-20T12:00:00Z",
+        game_segment: 'section_1',
+        status: 'pending_reveal',
+        added_at: '2025-11-20T12:00:00Z',
         revealed_at: null,
-        created_at: "2025-11-20T12:00:00Z",
-        updated_at: "2025-11-20T12:00:00Z",
-        first_name: "John",
-        last_name: "Doe",
-        photo_filename: "john-doe.jpg",
-        role: "audience",
+        created_at: '2025-11-20T12:00:00Z',
+        updated_at: '2025-11-20T12:00:00Z',
+        first_name: 'John',
+        last_name: 'Doe',
+        photo_filename: 'john-doe.jpg',
+        role: 'audience',
       },
     ],
     eligibleAudienceCount: 50,
@@ -60,8 +60,8 @@ describe("gameStore", () => {
     setGameStoreSessionTokenGetter(mockGetSessionToken);
   });
 
-  describe("fetchGameState", () => {
-    it("should fetch game state successfully", async () => {
+  describe('fetchGameState', () => {
+    it('should fetch game state successfully', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -74,7 +74,7 @@ describe("gameStore", () => {
       await store.fetchGameState();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/state"),
+        expect.stringContaining('/game/state'),
         expect.objectContaining({
           headers: expect.objectContaining({
             Authorization: `Bearer ${testToken}`,
@@ -89,13 +89,13 @@ describe("gameStore", () => {
       expect(state.lastUpdated).toBeGreaterThan(0);
     });
 
-    it("should handle fetch error", async () => {
+    it('should handle fetch error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
-        statusText: "Internal Server Error",
+        statusText: 'Internal Server Error',
         json: async () => ({
-          error: "Database error",
+          error: 'Database error',
         }),
       });
 
@@ -105,34 +105,34 @@ describe("gameStore", () => {
       const state = useGameStore.getState();
       expect(state.gameState).toBe(null);
       expect(state.isLoading).toBe(false);
-      expect(state.error).toBe("Database error");
+      expect(state.error).toBe('Database error');
     });
 
-    it("should handle network error", async () => {
-      mockFetch.mockRejectedValueOnce(new Error("Network error"));
+    it('should handle network error', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       const store = useGameStore.getState();
       await store.fetchGameState();
 
       const state = useGameStore.getState();
-      expect(state.error).toBe("Network error");
+      expect(state.error).toBe('Network error');
       expect(state.isLoading).toBe(false);
     });
 
-    it("should handle missing auth token", async () => {
+    it('should handle missing auth token', async () => {
       mockToken = null;
 
       const store = useGameStore.getState();
       await store.fetchGameState();
 
       const state = useGameStore.getState();
-      expect(state.error).toBe("Not authenticated");
+      expect(state.error).toBe('Not authenticated');
       expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 
-  describe("startNewGame", () => {
-    it("should start a new game successfully", async () => {
+  describe('startNewGame', () => {
+    it('should start a new game successfully', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -145,12 +145,12 @@ describe("gameStore", () => {
       await store.startNewGame();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/start"),
+        expect.stringContaining('/game/start'),
         expect.objectContaining({
-          method: "POST",
+          method: 'POST',
           headers: expect.objectContaining({
             Authorization: `Bearer ${mockToken}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           }),
         }),
       );
@@ -160,31 +160,29 @@ describe("gameStore", () => {
       expect(state.error).toBe(null);
     });
 
-    it("should handle start game error", async () => {
+    it('should handle start game error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        statusText: "Bad Request",
+        statusText: 'Bad Request',
         json: async () => ({
-          error: "Game already in progress",
+          error: 'Game already in progress',
         }),
       });
 
       const store = useGameStore.getState();
 
       // Should throw error
-      await expect(store.startNewGame()).rejects.toThrow(
-        "Game already in progress",
-      );
+      await expect(store.startNewGame()).rejects.toThrow('Game already in progress');
 
       const state = useGameStore.getState();
-      expect(state.error).toBe("Game already in progress");
+      expect(state.error).toBe('Game already in progress');
       expect(state.gameState).toBe(null);
     });
   });
 
-  describe("advancePhase", () => {
-    it("should advance phase successfully", async () => {
+  describe('advancePhase', () => {
+    it('should advance phase successfully', async () => {
       const advancedState = {
         ...mockGameState,
         workflow: {
@@ -205,9 +203,9 @@ describe("gameStore", () => {
       await store.advancePhase();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/advance"),
+        expect.stringContaining('/game/advance'),
         expect.objectContaining({
-          method: "POST",
+          method: 'POST',
         }),
       );
 
@@ -215,30 +213,28 @@ describe("gameStore", () => {
       expect(state.gameState?.workflow.current_segment_index).toBe(1);
     });
 
-    it("should handle advance phase error", async () => {
+    it('should handle advance phase error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        statusText: "Bad Request",
+        statusText: 'Bad Request',
         json: async () => ({
-          error: "Cannot advance beyond finale",
+          error: 'Cannot advance beyond finale',
         }),
       });
 
       const store = useGameStore.getState();
 
       // Should throw error
-      await expect(store.advancePhase()).rejects.toThrow(
-        "Cannot advance beyond finale",
-      );
+      await expect(store.advancePhase()).rejects.toThrow('Cannot advance beyond finale');
 
       const state = useGameStore.getState();
-      expect(state.error).toBe("Cannot advance beyond finale");
+      expect(state.error).toBe('Cannot advance beyond finale');
     });
   });
 
-  describe("revealContestant", () => {
-    it("should reveal contestant and refresh state", async () => {
+  describe('revealContestant', () => {
+    it('should reveal contestant and refresh state', async () => {
       // Mock reveal response
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -246,8 +242,8 @@ describe("gameStore", () => {
           success: true,
           contestant: {
             ...mockGameState.contestantsRow[0],
-            status: "active",
-            role: "player",
+            status: 'active',
+            role: 'player',
           },
         }),
       });
@@ -258,8 +254,8 @@ describe("gameStore", () => {
         contestantsRow: [
           {
             ...mockGameState.contestantsRow[0],
-            status: "active",
-            role: "player",
+            status: 'active',
+            role: 'player',
           },
         ],
       };
@@ -275,26 +271,26 @@ describe("gameStore", () => {
       await store.revealContestant(1);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/reveal-contestant"),
+        expect.stringContaining('/game/reveal-contestant'),
         expect.objectContaining({
-          method: "POST",
+          method: 'POST',
           body: JSON.stringify({ contestantRowId: 1 }),
         }),
       );
 
       // Should also fetch updated state
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/state"),
+        expect.stringContaining('/game/state'),
         expect.any(Object),
       );
 
       const state = useGameStore.getState();
-      expect(state.gameState?.contestantsRow[0].status).toBe("active");
+      expect(state.gameState?.contestantsRow[0].status).toBe('active');
     });
   });
 
-  describe("replaceContestantRandom", () => {
-    it("should replace contestant randomly and refresh state", async () => {
+  describe('replaceContestantRandom', () => {
+    it('should replace contestant randomly and refresh state', async () => {
       // Mock replace response
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -303,7 +299,7 @@ describe("gameStore", () => {
           contestant: {
             ...mockGameState.contestantsRow[0],
             player_id: 20,
-            first_name: "Jane",
+            first_name: 'Jane',
           },
         }),
       });
@@ -321,9 +317,9 @@ describe("gameStore", () => {
       await store.replaceContestantRandom(1);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/replace-contestant-random"),
+        expect.stringContaining('/game/replace-contestant-random'),
         expect.objectContaining({
-          method: "POST",
+          method: 'POST',
           body: JSON.stringify({ contestantRowId: 1 }),
         }),
       );
@@ -333,8 +329,8 @@ describe("gameStore", () => {
     });
   });
 
-  describe("manualSelectContestant", () => {
-    it("should manually select contestant and refresh state", async () => {
+  describe('manualSelectContestant', () => {
+    it('should manually select contestant and refresh state', async () => {
       // Mock manual select response
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -343,7 +339,7 @@ describe("gameStore", () => {
           contestant: {
             ...mockGameState.contestantsRow[0],
             position: 3,
-            status: "pending_reveal",
+            status: 'pending_reveal',
           },
         }),
       });
@@ -358,44 +354,44 @@ describe("gameStore", () => {
       });
 
       const store = useGameStore.getState();
-      await store.manualSelectContestant(25, 3, "section_1");
+      await store.manualSelectContestant(25, 3, 'section_1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/manual-select-contestant"),
+        expect.stringContaining('/game/manual-select-contestant'),
         expect.objectContaining({
-          method: "POST",
+          method: 'POST',
           body: JSON.stringify({
             playerId: 25,
             position: 3,
-            segment: "section_1",
+            segment: 'section_1',
           }),
         }),
       );
     });
 
-    it("should handle errors when manual selection fails", async () => {
+    it('should handle errors when manual selection fails', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        statusText: "Bad Request",
+        statusText: 'Bad Request',
         json: async () => ({
-          error: "Position already occupied",
+          error: 'Position already occupied',
         }),
       });
 
       const store = useGameStore.getState();
 
       // Should throw error
-      await expect(
-        store.manualSelectContestant(25, 1, "section_1"),
-      ).rejects.toThrow("Position already occupied");
+      await expect(store.manualSelectContestant(25, 1, 'section_1')).rejects.toThrow(
+        'Position already occupied',
+      );
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const state = useGameStore.getState();
-      expect(state.error).toBe("Position already occupied");
+      expect(state.error).toBe('Position already occupied');
     });
 
-    it("should set loading state during manual selection", async () => {
+    it('should set loading state during manual selection', async () => {
       let loadingDuringCall = false;
 
       mockFetch.mockImplementationOnce(async () => {
@@ -418,15 +414,15 @@ describe("gameStore", () => {
       });
 
       const store = useGameStore.getState();
-      await store.manualSelectContestant(25, 2, "section_1");
+      await store.manualSelectContestant(25, 2, 'section_1');
 
       expect(loadingDuringCall).toBe(true);
       expect(store.isLoading).toBe(false);
     });
   });
 
-  describe("replaceContestantManual", () => {
-    it("should replace contestant manually and refresh state", async () => {
+  describe('replaceContestantManual', () => {
+    it('should replace contestant manually and refresh state', async () => {
       // Mock replace response
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -449,17 +445,17 @@ describe("gameStore", () => {
       await store.replaceContestantManual(1, 25);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/replace-contestant-manual"),
+        expect.stringContaining('/game/replace-contestant-manual'),
         expect.objectContaining({
-          method: "POST",
+          method: 'POST',
           body: JSON.stringify({ contestantRowId: 1, newPlayerId: 25 }),
         }),
       );
     });
   });
 
-  describe("refreshContestantsRow", () => {
-    it("should refresh contestants row and fetch state", async () => {
+  describe('refreshContestantsRow', () => {
+    it('should refresh contestants row and fetch state', async () => {
       // Mock refresh response
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -479,27 +475,27 @@ describe("gameStore", () => {
       });
 
       const store = useGameStore.getState();
-      await store.refreshContestantsRow("section_1");
+      await store.refreshContestantsRow('section_1');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/refresh-contestants-row"),
+        expect.stringContaining('/game/refresh-contestants-row'),
         expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ segment: "section_1" }),
+          method: 'POST',
+          body: JSON.stringify({ segment: 'section_1' }),
         }),
       );
     });
   });
 
-  describe("overridePhase", () => {
-    it("should override phase successfully", async () => {
+  describe('overridePhase', () => {
+    it('should override phase successfully', async () => {
       const overriddenState = {
         ...mockGameState,
         workflow: {
           ...mockGameState.workflow,
-          current_segment: "section_2",
+          current_segment: 'section_2',
           current_segment_index: 2,
-          phase_type: "wheel",
+          phase_type: 'wheel',
         },
       };
 
@@ -512,30 +508,30 @@ describe("gameStore", () => {
       });
 
       const store = useGameStore.getState();
-      await store.overridePhase("section_2", 2, "wheel", { type: "wheel" });
+      await store.overridePhase('section_2', 2, 'wheel', { type: 'wheel' });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/override-phase"),
+        expect.stringContaining('/game/override-phase'),
         expect.objectContaining({
-          method: "POST",
+          method: 'POST',
           body: JSON.stringify({
-            segment: "section_2",
+            segment: 'section_2',
             segmentIndex: 2,
-            phaseType: "wheel",
-            phaseMetadata: { type: "wheel" },
+            phaseType: 'wheel',
+            phaseMetadata: { type: 'wheel' },
           }),
         }),
       );
 
       const state = useGameStore.getState();
-      expect(state.gameState?.workflow.current_segment).toBe("section_2");
-      expect(state.gameState?.workflow.phase_type).toBe("wheel");
+      expect(state.gameState?.workflow.current_segment).toBe('section_2');
+      expect(state.gameState?.workflow.phase_type).toBe('wheel');
     });
   });
 
-  describe("clearError", () => {
-    it("should clear error message", () => {
-      useGameStore.setState({ error: "Some error" });
+  describe('clearError', () => {
+    it('should clear error message', () => {
+      useGameStore.setState({ error: 'Some error' });
 
       const store = useGameStore.getState();
       store.clearError();
@@ -545,8 +541,8 @@ describe("gameStore", () => {
     });
   });
 
-  describe("loading states", () => {
-    it("should set loading true while fetching", async () => {
+  describe('loading states', () => {
+    it('should set loading true while fetching', async () => {
       let resolveFetch: (value: unknown) => void;
       const fetchPromise = new Promise((resolve) => {
         resolveFetch = resolve;
@@ -573,12 +569,12 @@ describe("gameStore", () => {
     });
   });
 
-  describe("Edge Cases and Error Handling", () => {
-    it("should handle HTTP error without error field in response", async () => {
+  describe('Edge Cases and Error Handling', () => {
+    it('should handle HTTP error without error field in response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
-        statusText: "Internal Server Error",
+        statusText: 'Internal Server Error',
         json: async () => ({}), // No error field
       });
 
@@ -586,14 +582,14 @@ describe("gameStore", () => {
       await store.fetchGameState();
 
       const state = useGameStore.getState();
-      expect(state.error).toBe("HTTP 500: Internal Server Error");
+      expect(state.error).toBe('HTTP 500: Internal Server Error');
     });
 
-    it("should handle JSON parsing error", async () => {
+    it('should handle JSON parsing error', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => {
-          throw new Error("Invalid JSON");
+          throw new Error('Invalid JSON');
         },
       });
 
@@ -601,65 +597,63 @@ describe("gameStore", () => {
       await store.fetchGameState();
 
       const state = useGameStore.getState();
-      expect(state.error).toBe("Invalid JSON");
+      expect(state.error).toBe('Invalid JSON');
     });
 
-    it("should handle callback returning null token", async () => {
+    it('should handle callback returning null token', async () => {
       mockToken = null;
 
       const store = useGameStore.getState();
       await store.fetchGameState();
 
       const state = useGameStore.getState();
-      expect(state.error).toBe("Not authenticated");
+      expect(state.error).toBe('Not authenticated');
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it("should handle callback returning empty string token", async () => {
-      mockToken = "";
+    it('should handle callback returning empty string token', async () => {
+      mockToken = '';
 
       const store = useGameStore.getState();
       await store.fetchGameState();
 
       const state = useGameStore.getState();
-      expect(state.error).toBe("Not authenticated");
+      expect(state.error).toBe('Not authenticated');
     });
 
-    it("should not call fetchGameState when revealContestant fails", async () => {
+    it('should not call fetchGameState when revealContestant fails', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
-        statusText: "Not Found",
+        statusText: 'Not Found',
         json: async () => ({
-          error: "Contestant not found",
+          error: 'Contestant not found',
         }),
       });
 
       const store = useGameStore.getState();
 
       // Should throw error
-      await expect(store.revealContestant(999)).rejects.toThrow(
-        "Contestant not found",
-      );
+      await expect(store.revealContestant(999)).rejects.toThrow('Contestant not found');
 
       // Should only have called reveal, NOT fetchGameState
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/reveal-contestant"),
+        expect.stringContaining('/game/reveal-contestant'),
         expect.any(Object),
       );
 
       const state = useGameStore.getState();
-      expect(state.error).toBe("Contestant not found");
+      expect(state.error).toBe('Contestant not found');
     });
 
-    it("should not call fetchGameState when replaceContestantRandom fails", async () => {
+    it('should not call fetchGameState when replaceContestantRandom fails', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        statusText: "Bad Request",
+        statusText: 'Bad Request',
         json: async () => ({
-          error: "No eligible audience members",
+          error: 'No eligible audience members',
         }),
       });
 
@@ -667,59 +661,55 @@ describe("gameStore", () => {
 
       // Should throw error
       await expect(store.replaceContestantRandom(1)).rejects.toThrow(
-        "No eligible audience members",
+        'No eligible audience members',
       );
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const state = useGameStore.getState();
-      expect(state.error).toBe("No eligible audience members");
+      expect(state.error).toBe('No eligible audience members');
     });
 
-    it("should not call fetchGameState when replaceContestantManual fails", async () => {
+    it('should not call fetchGameState when replaceContestantManual fails', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        statusText: "Bad Request",
+        statusText: 'Bad Request',
         json: async () => ({
-          error: "Player not active",
+          error: 'Player not active',
         }),
       });
 
       const store = useGameStore.getState();
 
       // Should throw error
-      await expect(store.replaceContestantManual(1, 999)).rejects.toThrow(
-        "Player not active",
-      );
+      await expect(store.replaceContestantManual(1, 999)).rejects.toThrow('Player not active');
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const state = useGameStore.getState();
-      expect(state.error).toBe("Player not active");
+      expect(state.error).toBe('Player not active');
     });
 
-    it("should not call fetchGameState when refreshContestantsRow fails", async () => {
+    it('should not call fetchGameState when refreshContestantsRow fails', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
-        statusText: "Server Error",
+        statusText: 'Server Error',
         json: async () => ({
-          error: "Database error",
+          error: 'Database error',
         }),
       });
 
       const store = useGameStore.getState();
 
       // Should throw error
-      await expect(store.refreshContestantsRow("section_1")).rejects.toThrow(
-        "Database error",
-      );
+      await expect(store.refreshContestantsRow('section_1')).rejects.toThrow('Database error');
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       const state = useGameStore.getState();
-      expect(state.error).toBe("Database error");
+      expect(state.error).toBe('Database error');
     });
 
-    it("should construct correct full URL", async () => {
+    it('should construct correct full URL', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -733,12 +723,12 @@ describe("gameStore", () => {
 
       // Verify the URL contains the game state endpoint
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/state"),
+        expect.stringContaining('/game/state'),
         expect.any(Object),
       );
     });
 
-    it("should include Content-Type header in POST requests", async () => {
+    it('should include Content-Type header in POST requests', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -754,15 +744,15 @@ describe("gameStore", () => {
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           }),
         }),
       );
     });
 
-    it("should clear error before making a new request", async () => {
+    it('should clear error before making a new request', async () => {
       // Set initial error
-      useGameStore.setState({ error: "Previous error" });
+      useGameStore.setState({ error: 'Previous error' });
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -779,16 +769,16 @@ describe("gameStore", () => {
       expect(state.error).toBe(null);
     });
 
-    it("should preserve gameState when fetch fails", async () => {
+    it('should preserve gameState when fetch fails', async () => {
       // Set initial state
       useGameStore.setState({ gameState: mockGameState });
 
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
-        statusText: "Server Error",
+        statusText: 'Server Error',
         json: async () => ({
-          error: "Server error",
+          error: 'Server error',
         }),
       });
 
@@ -798,21 +788,21 @@ describe("gameStore", () => {
       const state = useGameStore.getState();
       // gameState should still be there
       expect(state.gameState).toEqual(mockGameState);
-      expect(state.error).toBe("Server error");
+      expect(state.error).toBe('Server error');
     });
   });
 
   // Wheel Animation Timing Tests
-  describe("Wheel Animation Timing", () => {
+  describe('Wheel Animation Timing', () => {
     const mockWheelState: GameState = {
       workflow: {
         id: 1,
-        current_segment: "section_1",
+        current_segment: 'section_1',
         current_segment_index: 0,
-        phase_type: "wheel",
+        phase_type: 'wheel',
         phase_metadata: '{"type":"wheel"}',
-        created_at: "2025-11-20T12:00:00Z",
-        updated_at: "2025-11-20T12:00:00Z",
+        created_at: '2025-11-20T12:00:00Z',
+        updated_at: '2025-11-20T12:00:00Z',
       },
       contestantsRow: [],
       eligibleAudienceCount: 50,
@@ -834,6 +824,7 @@ describe("gameStore", () => {
         lastUpdated: 0,
         isWheelAnimating: false,
         pendingSpinTarget: null,
+        lastProcessedSpinTimestamp: null,
       });
     });
 
@@ -844,7 +835,7 @@ describe("gameStore", () => {
       vi.useRealTimers();
     });
 
-    it("should set pendingSpinTarget immediately after spin API returns", async () => {
+    it('should set pendingSpinTarget and lastProcessedSpinTimestamp immediately after spin API returns', async () => {
       // Mock spin response - player spins and gets $0.75
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -866,9 +857,9 @@ describe("gameStore", () => {
             playerTotals: [
               {
                 player_id: 10,
-                first_name: "John",
-                last_name: "Doe",
-                photo_filename: "john.jpg",
+                first_name: 'John',
+                last_name: 'Doe',
+                photo_filename: 'john.jpg',
                 position: 1,
                 total: 0.75,
                 eliminated: false,
@@ -877,6 +868,10 @@ describe("gameStore", () => {
           },
         }),
       });
+
+      // Store initial timestamp to verify it changes
+      const initialTimestamp = useGameStore.getState().lastProcessedSpinTimestamp;
+      expect(initialTimestamp).toBe(null);
 
       const store = useGameStore.getState();
       // Start the spin (don't await - it won't complete until timeout fires)
@@ -889,13 +884,16 @@ describe("gameStore", () => {
       const stateAfterSpin = useGameStore.getState();
       expect(stateAfterSpin.pendingSpinTarget).toBe(75);
       expect(stateAfterSpin.isWheelAnimating).toBe(true);
+      // lastProcessedSpinTimestamp should be set to prevent re-animation
+      expect(stateAfterSpin.lastProcessedSpinTimestamp).not.toBe(null);
+      expect(typeof stateAfterSpin.lastProcessedSpinTimestamp).toBe('number');
 
       // Clean up: advance timers to complete the spin
       await vi.advanceTimersByTimeAsync(3000);
       await spinPromise;
     });
 
-    it("should keep isWheelAnimating true for 3 seconds", async () => {
+    it('should keep isWheelAnimating true for 3 seconds', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -936,7 +934,7 @@ describe("gameStore", () => {
       await spinPromise;
     });
 
-    it("should NOT call fetchGameState immediately after spin API returns", async () => {
+    it('should NOT call fetchGameState immediately after spin API returns', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -965,7 +963,7 @@ describe("gameStore", () => {
       // Only the spin API should have been called
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/game/wheel-spin"),
+        expect.stringContaining('/game/wheel-spin'),
         expect.any(Object),
       );
 
@@ -974,7 +972,7 @@ describe("gameStore", () => {
       await spinPromise;
     });
 
-    it("should call fetchGameState only after 3 seconds", async () => {
+    it('should call fetchGameState only after 3 seconds', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -1011,14 +1009,14 @@ describe("gameStore", () => {
       await vi.advanceTimersByTimeAsync(1000);
       expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(mockFetch).toHaveBeenLastCalledWith(
-        expect.stringContaining("/game/state"),
+        expect.stringContaining('/game/state'),
         expect.any(Object),
       );
 
       await spinPromise;
     });
 
-    it("should update gameState with winner only after animation completes", async () => {
+    it('should update gameState with winner only after animation completes', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -1036,9 +1034,9 @@ describe("gameStore", () => {
         playerTotals: [
           {
             player_id: 10,
-            first_name: "John",
-            last_name: "Doe",
-            photo_filename: "john.jpg",
+            first_name: 'John',
+            last_name: 'Doe',
+            photo_filename: 'john.jpg',
             position: 1,
             total: 1.0,
             eliminated: false,
@@ -1073,7 +1071,7 @@ describe("gameStore", () => {
       await spinPromise;
     });
 
-    it("should clear pendingSpinTarget after animation completes", async () => {
+    it('should clear pendingSpinTarget after animation completes', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -1110,7 +1108,7 @@ describe("gameStore", () => {
       await spinPromise;
     });
 
-    it("should not update tie/elimination state until after animation", async () => {
+    it('should not update tie/elimination state until after animation', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -1128,18 +1126,18 @@ describe("gameStore", () => {
         playerTotals: [
           {
             player_id: 10,
-            first_name: "John",
-            last_name: "Doe",
-            photo_filename: "john.jpg",
+            first_name: 'John',
+            last_name: 'Doe',
+            photo_filename: 'john.jpg',
             position: 1,
             total: 0.9,
             eliminated: false,
           },
           {
             player_id: 11,
-            first_name: "Jane",
-            last_name: "Doe",
-            photo_filename: "jane.jpg",
+            first_name: 'Jane',
+            last_name: 'Doe',
+            photo_filename: 'jane.jpg',
             position: 2,
             total: 0.9,
             eliminated: false,
@@ -1174,19 +1172,19 @@ describe("gameStore", () => {
       await spinPromise;
     });
 
-    it("should handle spin API error without leaving animation in bad state", async () => {
+    it('should handle spin API error without leaving animation in bad state', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
-        statusText: "Server Error",
+        statusText: 'Server Error',
         json: async () => ({
-          error: "Spin failed",
+          error: 'Spin failed',
         }),
       });
 
       const store = useGameStore.getState();
 
-      await expect(store.spinWheel(10)).rejects.toThrow("Spin failed");
+      await expect(store.spinWheel(10)).rejects.toThrow('Spin failed');
 
       // Animation states should be reset
       const state = useGameStore.getState();
@@ -1195,7 +1193,7 @@ describe("gameStore", () => {
       expect(state.isLoading).toBe(false);
     });
 
-    it("should convert spin result to cents correctly", async () => {
+    it('should convert spin result to cents correctly', async () => {
       // Test various spin values
       const testCases = [
         { input: 0.05, expected: 5 },
@@ -1248,7 +1246,7 @@ describe("gameStore", () => {
       }
     });
 
-    it("should show elimination only after animation completes", async () => {
+    it('should show elimination only after animation completes', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -1266,9 +1264,9 @@ describe("gameStore", () => {
         playerTotals: [
           {
             player_id: 10,
-            first_name: "John",
-            last_name: "Doe",
-            photo_filename: "john.jpg",
+            first_name: 'John',
+            last_name: 'Doe',
+            photo_filename: 'john.jpg',
             position: 1,
             total: 1.25,
             eliminated: true, // Eliminated
@@ -1298,16 +1296,112 @@ describe("gameStore", () => {
       await vi.advanceTimersByTimeAsync(3000);
 
       // NOW elimination should be visible
-      expect(
-        useGameStore.getState().gameState?.playerTotals?.[0]?.eliminated,
-      ).toBe(true);
+      expect(useGameStore.getState().gameState?.playerTotals?.[0]?.eliminated).toBe(true);
 
       await spinPromise;
+    });
+
+    describe('triggerWheelAnimation', () => {
+      it('should set animation state and lastProcessedSpinTimestamp', async () => {
+        // Initial state should have no animation
+        expect(useGameStore.getState().isWheelAnimating).toBe(false);
+        expect(useGameStore.getState().pendingSpinTarget).toBe(null);
+        expect(useGameStore.getState().lastProcessedSpinTimestamp).toBe(null);
+
+        // Mock fetchGameState for the timeout callback
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            state: mockWheelState,
+          }),
+        });
+
+        const targetValue = 75; // cents
+        const timestamp = Date.now();
+
+        // Trigger the animation
+        useGameStore.getState().triggerWheelAnimation(targetValue, timestamp);
+
+        // Animation state should be set immediately
+        const stateAfterTrigger = useGameStore.getState();
+        expect(stateAfterTrigger.isWheelAnimating).toBe(true);
+        expect(stateAfterTrigger.pendingSpinTarget).toBe(75);
+        expect(stateAfterTrigger.lastProcessedSpinTimestamp).toBe(timestamp);
+
+        // Clean up: advance timers
+        await vi.advanceTimersByTimeAsync(3000);
+      });
+
+      it('should call fetchGameState after 3 seconds', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            state: mockWheelState,
+          }),
+        });
+
+        useGameStore.getState().triggerWheelAnimation(50, Date.now());
+
+        // fetchGameState should NOT be called immediately
+        expect(mockFetch).not.toHaveBeenCalled();
+
+        // Advance 2 seconds - still shouldn't be called
+        await vi.advanceTimersByTimeAsync(2000);
+        expect(mockFetch).not.toHaveBeenCalled();
+
+        // After 3 seconds total, fetchGameState should be called
+        await vi.advanceTimersByTimeAsync(1000);
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/game/state'),
+          expect.any(Object),
+        );
+      });
+
+      it('should clear animation state after 3 seconds', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            state: mockWheelState,
+          }),
+        });
+
+        useGameStore.getState().triggerWheelAnimation(35, Date.now());
+
+        // Animation should be active
+        expect(useGameStore.getState().isWheelAnimating).toBe(true);
+        expect(useGameStore.getState().pendingSpinTarget).toBe(35);
+
+        // After 3 seconds
+        await vi.advanceTimersByTimeAsync(3000);
+
+        // Animation should be cleared
+        expect(useGameStore.getState().isWheelAnimating).toBe(false);
+        expect(useGameStore.getState().pendingSpinTarget).toBe(null);
+      });
+
+      it('should store lastProcessedSpinTimestamp for callers to check before re-animating', () => {
+        // NOTE: The actual re-animation prevention logic is in WheelPhaseView's useEffect,
+        // not in triggerWheelAnimation. This test verifies the store correctly stores
+        // timestamps so that callers can check before calling triggerWheelAnimation.
+        const timestamp = Date.now();
+
+        // First trigger
+        useGameStore.getState().triggerWheelAnimation(75, timestamp);
+        expect(useGameStore.getState().lastProcessedSpinTimestamp).toBe(timestamp);
+
+        // Second trigger with newer timestamp updates the stored value
+        const newTimestamp = timestamp + 1000;
+        useGameStore.getState().triggerWheelAnimation(80, newTimestamp);
+        expect(useGameStore.getState().lastProcessedSpinTimestamp).toBe(newTimestamp);
+      });
     });
   });
 
   // Showcase Actions Tests
-  describe("Showcase Actions", () => {
+  describe('Showcase Actions', () => {
     // Clear mocks before each test in this section to prevent interference
     beforeEach(() => {
       mockFetch.mockReset();
@@ -1328,14 +1422,14 @@ describe("gameStore", () => {
       },
       showcase1: [
         {
-          id: "product-1",
-          product: { name: "Car", price: 25000, images: ["car.jpg"] },
+          id: 'product-1',
+          product: { name: 'Car', price: 25000, images: ['car.jpg'] },
         },
       ],
       showcase2: [
         {
-          id: "product-2",
-          product: { name: "Boat", price: 30000, images: ["boat.jpg"] },
+          id: 'product-2',
+          product: { name: 'Boat', price: 30000, images: ['boat.jpg'] },
         },
       ],
       showcase1Value: 25000,
@@ -1352,15 +1446,15 @@ describe("gameStore", () => {
         bid_amount: 24000,
         retry_number: 0,
         locked: 1,
-        created_at: "2025-12-01T12:00:00Z",
-        updated_at: "2025-12-01T12:00:00Z",
-        first_name: "John",
-        last_name: "Doe",
-        photo_filename: "john-doe.jpg",
+        created_at: '2025-12-01T12:00:00Z',
+        updated_at: '2025-12-01T12:00:00Z',
+        first_name: 'John',
+        last_name: 'Doe',
+        photo_filename: 'john-doe.jpg',
       },
     ];
 
-    describe("fetchShowcaseState", () => {
+    describe('fetchShowcaseState', () => {
       beforeEach(() => {
         // Set up initial game state for showcase tests
         useGameStore.setState({
@@ -1370,7 +1464,7 @@ describe("gameStore", () => {
         });
       });
 
-      it("should fetch showcase state and bids successfully", async () => {
+      it('should fetch showcase state and bids successfully', async () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
@@ -1393,7 +1487,7 @@ describe("gameStore", () => {
 
         // Verify both API calls were made
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/state"),
+          expect.stringContaining('/showcase/state'),
           expect.objectContaining({
             headers: expect.objectContaining({
               Authorization: `Bearer ${testToken}`,
@@ -1402,7 +1496,7 @@ describe("gameStore", () => {
         );
 
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/bids"),
+          expect.stringContaining('/showcase/bids'),
           expect.objectContaining({
             headers: expect.objectContaining({
               Authorization: `Bearer ${testToken}`,
@@ -1419,13 +1513,13 @@ describe("gameStore", () => {
         expect(state.lastUpdated).toBeGreaterThan(0);
       });
 
-      it("should handle showcase state fetch error", async () => {
+      it('should handle showcase state fetch error', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: false,
           status: 400,
-          statusText: "Bad Request",
+          statusText: 'Bad Request',
           json: async () => ({
-            error: "Showcase not initialized",
+            error: 'Showcase not initialized',
           }),
         });
 
@@ -1433,33 +1527,33 @@ describe("gameStore", () => {
         await store.fetchShowcaseState();
 
         const state = useGameStore.getState();
-        expect(state.error).toBe("Showcase not initialized");
+        expect(state.error).toBe('Showcase not initialized');
         expect(state.isLoading).toBe(false);
       });
 
-      it("should handle network error", async () => {
-        mockFetch.mockRejectedValueOnce(new Error("Network error"));
+      it('should handle network error', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
         const store = useGameStore.getState();
         await store.fetchShowcaseState();
 
         const state = useGameStore.getState();
-        expect(state.error).toBe("Network error");
+        expect(state.error).toBe('Network error');
         expect(state.isLoading).toBe(false);
       });
 
-      it("should handle missing auth token", async () => {
+      it('should handle missing auth token', async () => {
         mockToken = null;
 
         const store = useGameStore.getState();
         await store.fetchShowcaseState();
 
         const state = useGameStore.getState();
-        expect(state.error).toBe("Not authenticated");
+        expect(state.error).toBe('Not authenticated');
         expect(mockFetch).not.toHaveBeenCalled();
       });
 
-      it("should handle bids fetch error after successful state fetch", async () => {
+      it('should handle bids fetch error after successful state fetch', async () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
@@ -1471,9 +1565,9 @@ describe("gameStore", () => {
           .mockResolvedValueOnce({
             ok: false,
             status: 500,
-            statusText: "Internal Server Error",
+            statusText: 'Internal Server Error',
             json: async () => ({
-              error: "Failed to fetch bids",
+              error: 'Failed to fetch bids',
             }),
           });
 
@@ -1487,7 +1581,7 @@ describe("gameStore", () => {
       });
     });
 
-    describe("initializeShowcase", () => {
+    describe('initializeShowcase', () => {
       beforeEach(() => {
         useGameStore.setState({
           gameState: mockGameState,
@@ -1496,7 +1590,7 @@ describe("gameStore", () => {
         });
       });
 
-      it("should initialize showcase successfully", async () => {
+      it('should initialize showcase successfully', async () => {
         // Mock initialize API call
         mockFetch
           .mockResolvedValueOnce({
@@ -1528,12 +1622,12 @@ describe("gameStore", () => {
 
         // Verify API calls
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/initialize"),
+          expect.stringContaining('/showcase/initialize'),
           expect.objectContaining({
-            method: "POST",
+            method: 'POST',
             headers: expect.objectContaining({
               Authorization: `Bearer ${testToken}`,
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             }),
           }),
         );
@@ -1545,57 +1639,51 @@ describe("gameStore", () => {
         expect(state.error).toBe(null);
       });
 
-      it("should handle initialize error", async () => {
+      it('should handle initialize error', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: false,
           status: 400,
-          statusText: "Bad Request",
+          statusText: 'Bad Request',
           json: async () => ({
-            error: "Finalists not found",
+            error: 'Finalists not found',
           }),
         });
 
         const store = useGameStore.getState();
 
-        await expect(store.initializeShowcase()).rejects.toThrow(
-          "Finalists not found",
-        );
+        await expect(store.initializeShowcase()).rejects.toThrow('Finalists not found');
 
         const state = useGameStore.getState();
-        expect(state.error).toBe("Finalists not found");
+        expect(state.error).toBe('Finalists not found');
         expect(state.isLoading).toBe(false);
       });
 
-      it("should handle network error", async () => {
-        mockFetch.mockRejectedValueOnce(new Error("Network failure"));
+      it('should handle network error', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('Network failure'));
 
         const store = useGameStore.getState();
 
-        await expect(store.initializeShowcase()).rejects.toThrow(
-          "Network failure",
-        );
+        await expect(store.initializeShowcase()).rejects.toThrow('Network failure');
 
         const state = useGameStore.getState();
-        expect(state.error).toBe("Network failure");
+        expect(state.error).toBe('Network failure');
         expect(state.isLoading).toBe(false);
       });
 
-      it("should handle missing auth token", async () => {
+      it('should handle missing auth token', async () => {
         mockToken = null;
 
         const store = useGameStore.getState();
 
-        await expect(store.initializeShowcase()).rejects.toThrow(
-          "Not authenticated",
-        );
+        await expect(store.initializeShowcase()).rejects.toThrow('Not authenticated');
 
         const state = useGameStore.getState();
-        expect(state.error).toBe("Not authenticated");
+        expect(state.error).toBe('Not authenticated');
         expect(mockFetch).not.toHaveBeenCalled();
       });
     });
 
-    describe("submitPass", () => {
+    describe('submitPass', () => {
       beforeEach(() => {
         useGameStore.setState({
           gameState: mockGameState,
@@ -1604,7 +1692,7 @@ describe("gameStore", () => {
         });
       });
 
-      it("should submit pass successfully", async () => {
+      it('should submit pass successfully', async () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
@@ -1635,9 +1723,9 @@ describe("gameStore", () => {
         await store.submitPass();
 
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/pass"),
+          expect.stringContaining('/showcase/pass'),
           expect.objectContaining({
-            method: "POST",
+            method: 'POST',
             headers: expect.objectContaining({
               Authorization: `Bearer ${testToken}`,
             }),
@@ -1645,47 +1733,43 @@ describe("gameStore", () => {
         );
 
         const state = useGameStore.getState();
-        expect(
-          state.gameState?.showcaseState?.state.finale_player1_passed,
-        ).toBe(1);
+        expect(state.gameState?.showcaseState?.state.finale_player1_passed).toBe(1);
         expect(state.isLoading).toBe(false);
         expect(state.error).toBe(null);
       });
 
-      it("should handle pass error", async () => {
+      it('should handle pass error', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: false,
           status: 400,
-          statusText: "Bad Request",
+          statusText: 'Bad Request',
           json: async () => ({
-            error: "Cannot pass at this time",
+            error: 'Cannot pass at this time',
           }),
         });
 
         const store = useGameStore.getState();
 
-        await expect(store.submitPass()).rejects.toThrow(
-          "Cannot pass at this time",
-        );
+        await expect(store.submitPass()).rejects.toThrow('Cannot pass at this time');
 
         const state = useGameStore.getState();
-        expect(state.error).toBe("Cannot pass at this time");
+        expect(state.error).toBe('Cannot pass at this time');
         expect(state.isLoading).toBe(false);
       });
 
-      it("should handle network error", async () => {
-        mockFetch.mockRejectedValueOnce(new Error("Network failure"));
+      it('should handle network error', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('Network failure'));
 
         const store = useGameStore.getState();
 
-        await expect(store.submitPass()).rejects.toThrow("Network failure");
+        await expect(store.submitPass()).rejects.toThrow('Network failure');
 
         const state = useGameStore.getState();
-        expect(state.error).toBe("Network failure");
+        expect(state.error).toBe('Network failure');
       });
     });
 
-    describe("submitBidDecision", () => {
+    describe('submitBidDecision', () => {
       beforeEach(() => {
         useGameStore.setState({
           gameState: mockGameState,
@@ -1694,7 +1778,7 @@ describe("gameStore", () => {
         });
       });
 
-      it("should submit bid decision successfully", async () => {
+      it('should submit bid decision successfully', async () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
@@ -1718,9 +1802,9 @@ describe("gameStore", () => {
         await store.submitBidDecision();
 
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/bid-decision"),
+          expect.stringContaining('/showcase/bid-decision'),
           expect.objectContaining({
-            method: "POST",
+            method: 'POST',
           }),
         );
 
@@ -1729,28 +1813,26 @@ describe("gameStore", () => {
         expect(state.error).toBe(null);
       });
 
-      it("should handle bid decision error", async () => {
+      it('should handle bid decision error', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: false,
           status: 400,
-          statusText: "Bad Request",
+          statusText: 'Bad Request',
           json: async () => ({
-            error: "Invalid state for bid decision",
+            error: 'Invalid state for bid decision',
           }),
         });
 
         const store = useGameStore.getState();
 
-        await expect(store.submitBidDecision()).rejects.toThrow(
-          "Invalid state for bid decision",
-        );
+        await expect(store.submitBidDecision()).rejects.toThrow('Invalid state for bid decision');
 
         const state = useGameStore.getState();
-        expect(state.error).toBe("Invalid state for bid decision");
+        expect(state.error).toBe('Invalid state for bid decision');
       });
     });
 
-    describe("submitShowcaseBid", () => {
+    describe('submitShowcaseBid', () => {
       beforeEach(() => {
         useGameStore.setState({
           gameState: mockGameState,
@@ -1759,7 +1841,7 @@ describe("gameStore", () => {
         });
       });
 
-      it("should submit showcase bid as player", async () => {
+      it('should submit showcase bid as player', async () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
@@ -1783,9 +1865,9 @@ describe("gameStore", () => {
         await store.submitShowcaseBid(24000);
 
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/submit-bid"),
+          expect.stringContaining('/showcase/submit-bid'),
           expect.objectContaining({
-            method: "POST",
+            method: 'POST',
             body: JSON.stringify({ bid_amount: 24000 }),
           }),
         );
@@ -1796,7 +1878,7 @@ describe("gameStore", () => {
         expect(state.error).toBe(null);
       });
 
-      it("should submit showcase bid as host for another player", async () => {
+      it('should submit showcase bid as host for another player', async () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
@@ -1820,9 +1902,9 @@ describe("gameStore", () => {
         await store.submitShowcaseBid(24000, 2);
 
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/submit-bid"),
+          expect.stringContaining('/showcase/submit-bid'),
           expect.objectContaining({
-            method: "POST",
+            method: 'POST',
             body: JSON.stringify({ bid_amount: 24000, player_id: 2 }),
           }),
         );
@@ -1832,38 +1914,34 @@ describe("gameStore", () => {
         expect(state.error).toBe(null);
       });
 
-      it("should handle submit bid error", async () => {
+      it('should handle submit bid error', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: false,
           status: 400,
-          statusText: "Bad Request",
+          statusText: 'Bad Request',
           json: async () => ({
-            error: "Bid is locked",
+            error: 'Bid is locked',
           }),
         });
 
         const store = useGameStore.getState();
 
-        await expect(store.submitShowcaseBid(24000)).rejects.toThrow(
-          "Bid is locked",
-        );
+        await expect(store.submitShowcaseBid(24000)).rejects.toThrow('Bid is locked');
 
         const state = useGameStore.getState();
-        expect(state.error).toBe("Bid is locked");
+        expect(state.error).toBe('Bid is locked');
       });
 
-      it("should handle network error", async () => {
-        mockFetch.mockRejectedValueOnce(new Error("Connection failed"));
+      it('should handle network error', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('Connection failed'));
 
         const store = useGameStore.getState();
 
-        await expect(store.submitShowcaseBid(24000)).rejects.toThrow(
-          "Connection failed",
-        );
+        await expect(store.submitShowcaseBid(24000)).rejects.toThrow('Connection failed');
       });
     });
 
-    describe("unlockShowcaseBid", () => {
+    describe('unlockShowcaseBid', () => {
       beforeEach(() => {
         useGameStore.setState({
           gameState: mockGameState,
@@ -1872,7 +1950,7 @@ describe("gameStore", () => {
         });
       });
 
-      it("should unlock showcase bid successfully", async () => {
+      it('should unlock showcase bid successfully', async () => {
         const unlockedBids = [
           {
             ...mockShowcaseBids[0],
@@ -1903,9 +1981,9 @@ describe("gameStore", () => {
         await store.unlockShowcaseBid(1);
 
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/unlock-bid"),
+          expect.stringContaining('/showcase/unlock-bid'),
           expect.objectContaining({
-            method: "POST",
+            method: 'POST',
             body: JSON.stringify({ player_id: 1 }),
           }),
         );
@@ -1916,25 +1994,23 @@ describe("gameStore", () => {
         expect(state.error).toBe(null);
       });
 
-      it("should handle unlock error", async () => {
+      it('should handle unlock error', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: false,
           status: 400,
-          statusText: "Bad Request",
+          statusText: 'Bad Request',
           json: async () => ({
-            error: "No bid found for player",
+            error: 'No bid found for player',
           }),
         });
 
         const store = useGameStore.getState();
 
-        await expect(store.unlockShowcaseBid(1)).rejects.toThrow(
-          "No bid found for player",
-        );
+        await expect(store.unlockShowcaseBid(1)).rejects.toThrow('No bid found for player');
       });
     });
 
-    describe("updateShowcaseBid", () => {
+    describe('updateShowcaseBid', () => {
       beforeEach(() => {
         useGameStore.setState({
           gameState: mockGameState,
@@ -1943,7 +2019,7 @@ describe("gameStore", () => {
         });
       });
 
-      it("should update showcase bid successfully", async () => {
+      it('should update showcase bid successfully', async () => {
         const updatedBids = [
           {
             ...mockShowcaseBids[0],
@@ -1974,9 +2050,9 @@ describe("gameStore", () => {
         await store.updateShowcaseBid(1, 25000);
 
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/update-bid"),
+          expect.stringContaining('/showcase/update-bid'),
           expect.objectContaining({
-            method: "POST",
+            method: 'POST',
             body: JSON.stringify({ player_id: 1, bid_amount: 25000 }),
           }),
         );
@@ -1987,25 +2063,23 @@ describe("gameStore", () => {
         expect(state.error).toBe(null);
       });
 
-      it("should handle update error", async () => {
+      it('should handle update error', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: false,
           status: 400,
-          statusText: "Bad Request",
+          statusText: 'Bad Request',
           json: async () => ({
-            error: "Invalid bid amount",
+            error: 'Invalid bid amount',
           }),
         });
 
         const store = useGameStore.getState();
 
-        await expect(store.updateShowcaseBid(1, -100)).rejects.toThrow(
-          "Invalid bid amount",
-        );
+        await expect(store.updateShowcaseBid(1, -100)).rejects.toThrow('Invalid bid amount');
       });
     });
 
-    describe("revealShowcaseWinner", () => {
+    describe('revealShowcaseWinner', () => {
       beforeEach(() => {
         useGameStore.setState({
           gameState: mockGameState,
@@ -2014,7 +2088,7 @@ describe("gameStore", () => {
         });
       });
 
-      it("should reveal winner successfully", async () => {
+      it('should reveal winner successfully', async () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
@@ -2047,9 +2121,9 @@ describe("gameStore", () => {
         const result = await store.revealShowcaseWinner();
 
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/reveal-winner"),
+          expect.stringContaining('/showcase/reveal-winner'),
           expect.objectContaining({
-            method: "POST",
+            method: 'POST',
           }),
         );
 
@@ -2064,7 +2138,7 @@ describe("gameStore", () => {
         expect(state.error).toBe(null);
       });
 
-      it("should handle retry needed scenario", async () => {
+      it('should handle retry needed scenario', async () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
@@ -2098,35 +2172,31 @@ describe("gameStore", () => {
         expect(state.isLoading).toBe(false);
       });
 
-      it("should handle reveal winner error", async () => {
+      it('should handle reveal winner error', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: false,
           status: 400,
-          statusText: "Bad Request",
+          statusText: 'Bad Request',
           json: async () => ({
-            error: "Both players must have bids",
+            error: 'Both players must have bids',
           }),
         });
 
         const store = useGameStore.getState();
 
-        await expect(store.revealShowcaseWinner()).rejects.toThrow(
-          "Both players must have bids",
-        );
+        await expect(store.revealShowcaseWinner()).rejects.toThrow('Both players must have bids');
       });
 
-      it("should handle network error", async () => {
-        mockFetch.mockRejectedValueOnce(new Error("Network timeout"));
+      it('should handle network error', async () => {
+        mockFetch.mockRejectedValueOnce(new Error('Network timeout'));
 
         const store = useGameStore.getState();
 
-        await expect(store.revealShowcaseWinner()).rejects.toThrow(
-          "Network timeout",
-        );
+        await expect(store.revealShowcaseWinner()).rejects.toThrow('Network timeout');
       });
     });
 
-    describe("retryShowcase", () => {
+    describe('retryShowcase', () => {
       beforeEach(() => {
         useGameStore.setState({
           gameState: mockGameState,
@@ -2135,7 +2205,7 @@ describe("gameStore", () => {
         });
       });
 
-      it("should initiate retry successfully", async () => {
+      it('should initiate retry successfully', async () => {
         mockFetch
           .mockResolvedValueOnce({
             ok: true,
@@ -2167,34 +2237,32 @@ describe("gameStore", () => {
         await store.retryShowcase();
 
         expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining("/showcase/retry"),
+          expect.stringContaining('/showcase/retry'),
           expect.objectContaining({
-            method: "POST",
+            method: 'POST',
           }),
         );
 
         const state = useGameStore.getState();
-        expect(state.gameState?.showcaseState?.state.finale_retry_number).toBe(
-          1,
-        );
+        expect(state.gameState?.showcaseState?.state.finale_retry_number).toBe(1);
         expect(state.gameState?.showcaseBids).toEqual([]);
         expect(state.isLoading).toBe(false);
         expect(state.error).toBe(null);
       });
 
-      it("should handle retry error", async () => {
+      it('should handle retry error', async () => {
         mockFetch.mockResolvedValueOnce({
           ok: false,
           status: 400,
-          statusText: "Bad Request",
+          statusText: 'Bad Request',
           json: async () => ({
-            error: "Retry not needed",
+            error: 'Retry not needed',
           }),
         });
 
         const store = useGameStore.getState();
 
-        await expect(store.retryShowcase()).rejects.toThrow("Retry not needed");
+        await expect(store.retryShowcase()).rejects.toThrow('Retry not needed');
       });
     });
   });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   DialogRoot,
   DialogContent,
@@ -6,18 +6,17 @@ import {
   DialogBody,
   DialogFooter,
   DialogCloseTrigger,
-} from "./ui/dialog";
-import { Button, Input, VStack, Separator, Text } from "@chakra-ui/react";
-import { Field } from "./ui/field";
-import { NativeSelectRoot, NativeSelectField } from "./ui/native-select";
-import { Alert } from "./ui/alert";
-import type { Player, PlayerRole } from "../../../backend/src/types/player";
-import { useAuthStore } from "../store/authStore";
-import { PhotoUpload } from "./PhotoUpload";
-import { showToast } from "../utils/toast";
+} from './ui/dialog';
+import { Button, Input, VStack, Separator, Text } from '@chakra-ui/react';
+import { Field } from './ui/field';
+import { NativeSelectRoot, NativeSelectField } from './ui/native-select';
+import { Alert } from './ui/alert';
+import type { Player, PlayerRole } from '../../../backend/src/types/player';
+import { useAuthStore } from '../store/authStore';
+import { PhotoUpload } from './PhotoUpload';
+import { showToast } from '../utils/toast';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 interface EditPlayerModalProps {
   isOpen: boolean;
@@ -26,12 +25,7 @@ interface EditPlayerModalProps {
   onSuccess?: () => void;
 }
 
-export function EditPlayerModal({
-  isOpen,
-  onClose,
-  player,
-  onSuccess,
-}: EditPlayerModalProps) {
+export function EditPlayerModal({ isOpen, onClose, player, onSuccess }: EditPlayerModalProps) {
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isUpdating, setIsUpdating] = useState(false);
   const [firstName, setFirstName] = useState(player.firstName);
@@ -46,43 +40,40 @@ export function EditPlayerModal({
 
     // Client-side validation
     if (!firstName.trim() || !lastName.trim()) {
-      setValidationError("First name and last name are required");
+      setValidationError('First name and last name are required');
       return;
     }
 
     // Validate role change: player -> host is not allowed
-    if (player.role === "player" && role === "host") {
-      setValidationError("Cannot promote a player to host (unfair advantage)");
+    if (player.role === 'player' && role === 'host') {
+      setValidationError('Cannot promote a player to host (unfair advantage)');
       return;
     }
 
     setIsUpdating(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/players/${player.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${sessionToken}`,
-          },
-          body: JSON.stringify({
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            role,
-            weight,
-          }),
+      const response = await fetch(`${API_BASE_URL}/players/${player.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionToken}`,
         },
-      );
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          role,
+          weight,
+        }),
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to update player");
+        throw new Error(error.error || 'Failed to update player');
       }
 
       showToast({
-        title: "Player updated",
-        type: "success",
+        title: 'Player updated',
+        type: 'success',
       });
 
       if (onSuccess) {
@@ -91,13 +82,12 @@ export function EditPlayerModal({
 
       onClose();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to update player";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update player';
       setValidationError(errorMessage);
       showToast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        type: "error",
+        type: 'error',
       });
     } finally {
       setIsUpdating(false);
@@ -128,9 +118,7 @@ export function EditPlayerModal({
                 Player Details
               </Text>
 
-              {validationError && (
-                <Alert status="error">{validationError}</Alert>
-              )}
+              {validationError && <Alert status="error">{validationError}</Alert>}
 
               <Field label="First Name" required>
                 <Input
@@ -182,7 +170,7 @@ export function EditPlayerModal({
                 />
               </Field>
 
-              {player.role === "player" && role === "host" && (
+              {player.role === 'player' && role === 'host' && (
                 <Alert status="warning">
                   Players cannot be promoted to host (unfair advantage)
                 </Alert>
@@ -200,7 +188,7 @@ export function EditPlayerModal({
               disabled={
                 !firstName.trim() ||
                 !lastName.trim() ||
-                (player.role === "player" && role === "host")
+                (player.role === 'player' && role === 'host')
               }
             >
               Save Changes

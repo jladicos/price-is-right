@@ -1,16 +1,15 @@
-import { useState } from "react";
-import { HStack, Button, Text, Box } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
-import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "./ui/menu";
-import { ExportDatabaseModal } from "./ExportDatabaseModal";
-import { ImportDatabaseModal } from "./ImportDatabaseModal";
-import { StartGameConfirmModal } from "./StartGameConfirmModal";
-import { useAuthStore } from "../store/authStore";
-import { showToast } from "../utils/toast";
-import type { GameState } from "../store/gameStore";
+import { useState } from 'react';
+import { HStack, Button, Text, Box } from '@chakra-ui/react';
+import { useNavigate } from 'react-router-dom';
+import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from './ui/menu';
+import { ExportDatabaseModal } from './ExportDatabaseModal';
+import { ImportDatabaseModal } from './ImportDatabaseModal';
+import { StartGameConfirmModal } from './StartGameConfirmModal';
+import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
+import type { GameState } from '../store/gameStore';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 interface GameControlStripProps {
   gameState: GameState;
@@ -78,29 +77,27 @@ export function GameControlStrip({
   const navigate = useNavigate();
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const workflow = gameState.workflow;
-  const isBiddingPhase = workflow.phase_type === "bidding";
-  const isAudienceBidPhase = workflow.phase_type === "audience_bid";
-  const isWheelPhase = workflow.phase_type === "wheel";
-  const isShowcasePhase = workflow.phase_type === "showcase";
+  const isBiddingPhase = workflow.phase_type === 'bidding';
+  const isAudienceBidPhase = workflow.phase_type === 'audience_bid';
+  const isWheelPhase = workflow.phase_type === 'wheel';
+  const isShowcasePhase = workflow.phase_type === 'showcase';
 
   // Modal state
   const [isStartGameModalOpen, setIsStartGameModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
-  const metadata = workflow.phase_metadata
-    ? JSON.parse(workflow.phase_metadata)
-    : {};
+  const metadata = workflow.phase_metadata ? JSON.parse(workflow.phase_metadata) : {};
   const winnerInfo = metadata.winner_info;
   const hasWinnerBeenRevealed =
-    winnerInfo && typeof winnerInfo === "object" && winnerInfo.player_id;
+    winnerInfo && typeof winnerInfo === 'object' && winnerInfo.player_id;
   const currentBids = gameState.currentBids || [];
   const hasBids = currentBids.length > 0;
 
   // Handler for start new game
   const handleStartNewGameClick = () => {
     // Check if there's a game in progress
-    const hasGameInProgress = workflow && workflow.phase_type !== "not_started";
+    const hasGameInProgress = workflow && workflow.phase_type !== 'not_started';
 
     if (hasGameInProgress) {
       // Show confirmation modal if game is in progress
@@ -128,7 +125,7 @@ export function GameControlStrip({
   const handleExportWinners = async () => {
     try {
       if (!sessionToken) {
-        throw new Error("Not authenticated");
+        throw new Error('Not authenticated');
       }
 
       const response = await fetch(`${API_BASE_URL}/admin/export-winners`, {
@@ -139,28 +136,28 @@ export function GameControlStrip({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Export failed");
+        throw new Error(errorData.error || 'Export failed');
       }
 
       const result = await response.json();
 
       // Log winners to browser console for easy access
-      console.log("=== GAME WINNERS ===");
-      console.log("Section 1 Bidding Winners:", result.winners?.section1BiddingWinners || []);
-      console.log("Section 2 Bidding Winners:", result.winners?.section2BiddingWinners || []);
-      console.log("Showcase Winner:", result.winners?.showcaseWinner || "Not yet determined");
-      console.log("====================");
+      console.log('=== GAME WINNERS ===');
+      console.log('Section 1 Bidding Winners:', result.winners?.section1BiddingWinners || []);
+      console.log('Section 2 Bidding Winners:', result.winners?.section2BiddingWinners || []);
+      console.log('Showcase Winner:', result.winners?.showcaseWinner || 'Not yet determined');
+      console.log('====================');
 
       showToast({
-        title: "Winners exported",
+        title: 'Winners exported',
         description: `Saved to ${result.filePath} (also logged to console)`,
-        type: "success",
+        type: 'success',
       });
     } catch (err) {
       showToast({
-        title: "Export failed",
-        description: err instanceof Error ? err.message : "An error occurred",
-        type: "error",
+        title: 'Export failed',
+        description: err instanceof Error ? err.message : 'An error occurred',
+        type: 'error',
       });
     }
   };
@@ -183,7 +180,7 @@ export function GameControlStrip({
         {/* Left: Navigation */}
         <HStack gap={2}>
           <Button
-            onClick={() => navigate("/welcome")}
+            onClick={() => navigate('/welcome')}
             colorPalette="blue"
             variant="solid"
             size="md"
@@ -191,7 +188,7 @@ export function GameControlStrip({
             ← Welcome
           </Button>
 
-          {role === "host" && (
+          {role === 'host' && (
             <MenuRoot>
               <MenuTrigger asChild>
                 <Button colorPalette="purple" variant="solid" size="md">
@@ -208,45 +205,27 @@ export function GameControlStrip({
                   </MenuItem>
                 )}
                 {isBiddingPhase && !hasWinnerBeenRevealed && (
-                  <MenuItem
-                    value="refresh-row"
-                    onClick={onRefreshContestantsRow}
-                  >
+                  <MenuItem value="refresh-row" onClick={onRefreshContestantsRow}>
                     Refresh Entire Row
                   </MenuItem>
                 )}
                 {isWheelPhase && onResetWheel && (
-                  <MenuItem
-                    value="reset-wheel"
-                    onClick={onResetWheel}
-                  >
+                  <MenuItem value="reset-wheel" onClick={onResetWheel}>
                     Reset to First Player
                   </MenuItem>
                 )}
                 {isShowcasePhase && onRestartShowcase && (
-                  <MenuItem
-                    value="restart-showcase"
-                    onClick={onRestartShowcase}
-                  >
+                  <MenuItem value="restart-showcase" onClick={onRestartShowcase}>
                     🔄 Restart Showcase Phase
                   </MenuItem>
                 )}
-                <MenuItem
-                  value="export"
-                  onClick={() => setIsExportModalOpen(true)}
-                >
+                <MenuItem value="export" onClick={() => setIsExportModalOpen(true)}>
                   Export Game State
                 </MenuItem>
-                <MenuItem
-                  value="export-winners"
-                  onClick={handleExportWinners}
-                >
+                <MenuItem value="export-winners" onClick={handleExportWinners}>
                   Export Winners
                 </MenuItem>
-                <MenuItem
-                  value="import"
-                  onClick={() => setIsImportModalOpen(true)}
-                >
+                <MenuItem value="import" onClick={() => setIsImportModalOpen(true)}>
                   Import Game State
                 </MenuItem>
                 <MenuItem value="restart" onClick={onRestartGame}>
@@ -258,25 +237,15 @@ export function GameControlStrip({
         </HStack>
 
         {/* Center: Phase-specific controls */}
-        {role === "host" && isBiddingPhase && (
+        {role === 'host' && isBiddingPhase && (
           <HStack gap={4} justify="center" flex="1" wrap="wrap">
             {/* Product Display Controls */}
             {!isProductModalOpen ? (
-              <Button
-                onClick={onShowProduct}
-                colorPalette="green"
-                size="lg"
-                disabled={isLoading}
-              >
+              <Button onClick={onShowProduct} colorPalette="green" size="lg" disabled={isLoading}>
                 Show Product
               </Button>
             ) : (
-              <Button
-                onClick={onHideProduct}
-                colorPalette="orange"
-                size="lg"
-                disabled={isLoading}
-              >
+              <Button onClick={onHideProduct} colorPalette="orange" size="lg" disabled={isLoading}>
                 Hide Product Modal
               </Button>
             )}
@@ -312,7 +281,7 @@ export function GameControlStrip({
         )}
 
         {/* Audience Bid Phase Controls */}
-        {role === "host" && isAudienceBidPhase && (
+        {role === 'host' && isAudienceBidPhase && (
           <HStack gap={4} justify="center" flex="1" wrap="wrap">
             {/* Phase Info */}
             <Box bg="teal.600" px={4} py={2} borderRadius="md" minWidth="200px">
@@ -330,21 +299,11 @@ export function GameControlStrip({
 
             {/* Product Display Controls */}
             {!isProductModalOpen ? (
-              <Button
-                onClick={onShowProduct}
-                colorPalette="green"
-                size="lg"
-                disabled={isLoading}
-              >
+              <Button onClick={onShowProduct} colorPalette="green" size="lg" disabled={isLoading}>
                 Show Product
               </Button>
             ) : (
-              <Button
-                onClick={onHideProduct}
-                colorPalette="orange"
-                size="lg"
-                disabled={isLoading}
-              >
+              <Button onClick={onHideProduct} colorPalette="orange" size="lg" disabled={isLoading}>
                 Hide Product
               </Button>
             )}
@@ -363,16 +322,10 @@ export function GameControlStrip({
         )}
 
         {/* Wheel Phase Controls */}
-        {role === "host" && isWheelPhase && (
+        {role === 'host' && isWheelPhase && (
           <HStack gap={4} justify="center" flex="1" wrap="wrap">
             {/* Phase Info */}
-            <Box
-              bg="purple.600"
-              px={4}
-              py={2}
-              borderRadius="md"
-              minWidth="200px"
-            >
+            <Box bg="purple.600" px={4} py={2} borderRadius="md" minWidth="200px">
               <Text
                 fontSize="sm"
                 fontWeight="bold"
@@ -387,12 +340,7 @@ export function GameControlStrip({
 
             {/* Next Spinner Button */}
             {showNextSpinnerButton && (
-              <Button
-                onClick={onNextSpinner}
-                colorPalette="teal"
-                size="lg"
-                disabled={isLoading}
-              >
+              <Button onClick={onNextSpinner} colorPalette="teal" size="lg" disabled={isLoading}>
                 Next Spinner →
               </Button>
             )}
@@ -411,7 +359,7 @@ export function GameControlStrip({
         )}
 
         {/* Showcase Phase Controls */}
-        {role === "host" && isShowcasePhase && (
+        {role === 'host' && isShowcasePhase && (
           <HStack gap={4} justify="center" flex="1" wrap="wrap">
             {/* Phase Info */}
             <Box bg="pink.600" px={4} py={2} borderRadius="md" minWidth="200px">
@@ -483,7 +431,6 @@ export function GameControlStrip({
             {/* No "Next Phase" button - Showcase is the final phase */}
           </HStack>
         )}
-
       </HStack>
 
       {/* Modals */}
@@ -493,10 +440,7 @@ export function GameControlStrip({
         onConfirm={handleConfirmStartNewGame}
       />
 
-      <ExportDatabaseModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-      />
+      <ExportDatabaseModal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)} />
 
       <ImportDatabaseModal
         isOpen={isImportModalOpen}

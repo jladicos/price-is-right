@@ -1,4 +1,4 @@
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Text } from '@chakra-ui/react';
 
 /**
  * WaitingScreen - Displayed to non-host players before the game officially starts
@@ -19,7 +19,7 @@ export default function WaitingScreen() {
     >
       <Text
         fontFamily="'Pricedown', sans-serif"
-        fontSize={{ base: "4xl", md: "6xl", lg: "8xl" }}
+        fontSize={{ base: '4xl', md: '6xl', lg: '8xl' }}
         color="white"
         textAlign="center"
         px={4}

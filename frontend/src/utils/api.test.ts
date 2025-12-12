@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import {
   login,
   logout,
@@ -7,12 +7,12 @@ import {
   setSessionTokenGetter,
   type LoginResponse,
   type SessionResponse,
-} from "./api";
+} from './api';
 
 // Mock fetch
 global.fetch = vi.fn();
 
-describe("API Client", () => {
+describe('API Client', () => {
   let mockSessionExpiredHandler: ReturnType<typeof vi.fn>;
   let mockSessionTokenGetter: ReturnType<typeof vi.fn>;
 
@@ -30,22 +30,22 @@ describe("API Client", () => {
     vi.resetAllMocks();
   });
 
-  describe("login", () => {
-    it("should make POST request to /api/auth/login", async () => {
+  describe('login', () => {
+    it('should make POST request to /api/auth/login', async () => {
       const mockResponse: LoginResponse = {
-        sessionToken: "test-token-123",
+        sessionToken: 'test-token-123',
         player: {
           id: 1,
-          firstName: "Test",
-          lastName: "User",
-          accessCode: "TEST01",
-          role: "player",
+          firstName: 'Test',
+          lastName: 'User',
+          accessCode: 'TEST01',
+          role: 'player',
           email: null,
-          photoFilename: "default.jpg",
+          photoFilename: 'default.jpg',
           active: true,
-          sessionToken: "test-token-123",
-          createdAt: "2025-01-01",
-          updatedAt: "2025-01-01",
+          sessionToken: 'test-token-123',
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
         },
       };
 
@@ -54,23 +54,23 @@ describe("API Client", () => {
         json: async () => mockResponse,
       } as Response);
 
-      const result = await login("TEST01");
+      const result = await login('TEST01');
 
       expect(fetch).toHaveBeenCalledWith(
-        "http://localhost:3001/api/auth/login",
+        'http://localhost:3001/api/auth/login',
         expect.objectContaining({
-          method: "POST",
+          method: 'POST',
           headers: expect.objectContaining({
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           }),
-          body: JSON.stringify({ accessCode: "TEST01" }),
+          body: JSON.stringify({ accessCode: 'TEST01' }),
         }),
       );
 
       expect(result).toEqual(mockResponse);
     });
 
-    it("should not include Authorization header for login when no token exists", async () => {
+    it('should not include Authorization header for login when no token exists', async () => {
       mockSessionTokenGetter.mockReturnValue(null);
 
       vi.mocked(fetch).mockResolvedValue({
@@ -78,101 +78,101 @@ describe("API Client", () => {
         json: async () => ({}),
       } as Response);
 
-      await login("TEST01");
+      await login('TEST01');
 
       const callArgs = vi.mocked(fetch).mock.calls[0];
       const headers = callArgs[1]?.headers as Record<string, string>;
 
       // Should not have Authorization header for login
-      expect(headers["Authorization"]).toBeUndefined();
+      expect(headers['Authorization']).toBeUndefined();
     });
 
-    it("should throw error on 401 response", async () => {
+    it('should throw error on 401 response', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
         status: 401,
         json: async () => ({
-          error: "Authentication Failed",
-          message: "Invalid access code",
+          error: 'Authentication Failed',
+          message: 'Invalid access code',
         }),
       } as Response);
 
-      await expect(login("INVALID")).rejects.toThrow("Invalid access code");
+      await expect(login('INVALID')).rejects.toThrow('Invalid access code');
     });
 
-    it("should call session expired handler on 401", async () => {
+    it('should call session expired handler on 401', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
         status: 401,
         json: async () => ({
-          error: "Authentication Failed",
-          message: "Invalid access code",
+          error: 'Authentication Failed',
+          message: 'Invalid access code',
         }),
       } as Response);
 
-      await expect(login("INVALID")).rejects.toThrow();
+      await expect(login('INVALID')).rejects.toThrow();
 
       expect(mockSessionExpiredHandler).toHaveBeenCalledTimes(1);
     });
 
-    it("should throw error on non-401 error responses", async () => {
+    it('should throw error on non-401 error responses', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
         status: 500,
         json: async () => ({
-          error: "Internal Server Error",
-          message: "Something went wrong",
+          error: 'Internal Server Error',
+          message: 'Something went wrong',
         }),
       } as Response);
 
-      await expect(login("TEST01")).rejects.toThrow("Something went wrong");
+      await expect(login('TEST01')).rejects.toThrow('Something went wrong');
     });
 
-    it("should use error field if message is not available", async () => {
+    it('should use error field if message is not available', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
         status: 400,
         json: async () => ({
-          error: "Bad Request",
+          error: 'Bad Request',
         }),
       } as Response);
 
-      await expect(login("TEST01")).rejects.toThrow("Bad Request");
+      await expect(login('TEST01')).rejects.toThrow('Bad Request');
     });
 
-    it("should use generic message if neither error nor message available", async () => {
+    it('should use generic message if neither error nor message available', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
         status: 500,
         json: async () => ({}),
       } as Response);
 
-      await expect(login("TEST01")).rejects.toThrow("Request failed");
+      await expect(login('TEST01')).rejects.toThrow('Request failed');
     });
   });
 
-  describe("logout", () => {
+  describe('logout', () => {
     beforeEach(() => {
-      mockSessionTokenGetter.mockReturnValue("test-token-123");
+      mockSessionTokenGetter.mockReturnValue('test-token-123');
     });
 
-    it("should make POST request to /api/auth/logout", async () => {
+    it('should make POST request to /api/auth/logout', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
-        json: async () => ({ message: "Logged out successfully" }),
+        json: async () => ({ message: 'Logged out successfully' }),
       } as Response);
 
       await logout();
 
       expect(fetch).toHaveBeenCalledWith(
-        "http://localhost:3001/api/auth/logout",
+        'http://localhost:3001/api/auth/logout',
         expect.objectContaining({
-          method: "POST",
+          method: 'POST',
         }),
       );
     });
 
-    it("should include Authorization header with session token", async () => {
+    it('should include Authorization header with session token', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: async () => ({}),
@@ -183,10 +183,10 @@ describe("API Client", () => {
       const callArgs = vi.mocked(fetch).mock.calls[0];
       const headers = callArgs[1]?.headers as Record<string, string>;
 
-      expect(headers["Authorization"]).toBe("Bearer test-token-123");
+      expect(headers['Authorization']).toBe('Bearer test-token-123');
     });
 
-    it("should not include Authorization header if no token", async () => {
+    it('should not include Authorization header if no token', async () => {
       mockSessionTokenGetter.mockReturnValue(null);
 
       vi.mocked(fetch).mockResolvedValue({
@@ -199,43 +199,43 @@ describe("API Client", () => {
       const callArgs = vi.mocked(fetch).mock.calls[0];
       const headers = callArgs[1]?.headers as Record<string, string>;
 
-      expect(headers["Authorization"]).toBeUndefined();
+      expect(headers['Authorization']).toBeUndefined();
     });
 
-    it("should handle 401 response", async () => {
+    it('should handle 401 response', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
         status: 401,
         json: async () => ({
-          error: "Unauthorized",
-          message: "Invalid session",
+          error: 'Unauthorized',
+          message: 'Invalid session',
         }),
       } as Response);
 
-      await expect(logout()).rejects.toThrow("Invalid session");
+      await expect(logout()).rejects.toThrow('Invalid session');
       expect(mockSessionExpiredHandler).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("validateSession", () => {
+  describe('validateSession', () => {
     beforeEach(() => {
-      mockSessionTokenGetter.mockReturnValue("test-token-123");
+      mockSessionTokenGetter.mockReturnValue('test-token-123');
     });
 
-    it("should make GET request to /api/auth/session", async () => {
+    it('should make GET request to /api/auth/session', async () => {
       const mockResponse: SessionResponse = {
         player: {
           id: 1,
-          firstName: "Test",
-          lastName: "User",
-          accessCode: "TEST01",
-          role: "player",
+          firstName: 'Test',
+          lastName: 'User',
+          accessCode: 'TEST01',
+          role: 'player',
           email: null,
-          photoFilename: "default.jpg",
+          photoFilename: 'default.jpg',
           active: true,
-          sessionToken: "test-token-123",
-          createdAt: "2025-01-01",
-          updatedAt: "2025-01-01",
+          sessionToken: 'test-token-123',
+          createdAt: '2025-01-01',
+          updatedAt: '2025-01-01',
         },
       };
 
@@ -247,16 +247,16 @@ describe("API Client", () => {
       const result = await validateSession();
 
       expect(fetch).toHaveBeenCalledWith(
-        "http://localhost:3001/api/auth/session",
+        'http://localhost:3001/api/auth/session',
         expect.objectContaining({
-          method: "GET",
+          method: 'GET',
         }),
       );
 
       expect(result).toEqual(mockResponse);
     });
 
-    it("should include Authorization header", async () => {
+    it('should include Authorization header', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: async () => ({}),
@@ -267,29 +267,27 @@ describe("API Client", () => {
       const callArgs = vi.mocked(fetch).mock.calls[0];
       const headers = callArgs[1]?.headers as Record<string, string>;
 
-      expect(headers["Authorization"]).toBe("Bearer test-token-123");
+      expect(headers['Authorization']).toBe('Bearer test-token-123');
     });
 
-    it("should handle 401 response", async () => {
+    it('should handle 401 response', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
         status: 401,
         json: async () => ({
-          error: "Unauthorized",
-          message: "Invalid or expired session",
+          error: 'Unauthorized',
+          message: 'Invalid or expired session',
         }),
       } as Response);
 
-      await expect(validateSession()).rejects.toThrow(
-        "Invalid or expired session",
-      );
+      await expect(validateSession()).rejects.toThrow('Invalid or expired session');
       expect(mockSessionExpiredHandler).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("Session token injection", () => {
-    it("should inject token from getter for all authenticated requests", async () => {
-      mockSessionTokenGetter.mockReturnValue("my-session-token");
+  describe('Session token injection', () => {
+    it('should inject token from getter for all authenticated requests', async () => {
+      mockSessionTokenGetter.mockReturnValue('my-session-token');
 
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
@@ -301,10 +299,10 @@ describe("API Client", () => {
       const callArgs = vi.mocked(fetch).mock.calls[0];
       const headers = callArgs[1]?.headers as Record<string, string>;
 
-      expect(headers["Authorization"]).toBe("Bearer my-session-token");
+      expect(headers['Authorization']).toBe('Bearer my-session-token');
     });
 
-    it("should handle token getter returning null", async () => {
+    it('should handle token getter returning null', async () => {
       mockSessionTokenGetter.mockReturnValue(null);
 
       vi.mocked(fetch).mockResolvedValue({
@@ -317,64 +315,64 @@ describe("API Client", () => {
       const callArgs = vi.mocked(fetch).mock.calls[0];
       const headers = callArgs[1]?.headers as Record<string, string>;
 
-      expect(headers["Authorization"]).toBeUndefined();
+      expect(headers['Authorization']).toBeUndefined();
     });
   });
 
-  describe("Error handling", () => {
+  describe('Error handling', () => {
     beforeEach(() => {
-      mockSessionTokenGetter.mockReturnValue("test-token");
+      mockSessionTokenGetter.mockReturnValue('test-token');
     });
 
-    it("should handle network errors", async () => {
-      vi.mocked(fetch).mockRejectedValue(new Error("Network error"));
+    it('should handle network errors', async () => {
+      vi.mocked(fetch).mockRejectedValue(new Error('Network error'));
 
-      await expect(login("TEST01")).rejects.toThrow("Network error");
+      await expect(login('TEST01')).rejects.toThrow('Network error');
     });
 
-    it("should handle JSON parse errors", async () => {
+    it('should handle JSON parse errors', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: async () => {
-          throw new Error("Invalid JSON");
+          throw new Error('Invalid JSON');
         },
       } as Response);
 
-      await expect(login("TEST01")).rejects.toThrow("Invalid JSON");
+      await expect(login('TEST01')).rejects.toThrow('Invalid JSON');
     });
 
-    it("should not call session expired handler for non-401 errors", async () => {
+    it('should not call session expired handler for non-401 errors', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: false,
         status: 500,
         json: async () => ({
-          error: "Internal Server Error",
+          error: 'Internal Server Error',
         }),
       } as Response);
 
-      await expect(login("TEST01")).rejects.toThrow();
+      await expect(login('TEST01')).rejects.toThrow();
 
       expect(mockSessionExpiredHandler).not.toHaveBeenCalled();
     });
   });
 
-  describe("Content-Type header", () => {
+  describe('Content-Type header', () => {
     beforeEach(() => {
-      mockSessionTokenGetter.mockReturnValue("test-token");
+      mockSessionTokenGetter.mockReturnValue('test-token');
     });
 
-    it("should always include Content-Type: application/json", async () => {
+    it('should always include Content-Type: application/json', async () => {
       vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: async () => ({}),
       } as Response);
 
-      await login("TEST01");
+      await login('TEST01');
 
       const callArgs = vi.mocked(fetch).mock.calls[0];
       const headers = callArgs[1]?.headers as Record<string, string>;
 
-      expect(headers["Content-Type"]).toBe("application/json");
+      expect(headers['Content-Type']).toBe('application/json');
     });
   });
 });

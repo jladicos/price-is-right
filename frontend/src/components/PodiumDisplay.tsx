@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Box, VStack, HStack, Text, Input, Button } from "@chakra-ui/react";
-import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from "./ui/menu";
-import { PlayerCard } from "./PlayerCard";
-import type { ContestantWithPlayer } from "../store/gameStore";
-import type { BidWithPlayer } from "../store/gameStore";
+import { useState } from 'react';
+import { Box, VStack, HStack, Text, Input, Button } from '@chakra-ui/react';
+import { MenuContent, MenuItem, MenuRoot, MenuTrigger } from './ui/menu';
+import { PlayerCard } from './PlayerCard';
+import type { ContestantWithPlayer } from '../store/gameStore';
+import type { BidWithPlayer } from '../store/gameStore';
 
 interface PodiumDisplayProps {
   position: number; // 1-5
@@ -24,19 +24,16 @@ interface PodiumDisplayProps {
   onUnlockBid?: (bidId: number) => void;
   onRevealContestant?: (contestantRowId: number) => void;
   onReplaceContestantRandom?: (contestantRowId: number) => void;
-  onReplaceContestantManual?: (
-    contestantRowId: number,
-    position: number,
-  ) => void;
+  onReplaceContestantManual?: (contestantRowId: number, position: number) => void;
 }
 
 // Position-specific colors
 const PODIUM_COLORS = {
-  1: { primary: "#C80000", light: "#FF4444" }, // Red
-  2: { primary: "#FFD700", light: "#FFEB99" }, // Yellow
-  3: { primary: "#0064C8", light: "#4D9FFF" }, // Blue
-  4: { primary: "#00B400", light: "#66FF66" }, // Green
-  5: { primary: "#9600C8", light: "#C966FF" }, // Purple
+  1: { primary: '#C80000', light: '#FF4444' }, // Red
+  2: { primary: '#FFD700', light: '#FFEB99' }, // Yellow
+  3: { primary: '#0064C8', light: '#4D9FFF' }, // Blue
+  4: { primary: '#00B400', light: '#66FF66' }, // Green
+  5: { primary: '#9600C8', light: '#C966FF' }, // Purple
 };
 
 export function PodiumDisplay({
@@ -60,7 +57,7 @@ export function PodiumDisplay({
   onReplaceContestantRandom,
   onReplaceContestantManual,
 }: PodiumDisplayProps) {
-  const [bidInput, setBidInput] = useState("");
+  const [bidInput, setBidInput] = useState('');
   const [isEditingBid, setIsEditingBid] = useState(false);
 
   // Get colors for this position
@@ -76,9 +73,9 @@ export function PodiumDisplay({
   };
 
   // Responsive sizes (width only - height stays the same)
-  const podiumWidth = { base: "120px", lg: "180px" };
-  const photoSize = { base: "80px", lg: "150px" };
-  const podiumBodyWidth = { base: "110px", lg: "160px" };
+  const podiumWidth = { base: '120px', lg: '180px' };
+  const photoSize = { base: '80px', lg: '150px' };
+  const podiumBodyWidth = { base: '110px', lg: '160px' };
 
   // Empty podium case
   if (!contestant) {
@@ -91,7 +88,7 @@ export function PodiumDisplay({
         data-testid={`podium-${position}-empty`}
       >
         {/* Empty name space - matches revealed state height */}
-        <Box height={{ base: "42px", lg: "52px" }} />
+        <Box height={{ base: '42px', lg: '52px' }} />
 
         <Box
           width={photoSize}
@@ -137,7 +134,7 @@ export function PodiumDisplay({
   }
 
   // Pending reveal case
-  if (contestant.status === "pending_reveal") {
+  if (contestant.status === 'pending_reveal') {
     return (
       <VStack
         gap={4}
@@ -146,7 +143,7 @@ export function PodiumDisplay({
         data-testid={`podium-${position}-pending`}
       >
         {/* Blank name space - matches revealed state height */}
-        <Box height={{ base: "42px", lg: "52px" }} />
+        <Box height={{ base: '42px', lg: '52px' }} />
 
         {/* Blank photo space */}
         <Box width={photoSize} height={photoSize} alignSelf="center" />
@@ -156,9 +153,7 @@ export function PodiumDisplay({
           position="relative"
           alignSelf="center"
           width={podiumBodyWidth}
-          boxShadow={
-            shouldShowRevealButton ? getGlowShadow(colors.primary) : "none"
-          }
+          boxShadow={shouldShowRevealButton ? getGlowShadow(colors.primary) : 'none'}
           borderRadius="lg"
           transition="all 0.3s ease"
         >
@@ -192,7 +187,7 @@ export function PodiumDisplay({
 
         {/* Button space - always reserve space */}
         <Box minHeight="44px" position="relative" zIndex={3}>
-          {role === "host" && onRevealContestant && shouldShowRevealButton && (
+          {role === 'host' && onRevealContestant && shouldShowRevealButton && (
             <Button
               onClick={() => onRevealContestant(contestant.id)}
               colorPalette="green"
@@ -212,7 +207,7 @@ export function PodiumDisplay({
   const isCurrentPlayer = currentPlayerId === contestant.player_id;
   const canInputBid =
     isCurrentBidder &&
-    (isCurrentPlayer || role === "host") &&
+    (isCurrentPlayer || role === 'host') &&
     !bid &&
     allContestantsRevealed &&
     productHasBeenShown;
@@ -226,12 +221,12 @@ export function PodiumDisplay({
     if (isEditingBid && bid && onUpdateBid) {
       // Editing existing bid
       onUpdateBid(bid.id, amount);
-      setBidInput("");
+      setBidInput('');
       setIsEditingBid(false);
     } else if (onBidSubmit) {
       // Submitting new bid
       onBidSubmit(position, amount);
-      setBidInput("");
+      setBidInput('');
       setIsEditingBid(false);
     }
   };
@@ -244,7 +239,7 @@ export function PodiumDisplay({
    * - Press Escape → Cancel edit mode
    */
   const handleBidClick = () => {
-    if (bid && role === "host") {
+    if (bid && role === 'host') {
       // Enter edit mode
       setIsEditingBid(true);
       setBidInput(bid.bid_amount.toString());
@@ -253,7 +248,7 @@ export function PodiumDisplay({
 
   const handleCancelEdit = () => {
     setIsEditingBid(false);
-    setBidInput("");
+    setBidInput('');
   };
 
   return (
@@ -275,14 +270,14 @@ export function PodiumDisplay({
           borderRadius="md"
           boxShadow="sm"
           border="5px solid black"
-          height={{ base: "42px", lg: "52px" }}
+          height={{ base: '42px', lg: '52px' }}
           display="flex"
           alignItems="center"
           justifyContent="center"
           alignSelf="center"
         >
           <Text
-            fontSize={{ base: "sm", lg: "xl" }}
+            fontSize={{ base: 'sm', lg: 'xl' }}
             fontWeight="bold"
             textAlign="center"
             color="gray.800"
@@ -292,7 +287,7 @@ export function PodiumDisplay({
         </Box>
       )}
       {/* Empty space for winner to maintain layout */}
-      {isWinner && <Box height={{ base: "42px", lg: "52px" }} />}
+      {isWinner && <Box height={{ base: '42px', lg: '52px' }} />}
 
       {/* Profile Photo - maintains space but winner image floats above */}
       <Box width={photoSize} height={photoSize} alignSelf="center" position="relative">
@@ -300,7 +295,7 @@ export function PodiumDisplay({
         {isWinner && (
           <Box
             position="absolute"
-            bottom={{ base: "calc(100% + 50px)", lg: "calc(100% + 100px)" }}
+            bottom={{ base: 'calc(100% + 50px)', lg: 'calc(100% + 100px)' }}
             left="50%"
             transform="translateX(-50%)"
             bg="green.500"
@@ -309,7 +304,7 @@ export function PodiumDisplay({
             py={{ base: 1, lg: 3 }}
             borderRadius="full"
             fontWeight="bold"
-            fontSize={{ base: "sm", lg: "xl" }}
+            fontSize={{ base: 'sm', lg: 'xl' }}
             boxShadow="lg"
             animation="pulse 2s ease-in-out infinite"
             data-testid={`winner-label-${position}`}
@@ -322,29 +317,29 @@ export function PodiumDisplay({
 
         {/* Actual photo - absolute positioned for winner to float, bottom-aligned */}
         <Box
-          position={isWinner ? "absolute" : "relative"}
-          bottom={isWinner ? 0 : "auto"}
-          left={isWinner ? "50%" : "auto"}
-          transform={isWinner ? "translateX(-50%)" : "none"}
-          width={isWinner ? { base: "120px", lg: "240px" } : photoSize}
-          height={isWinner ? { base: "120px", lg: "240px" } : photoSize}
+          position={isWinner ? 'absolute' : 'relative'}
+          bottom={isWinner ? 0 : 'auto'}
+          left={isWinner ? '50%' : 'auto'}
+          transform={isWinner ? 'translateX(-50%)' : 'none'}
+          width={isWinner ? { base: '120px', lg: '240px' } : photoSize}
+          height={isWinner ? { base: '120px', lg: '240px' } : photoSize}
           zIndex={isWinner ? 15 : 1}
           overflow="hidden"
           borderRadius="md"
           border="3px solid"
           borderColor={
             isWinner
-              ? "green.500"
+              ? 'green.500'
               : isCurrentBidder && allContestantsRevealed && productHasBeenShown
-                ? "yellow.400"
-                : "gray.300"
+                ? 'yellow.400'
+                : 'gray.300'
           }
           boxShadow={
             isWinner
-              ? "0 0 20px rgba(34, 197, 94, 0.6)"
+              ? '0 0 20px rgba(34, 197, 94, 0.6)'
               : isCurrentBidder && allContestantsRevealed && productHasBeenShown
-                ? "0 0 15px rgba(250, 204, 21, 0.5)"
-                : "sm"
+                ? '0 0 15px rgba(250, 204, 21, 0.5)'
+                : 'sm'
           }
         >
           <PlayerCard
@@ -354,7 +349,7 @@ export function PodiumDisplay({
               last_name: contestant.last_name,
               photo_filename: contestant.photo_filename,
             }}
-            size={isWinner ? "large" : "medium"}
+            size={isWinner ? 'large' : 'medium'}
             fillContainer={true}
             showName={false} // Name handled separately above
             badge={undefined} // Badge handled separately for winners
@@ -373,7 +368,7 @@ export function PodiumDisplay({
             ? getGlowShadow(colors.primary)
             : isCurrentBidder && allContestantsRevealed && productHasBeenShown
               ? getGlowShadow(colors.primary)
-              : "none"
+              : 'none'
         }
         borderRadius="lg"
         transition="all 0.3s ease"
@@ -423,17 +418,13 @@ export function PodiumDisplay({
           justifyContent="center"
           overflow="hidden"
           boxShadow="inset 0 2px 8px rgba(0,0,0,0.5)"
-          cursor={
-            role === "host" && bid && !isEditingBid ? "pointer" : "default"
-          }
-          onClick={
-            role === "host" && bid && !isEditingBid ? handleBidClick : undefined
-          }
+          cursor={role === 'host' && bid && !isEditingBid ? 'pointer' : 'default'}
+          onClick={role === 'host' && bid && !isEditingBid ? handleBidClick : undefined}
           _hover={
-            role === "host" && bid && !isEditingBid
+            role === 'host' && bid && !isEditingBid
               ? {
-                  borderColor: "blue.400",
-                  boxShadow: "0 0 10px rgba(59, 130, 246, 0.4)",
+                  borderColor: 'blue.400',
+                  boxShadow: '0 0 10px rgba(59, 130, 246, 0.4)',
                 }
               : {}
           }
@@ -445,9 +436,9 @@ export function PodiumDisplay({
                 value={bidInput}
                 onChange={(e) => setBidInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                  if (e.key === 'Enter') {
                     handleBidSubmit();
-                  } else if (e.key === "Escape") {
+                  } else if (e.key === 'Escape') {
                     handleCancelEdit();
                   }
                 }}
@@ -461,12 +452,12 @@ export function PodiumDisplay({
                 fontSize="2xl"
                 fontWeight="bold"
                 fontFamily="monospace"
-                _placeholder={{ color: "gray.600" }}
+                _placeholder={{ color: 'gray.600' }}
                 autoFocus={isCurrentPlayer || isEditingBid}
                 data-testid={`bid-input-${position}`}
               />
               {/* Show submit button only for players (not host) */}
-              {role !== "host" && (
+              {role !== 'host' && (
                 <Button
                   onClick={handleBidSubmit}
                   size="xs"
@@ -483,9 +474,9 @@ export function PodiumDisplay({
               <Text
                 fontSize="3xl"
                 fontWeight="bold"
-                color={isWinner ? "green.400" : colors.light}
+                color={isWinner ? 'green.400' : colors.light}
                 fontFamily="monospace"
-                animation={isWinner ? "flash 1.5s ease-in-out infinite" : "none"}
+                animation={isWinner ? 'flash 1.5s ease-in-out infinite' : 'none'}
                 data-testid={`bid-amount-${position}`}
               >
                 {bid.bid_amount}
@@ -494,11 +485,12 @@ export function PodiumDisplay({
                 <Text
                   fontSize="lg"
                   fontWeight="bold"
-                  color={bidDifference > 0 ? "red.400" : "cyan.400"}
+                  color={bidDifference > 0 ? 'red.400' : 'cyan.400'}
                   fontFamily="monospace"
                   data-testid={`bid-difference-${position}`}
                 >
-                  {bidDifference > 0 ? "+" : ""}{bidDifference}
+                  {bidDifference > 0 ? '+' : ''}
+                  {bidDifference}
                 </Text>
               )}
             </VStack>
@@ -512,7 +504,7 @@ export function PodiumDisplay({
 
       {/* Button space - always reserve space */}
       <Box minHeight="44px" position="relative" zIndex={3}>
-        {role === "host" &&
+        {role === 'host' &&
           (onReplaceContestantRandom || onReplaceContestantManual) &&
           canReplaceContestants && (
             <MenuRoot>
@@ -539,9 +531,7 @@ export function PodiumDisplay({
                 {onReplaceContestantManual && (
                   <MenuItem
                     value="replace-manual"
-                    onClick={() =>
-                      onReplaceContestantManual(contestant.id, position)
-                    }
+                    onClick={() => onReplaceContestantManual(contestant.id, position)}
                   >
                     Replace with Manual
                   </MenuItem>

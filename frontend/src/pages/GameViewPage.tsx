@@ -1,37 +1,29 @@
-import { useEffect } from "react";
-import {
-  Container,
-  VStack,
-  Heading,
-  Text,
-  Button,
-  Spinner,
-  Center,
-} from "@chakra-ui/react";
-import { useGameState } from "../hooks/useGameState";
-import { useGameStore } from "../store/gameStore";
-import { useAuthStore } from "../store/authStore";
-import { BiddingPhaseView } from "../components/phases/BiddingPhaseView";
-import { AudienceBidPhaseView } from "../components/phases/AudienceBidPhaseView";
-import { WheelPhaseView } from "./WheelPhaseView";
-import { ShowcasePhaseView } from "../components/phases/ShowcasePhaseView";
-import WaitingScreen from "./WaitingScreen";
-import { showToast } from "../utils/toast";
+import { useEffect } from 'react';
+import { Container, VStack, Heading, Text, Button, Spinner, Center } from '@chakra-ui/react';
+import { useGameState } from '../hooks/useGameState';
+import { useGameStore } from '../store/gameStore';
+import { useAuthStore } from '../store/authStore';
+import { BiddingPhaseView } from '../components/phases/BiddingPhaseView';
+import { AudienceBidPhaseView } from '../components/phases/AudienceBidPhaseView';
+import { WheelPhaseView } from './WheelPhaseView';
+import { ShowcasePhaseView } from '../components/phases/ShowcasePhaseView';
+import WaitingScreen from './WaitingScreen';
+import { showToast } from '../utils/toast';
 
 export default function GameViewPage() {
   const { currentPlayer } = useAuthStore();
   const { gameState, isLoading, error } = useGameState();
   const { startNewGame, officiallyStartGame } = useGameStore();
 
-  const role = currentPlayer?.role || "audience";
+  const role = currentPlayer?.role || 'audience';
 
   // Handle errors
   useEffect(() => {
     if (error) {
       showToast({
-        title: "Error",
+        title: 'Error',
         description: error,
-        type: "error",
+        type: 'error',
       });
     }
   }, [error]);
@@ -51,9 +43,7 @@ export default function GameViewPage() {
       <Container maxW="4xl" centerContent py={10}>
         <VStack gap={6}>
           <Heading>Game Not Available</Heading>
-          <Text>
-            Unable to load game state. Please try refreshing the page.
-          </Text>
+          <Text>Unable to load game state. Please try refreshing the page.</Text>
         </VStack>
       </Container>
     );
@@ -63,17 +53,17 @@ export default function GameViewPage() {
   const officiallyStarted = gameState.workflow.officially_started === 1;
 
   // Show waiting screen for non-host players before game is officially started
-  if (!officiallyStarted && role !== "host") {
+  if (!officiallyStarted && role !== 'host') {
     return <WaitingScreen />;
   }
 
   // Handle "not_started" phase
-  if (phaseType === "not_started") {
+  if (phaseType === 'not_started') {
     return (
       <Container maxW="4xl" centerContent py={10}>
         <VStack gap={6}>
           <Heading>Game Not Started</Heading>
-          {role === "host" ? (
+          {role === 'host' ? (
             <>
               <Text>Click the button below to start a new game.</Text>
               <Button
@@ -84,12 +74,9 @@ export default function GameViewPage() {
                     await startNewGame();
                   } catch (err) {
                     showToast({
-                      title: "Error",
-                      description:
-                        err instanceof Error
-                          ? err.message
-                          : "Failed to start game",
-                      type: "error",
+                      title: 'Error',
+                      description: err instanceof Error ? err.message : 'Failed to start game',
+                      type: 'error',
                     });
                   }
                 }}
@@ -106,14 +93,12 @@ export default function GameViewPage() {
   }
 
   // Host can officially start the game (show button if not yet started)
-  if (!officiallyStarted && role === "host") {
+  if (!officiallyStarted && role === 'host') {
     return (
       <Container maxW="4xl" centerContent py={10}>
         <VStack gap={6}>
           <Heading>Ready to Start</Heading>
-          <Text>
-            Players are on the waiting screen. Click below when ready to begin.
-          </Text>
+          <Text>Players are on the waiting screen. Click below when ready to begin.</Text>
           <Button
             colorPalette="green"
             size="lg"
@@ -122,12 +107,9 @@ export default function GameViewPage() {
                 await officiallyStartGame();
               } catch (err) {
                 showToast({
-                  title: "Error",
-                  description:
-                    err instanceof Error
-                      ? err.message
-                      : "Failed to start game",
-                  type: "error",
+                  title: 'Error',
+                  description: err instanceof Error ? err.message : 'Failed to start game',
+                  type: 'error',
                 });
               }
             }}
@@ -141,33 +123,33 @@ export default function GameViewPage() {
 
   // Route to appropriate phase component
   switch (phaseType) {
-    case "bidding":
+    case 'bidding':
       return <BiddingPhaseView gameState={gameState} />;
 
-    case "audience_bid":
+    case 'audience_bid':
       return <AudienceBidPhaseView gameState={gameState} />;
 
-    case "contestant_selection":
+    case 'contestant_selection':
       // TODO: Implement ContestantSelectionPhaseView
       return (
         <Container maxW="4xl" centerContent py={10}>
           <VStack gap={6}>
             <Heading>Contestant Selection</Heading>
             <Text>
-              Contestant selection phase in progress. Use{" "}
+              Contestant selection phase in progress. Use{' '}
               <Text as="span" fontWeight="bold">
                 /host/game-control
-              </Text>{" "}
+              </Text>{' '}
               for now.
             </Text>
           </VStack>
         </Container>
       );
 
-    case "wheel":
+    case 'wheel':
       return <WheelPhaseView gameState={gameState} />;
 
-    case "showcase":
+    case 'showcase':
       return <ShowcasePhaseView gameState={gameState} />;
 
     default:

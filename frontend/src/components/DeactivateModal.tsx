@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   DialogRoot,
   DialogContent,
@@ -6,15 +6,14 @@ import {
   DialogBody,
   DialogFooter,
   DialogCloseTrigger,
-} from "./ui/dialog";
-import { Button, Text, VStack } from "@chakra-ui/react";
-import { Alert } from "./ui/alert";
-import type { Player } from "../../../backend/src/types/player";
-import { useAuthStore } from "../store/authStore";
-import { showToast } from "../utils/toast";
+} from './ui/dialog';
+import { Button, Text, VStack } from '@chakra-ui/react';
+import { Alert } from './ui/alert';
+import type { Player } from '../../../backend/src/types/player';
+import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 interface DeactivateModalProps {
   isOpen: boolean;
@@ -23,31 +22,23 @@ interface DeactivateModalProps {
   onSuccess?: () => void;
 }
 
-export function DeactivateModal({
-  isOpen,
-  onClose,
-  player,
-  onSuccess,
-}: DeactivateModalProps) {
+export function DeactivateModal({ isOpen, onClose, player, onSuccess }: DeactivateModalProps) {
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const isDeactivating = player.active;
-  const action = isDeactivating ? "deactivate" : "activate";
-  const endpoint = isDeactivating ? "deactivate" : "activate";
+  const action = isDeactivating ? 'deactivate' : 'activate';
+  const endpoint = isDeactivating ? 'deactivate' : 'activate';
 
   const handleConfirm = async () => {
     setIsUpdating(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/players/${player.id}/${endpoint}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${sessionToken}`,
-          },
+      const response = await fetch(`${API_BASE_URL}/players/${player.id}/${endpoint}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
         },
-      );
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -55,11 +46,11 @@ export function DeactivateModal({
       }
 
       showToast({
-        title: `Player ${isDeactivating ? "deactivated" : "activated"}`,
+        title: `Player ${isDeactivating ? 'deactivated' : 'activated'}`,
         description: isDeactivating
-          ? "Player has been deactivated and logged out"
-          : "Player has been activated",
-        type: "success",
+          ? 'Player has been deactivated and logged out'
+          : 'Player has been activated',
+        type: 'success',
       });
 
       if (onSuccess) {
@@ -69,10 +60,9 @@ export function DeactivateModal({
       onClose();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : `Failed to ${action} player`,
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : `Failed to ${action} player`,
+        type: 'error',
       });
     } finally {
       setIsUpdating(false);
@@ -82,20 +72,17 @@ export function DeactivateModal({
   return (
     <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()}>
       <DialogContent>
-        <DialogHeader>
-          {isDeactivating ? "Deactivate" : "Activate"} Player
-        </DialogHeader>
+        <DialogHeader>{isDeactivating ? 'Deactivate' : 'Activate'} Player</DialogHeader>
         <DialogCloseTrigger />
         <DialogBody>
           <VStack gap="4" align="stretch">
             {isDeactivating && (
               <Alert status="warning">
-                This will log out the player and prevent them from accessing the
-                game
+                This will log out the player and prevent them from accessing the game
               </Alert>
             )}
             <Text>
-              Are you sure you want to {action}{" "}
+              Are you sure you want to {action}{' '}
               <strong>
                 {player.firstName} {player.lastName}
               </strong>
@@ -113,11 +100,11 @@ export function DeactivateModal({
             Cancel
           </Button>
           <Button
-            colorPalette={isDeactivating ? "red" : "green"}
+            colorPalette={isDeactivating ? 'red' : 'green'}
             onClick={handleConfirm}
             loading={isUpdating}
           >
-            {isDeactivating ? "Deactivate" : "Activate"}
+            {isDeactivating ? 'Deactivate' : 'Activate'}
           </Button>
         </DialogFooter>
       </DialogContent>

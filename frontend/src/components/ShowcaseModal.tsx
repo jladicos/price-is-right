@@ -1,12 +1,7 @@
-import {
-  DialogRoot,
-  DialogContent,
-  DialogBody,
-  DialogCloseTrigger,
-} from "./ui/dialog";
-import { Box, Image, Text, VStack, HStack, Button } from "@chakra-ui/react";
-import { getProductImageUrls } from "../utils/imageUrls";
-import type { ShowcaseProduct } from "../store/gameStore";
+import { DialogRoot, DialogContent, DialogBody, DialogCloseTrigger } from './ui/dialog';
+import { Box, Image, Text, VStack, HStack, Button } from '@chakra-ui/react';
+import { getProductImageUrls } from '../utils/imageUrls';
+import type { ShowcaseProduct } from '../store/gameStore';
 
 interface ShowcaseModalProps {
   showcaseProducts: ShowcaseProduct[];
@@ -40,31 +35,33 @@ export function ShowcaseModal({
   const safeImageIndex = Math.min(currentImageIndex, imageUrls.length - 1);
 
   const handlePrevProduct = () => {
-    if (role !== "host" || !onNavigate) return;
-    const newProductIndex = safeProductIndex > 0 ? safeProductIndex - 1 : showcaseProducts.length - 1;
+    if (role !== 'host' || !onNavigate) return;
+    const newProductIndex =
+      safeProductIndex > 0 ? safeProductIndex - 1 : showcaseProducts.length - 1;
     onNavigate(newProductIndex, 0); // Reset to first image when changing products
   };
 
   const handleNextProduct = () => {
-    if (role !== "host" || !onNavigate) return;
-    const newProductIndex = safeProductIndex < showcaseProducts.length - 1 ? safeProductIndex + 1 : 0;
+    if (role !== 'host' || !onNavigate) return;
+    const newProductIndex =
+      safeProductIndex < showcaseProducts.length - 1 ? safeProductIndex + 1 : 0;
     onNavigate(newProductIndex, 0); // Reset to first image when changing products
   };
 
   const handlePrevImage = () => {
-    if (role !== "host" || !onNavigate) return;
+    if (role !== 'host' || !onNavigate) return;
     const newImageIndex = safeImageIndex > 0 ? safeImageIndex - 1 : imageUrls.length - 1;
     onNavigate(safeProductIndex, newImageIndex);
   };
 
   const handleNextImage = () => {
-    if (role !== "host" || !onNavigate) return;
+    if (role !== 'host' || !onNavigate) return;
     const newImageIndex = safeImageIndex < imageUrls.length - 1 ? safeImageIndex + 1 : 0;
     onNavigate(safeProductIndex, newImageIndex);
   };
 
   const handleClose = () => {
-    if (role === "host" && onClose) {
+    if (role === 'host' && onClose) {
       onClose();
     }
   };
@@ -73,7 +70,7 @@ export function ShowcaseModal({
     <DialogRoot
       open={isOpen}
       onOpenChange={(e) => {
-        if (!e.open && role === "host" && onClose) {
+        if (!e.open && role === 'host' && onClose) {
           handleClose();
         }
       }}
@@ -81,7 +78,7 @@ export function ShowcaseModal({
     >
       <DialogContent data-testid="showcase-modal">
         {/* Only show close button for host */}
-        {role === "host" && <DialogCloseTrigger />}
+        {role === 'host' && <DialogCloseTrigger />}
 
         <DialogBody p={6}>
           <VStack gap={6} align="stretch">
@@ -99,12 +96,7 @@ export function ShowcaseModal({
             </Text>
 
             {/* Product Counter */}
-            <Text
-              fontSize="lg"
-              textAlign="center"
-              color="gray.600"
-              fontWeight="medium"
-            >
+            <Text fontSize="lg" textAlign="center" color="gray.600" fontWeight="medium">
               Product {safeProductIndex + 1} of {showcaseProducts.length}
             </Text>
 
@@ -123,10 +115,7 @@ export function ShowcaseModal({
             </Text>
 
             {/* Image Display */}
-            <Box
-              position="relative"
-              data-testid="showcase-modal-image-container"
-            >
+            <Box position="relative" data-testid="showcase-modal-image-container">
               {/* Main Image */}
               <Box
                 width="100%"
@@ -149,7 +138,7 @@ export function ShowcaseModal({
               </Box>
 
               {/* Image Navigation Arrows (if multiple images) - Host only */}
-              {imageUrls.length > 1 && role === "host" && (
+              {imageUrls.length > 1 && role === 'host' && (
                 <>
                   <Button
                     position="absolute"
@@ -203,7 +192,7 @@ export function ShowcaseModal({
             </Box>
 
             {/* Product Navigation Buttons - Host only */}
-            {role === "host" && (
+            {role === 'host' && (
               <HStack gap={4} justify="center">
                 <Button
                   onClick={handlePrevProduct}

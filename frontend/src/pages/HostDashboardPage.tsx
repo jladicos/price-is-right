@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -12,10 +12,10 @@ import {
   Center,
   Table,
   Badge,
-} from "@chakra-ui/react";
-import { Avatar } from "../components/ui/avatar";
-import { apiRequest } from "../utils/api";
-import { showToast } from "../utils/toast";
+} from '@chakra-ui/react';
+import { Avatar } from '../components/ui/avatar';
+import { apiRequest } from '../utils/api';
+import { showToast } from '../utils/toast';
 
 interface OnlinePlayer {
   id: number;
@@ -46,16 +46,16 @@ export default function HostDashboardPage() {
 
   const fetchOnlinePlayers = useCallback(async () => {
     try {
-      const response = await apiRequest<OnlinePlayersResponse>("/players/online");
+      const response = await apiRequest<OnlinePlayersResponse>('/players/online');
       setData(response);
       setError(null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch online players";
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch online players';
       setError(errorMessage);
       showToast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        type: "error",
+        type: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -83,7 +83,7 @@ export default function HostDashboardPage() {
         <VStack gap={6}>
           <Heading>Error</Heading>
           <Text>{error}</Text>
-          <Button onClick={() => navigate("/welcome")}>Back to Welcome</Button>
+          <Button onClick={() => navigate('/welcome')}>Back to Welcome</Button>
         </VStack>
       </Container>
     );
@@ -91,12 +91,12 @@ export default function HostDashboardPage() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case "host":
-        return "purple";
-      case "player":
-        return "green";
+      case 'host':
+        return 'purple';
+      case 'player':
+        return 'green';
       default:
-        return "gray";
+        return 'gray';
     }
   };
 
@@ -108,14 +108,14 @@ export default function HostDashboardPage() {
           <VStack align="start" gap={1}>
             <Heading size="xl">Player Dashboard</Heading>
             <Text color="gray.600">
-              {data?.total || 0} player{data?.total !== 1 ? "s" : ""} currently online
+              {data?.total || 0} player{data?.total !== 1 ? 's' : ''} currently online
             </Text>
           </VStack>
           <HStack gap={3}>
-            <Button variant="outline" onClick={() => navigate("/welcome")}>
+            <Button variant="outline" onClick={() => navigate('/welcome')}>
               Back
             </Button>
-            <Button colorPalette="green" onClick={() => navigate("/game")}>
+            <Button colorPalette="green" onClick={() => navigate('/game')}>
               Enter Game
             </Button>
           </HStack>
@@ -129,7 +129,7 @@ export default function HostDashboardPage() {
                 {data?.byRole.host || 0}
               </Text>
               <Text color="purple.600" fontWeight="medium">
-                Host{data?.byRole.host !== 1 ? "s" : ""}
+                Host{data?.byRole.host !== 1 ? 's' : ''}
               </Text>
             </VStack>
           </Box>
@@ -139,7 +139,7 @@ export default function HostDashboardPage() {
                 {data?.byRole.player || 0}
               </Text>
               <Text color="green.600" fontWeight="medium">
-                Player{data?.byRole.player !== 1 ? "s" : ""}
+                Player{data?.byRole.player !== 1 ? 's' : ''}
               </Text>
             </VStack>
           </Box>
@@ -188,13 +188,11 @@ export default function HostDashboardPage() {
                     </HStack>
                   </Table.Cell>
                   <Table.Cell>
-                    <Badge colorPalette={getRoleBadgeColor(player.role)}>
-                      {player.role}
-                    </Badge>
+                    <Badge colorPalette={getRoleBadgeColor(player.role)}>{player.role}</Badge>
                   </Table.Cell>
                   <Table.Cell>
-                    <Badge colorPalette={player.active ? "green" : "red"}>
-                      {player.active ? "Active" : "Inactive"}
+                    <Badge colorPalette={player.active ? 'green' : 'red'}>
+                      {player.active ? 'Active' : 'Inactive'}
                     </Badge>
                   </Table.Cell>
                 </Table.Row>

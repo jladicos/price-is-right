@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef } from 'react';
 import {
   DialogRoot,
   DialogContent,
@@ -6,26 +6,16 @@ import {
   DialogBody,
   DialogFooter,
   DialogCloseTrigger,
-} from "./ui/dialog";
-import {
-  Button,
-  Input,
-  VStack,
-  HStack,
-  Text,
-  Code,
-  Image,
-  Box,
-} from "@chakra-ui/react";
-import { Field } from "./ui/field";
-import { NativeSelectRoot, NativeSelectField } from "./ui/native-select";
-import { Alert } from "./ui/alert";
-import type { PlayerRole } from "../../../backend/src/types/player";
-import { useAuthStore } from "../store/authStore";
-import { showToast } from "../utils/toast";
+} from './ui/dialog';
+import { Button, Input, VStack, HStack, Text, Code, Image, Box } from '@chakra-ui/react';
+import { Field } from './ui/field';
+import { NativeSelectRoot, NativeSelectField } from './ui/native-select';
+import { Alert } from './ui/alert';
+import type { PlayerRole } from '../../../backend/src/types/player';
+import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 interface AddPlayerModalProps {
   isOpen: boolean;
@@ -33,22 +23,16 @@ interface AddPlayerModalProps {
   onSuccess?: () => void;
 }
 
-export function AddPlayerModal({
-  isOpen,
-  onClose,
-  onSuccess,
-}: AddPlayerModalProps) {
+export function AddPlayerModal({ isOpen, onClose, onSuccess }: AddPlayerModalProps) {
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isCreating, setIsCreating] = useState(false);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState<PlayerRole>("player");
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [role, setRole] = useState<PlayerRole>('player');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [createdAccessCode, setCreatedAccessCode] = useState<string | null>(
-    null,
-  );
+  const [createdAccessCode, setCreatedAccessCode] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,11 +40,11 @@ export function AddPlayerModal({
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith("image/")) {
+    if (!file.type.startsWith('image/')) {
       showToast({
-        title: "Invalid file type",
-        description: "Please select an image file (JPG, PNG, or GIF)",
-        type: "error",
+        title: 'Invalid file type',
+        description: 'Please select an image file (JPG, PNG, or GIF)',
+        type: 'error',
       });
       return;
     }
@@ -68,9 +52,9 @@ export function AddPlayerModal({
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       showToast({
-        title: "File too large",
-        description: "Please select an image under 5MB",
-        type: "error",
+        title: 'File too large',
+        description: 'Please select an image under 5MB',
+        type: 'error',
       });
       return;
     }
@@ -89,7 +73,7 @@ export function AddPlayerModal({
     setSelectedFile(null);
     setPreviewUrl(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -99,22 +83,22 @@ export function AddPlayerModal({
 
     // Client-side validation
     if (!firstName.trim() || !lastName.trim()) {
-      setValidationError("First name and last name are required");
+      setValidationError('First name and last name are required');
       return;
     }
 
     setIsCreating(true);
     try {
       const formData = new FormData();
-      formData.append("firstName", firstName.trim());
-      formData.append("lastName", lastName.trim());
-      formData.append("role", role);
+      formData.append('firstName', firstName.trim());
+      formData.append('lastName', lastName.trim());
+      formData.append('role', role);
       if (selectedFile) {
-        formData.append("photo", selectedFile);
+        formData.append('photo', selectedFile);
       }
 
       const response = await fetch(`${API_BASE_URL}/players`, {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${sessionToken}`,
         },
@@ -123,7 +107,7 @@ export function AddPlayerModal({
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to create player");
+        throw new Error(error.error || 'Failed to create player');
       }
 
       const data = await response.json();
@@ -132,21 +116,20 @@ export function AddPlayerModal({
       setCreatedAccessCode(data.player.accessCode);
 
       showToast({
-        title: "Player created",
-        type: "success",
+        title: 'Player created',
+        type: 'success',
       });
 
       if (onSuccess) {
         onSuccess();
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to create player";
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create player';
       setValidationError(errorMessage);
       showToast({
-        title: "Error",
+        title: 'Error',
         description: errorMessage,
-        type: "error",
+        type: 'error',
       });
     } finally {
       setIsCreating(false);
@@ -155,15 +138,15 @@ export function AddPlayerModal({
 
   const handleClose = () => {
     // Reset form
-    setFirstName("");
-    setLastName("");
-    setRole("player");
+    setFirstName('');
+    setLastName('');
+    setRole('player');
     setSelectedFile(null);
     setPreviewUrl(null);
     setValidationError(null);
     setCreatedAccessCode(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
     onClose();
   };
@@ -172,18 +155,14 @@ export function AddPlayerModal({
     if (createdAccessCode) {
       navigator.clipboard.writeText(createdAccessCode);
       showToast({
-        title: "Access code copied",
-        type: "success",
+        title: 'Access code copied',
+        type: 'success',
       });
     }
   };
 
   return (
-    <DialogRoot
-      open={isOpen}
-      onOpenChange={(e) => !e.open && handleClose()}
-      size="lg"
-    >
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && handleClose()} size="lg">
       <DialogContent>
         <DialogHeader>Add New Player</DialogHeader>
         <DialogCloseTrigger />
@@ -191,9 +170,7 @@ export function AddPlayerModal({
           <form onSubmit={handleSubmit}>
             <DialogBody>
               <VStack gap="4" align="stretch">
-                {validationError && (
-                  <Alert status="error">{validationError}</Alert>
-                )}
+                {validationError && <Alert status="error">{validationError}</Alert>}
 
                 <Field label="First Name" required>
                   <Input
@@ -242,11 +219,7 @@ export function AddPlayerModal({
                           objectFit="contain"
                           borderRadius="md"
                         />
-                        <Button
-                          onClick={handleClearPhoto}
-                          size="sm"
-                          variant="ghost"
-                        >
+                        <Button onClick={handleClearPhoto} size="sm" variant="ghost">
                           Remove Photo
                         </Button>
                       </VStack>
@@ -299,7 +272,7 @@ export function AddPlayerModal({
                 <Text>
                   <strong>
                     {firstName} {lastName}
-                  </strong>{" "}
+                  </strong>{' '}
                   has been added as a {role}.
                 </Text>
 
@@ -308,20 +281,10 @@ export function AddPlayerModal({
                     Access Code
                   </Text>
                   <HStack>
-                    <Code
-                      fontSize="2xl"
-                      px={4}
-                      py={2}
-                      flex={1}
-                      textAlign="center"
-                    >
+                    <Code fontSize="2xl" px={4} py={2} flex={1} textAlign="center">
                       {createdAccessCode}
                     </Code>
-                    <Button
-                      onClick={handleCopyCode}
-                      colorPalette="blue"
-                      size="sm"
-                    >
+                    <Button onClick={handleCopyCode} colorPalette="blue" size="sm">
                       Copy
                     </Button>
                   </HStack>

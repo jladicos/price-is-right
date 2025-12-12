@@ -1,4 +1,4 @@
-import { Button, Text } from "@chakra-ui/react";
+import { Button, Text } from '@chakra-ui/react';
 import {
   DialogActionTrigger,
   DialogBody,
@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogRoot,
   DialogTitle,
-} from "./ui/dialog";
+} from './ui/dialog';
 
 interface StartGameConfirmModalProps {
   isOpen: boolean;
@@ -24,11 +24,7 @@ export function StartGameConfirmModal({
   isLoading = false,
 }: StartGameConfirmModalProps) {
   return (
-    <DialogRoot
-      open={isOpen}
-      onOpenChange={(e) => !e.open && onClose()}
-      size="md"
-    >
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && onClose()} size="md">
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Start New Game?</DialogTitle>
@@ -36,8 +32,8 @@ export function StartGameConfirmModal({
         </DialogHeader>
         <DialogBody>
           <Text>
-            This will reset all current game state and start a new game with 5
-            randomly selected contestants.
+            This will reset all current game state and start a new game with 5 randomly selected
+            contestants.
           </Text>
           <Text mt={3} fontWeight="semibold" color="orange.600">
             This action cannot be undone.

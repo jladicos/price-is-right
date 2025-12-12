@@ -1,5 +1,5 @@
-import { Box, VStack, Text, Image } from "@chakra-ui/react";
-import { getPlayerPhotoUrl } from "../utils/imageUrls";
+import { Box, VStack, Text } from '@chakra-ui/react';
+import { getPlayerPhotoUrl } from '../utils/imageUrls';
 
 export interface PlayerCardProps {
   player: {
@@ -8,59 +8,59 @@ export interface PlayerCardProps {
     last_name: string;
     photo_filename: string;
   };
-  size?: "small" | "medium" | "large";
+  size?: 'small' | 'medium' | 'large';
   fillContainer?: boolean; // If true, photo fills parent container instead of using fixed size
   showName?: boolean;
   badge?: string;
   badgeTestId?: string; // Custom test ID for badge (useful for position-specific badges)
-  variant?: "default" | "highlighted" | "eliminated" | "winner" | "noBorder";
+  variant?: 'default' | 'highlighted' | 'eliminated' | 'winner' | 'noBorder';
   children?: React.ReactNode;
 }
 
 const SIZE_CONFIG = {
   small: {
-    photo: "120px",
-    fontSize: "md",
+    photo: '120px',
+    fontSize: 'md',
   },
   medium: {
-    photo: "150px",
-    fontSize: "xl",
+    photo: '150px',
+    fontSize: 'xl',
   },
   large: {
-    photo: "240px",
-    fontSize: "2xl",
+    photo: '240px',
+    fontSize: '2xl',
   },
 };
 
 const VARIANT_CONFIG = {
   default: {
-    borderColor: "gray.300",
-    boxShadow: "sm",
-    bgColor: "transparent",
+    borderColor: 'gray.300',
+    boxShadow: 'sm',
+    bgColor: 'transparent',
     showBorder: true,
   },
   highlighted: {
-    borderColor: "blue.500",
-    boxShadow: "0 0 20px rgba(59, 130, 246, 0.6)",
-    bgColor: "transparent",
+    borderColor: 'blue.500',
+    boxShadow: '0 0 20px rgba(59, 130, 246, 0.6)',
+    bgColor: 'transparent',
     showBorder: true,
   },
   eliminated: {
-    borderColor: "red.500",
-    boxShadow: "0 0 15px rgba(239, 68, 68, 0.5)",
-    bgColor: "red.900",
+    borderColor: 'red.500',
+    boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)',
+    bgColor: 'red.900',
     showBorder: true,
   },
   winner: {
-    borderColor: "green.500",
-    boxShadow: "0 0 20px rgba(34, 197, 94, 0.6)",
-    bgColor: "transparent",
+    borderColor: 'green.500',
+    boxShadow: '0 0 20px rgba(34, 197, 94, 0.6)',
+    bgColor: 'transparent',
     showBorder: true,
   },
   noBorder: {
-    borderColor: "transparent",
-    boxShadow: "none",
-    bgColor: "transparent",
+    borderColor: 'transparent',
+    boxShadow: 'none',
+    bgColor: 'transparent',
     showBorder: false,
   },
 };
@@ -82,12 +82,12 @@ const VARIANT_CONFIG = {
  */
 export function PlayerCard({
   player,
-  size = "medium",
+  size = 'medium',
   fillContainer = false,
   showName = false,
   badge,
   badgeTestId,
-  variant = "default",
+  variant = 'default',
   children,
 }: PlayerCardProps) {
   const photoUrl = getPlayerPhotoUrl(player.photo_filename);
@@ -95,7 +95,7 @@ export function PlayerCard({
   const variantConfig = VARIANT_CONFIG[variant];
 
   // Use 100% if fillContainer, otherwise use fixed size
-  const photoSize = fillContainer ? "100%" : sizeConfig.photo;
+  const photoSize = fillContainer ? '100%' : sizeConfig.photo;
 
   return (
     <VStack gap={2} align="center" data-testid="player-card">
@@ -130,24 +130,24 @@ export function PlayerCard({
           position="relative"
           width={photoSize}
           height="0"
-          mb={badge ? "-40px" : "0"}
+          mb={badge ? '-40px' : '0'}
           zIndex={10}
         >
           <Box
             position="absolute"
-            top={showName ? "-80px" : "-70px"}
+            top={showName ? '-80px' : '-70px'}
             left="50%"
             transform="translateX(-50%)"
             bg={
-              badge === "ELIMINATED"
-                ? "red.500"
-                : badge.includes("WINNER")
-                  ? "green.500"
-                  : badge === "LEADER"
-                    ? "yellow.500"
-                    : badge === "TIE"
-                      ? "orange.500"
-                      : "blue.500"
+              badge === 'ELIMINATED'
+                ? 'red.500'
+                : badge.includes('WINNER')
+                  ? 'green.500'
+                  : badge === 'LEADER'
+                    ? 'yellow.500'
+                    : badge === 'TIE'
+                      ? 'orange.500'
+                      : 'blue.500'
             }
             color="white"
             px={3}
@@ -157,7 +157,7 @@ export function PlayerCard({
             fontSize="sm"
             boxShadow="md"
             whiteSpace="nowrap"
-            data-testid={badgeTestId || "player-card-badge"}
+            data-testid={badgeTestId || 'player-card-badge'}
           >
             {badge}
           </Box>
@@ -170,7 +170,7 @@ export function PlayerCard({
         height={photoSize}
         borderRadius="md"
         overflow="hidden"
-        border={variantConfig.showBorder ? "3px solid" : "none"}
+        border={variantConfig.showBorder ? '3px solid' : 'none'}
         borderColor={variantConfig.borderColor}
         boxShadow={variantConfig.boxShadow}
         bg={variantConfig.bgColor}
@@ -183,14 +183,14 @@ export function PlayerCard({
           alt={`${player.first_name} ${player.last_name}`}
           title={player.first_name}
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
           }}
         />
 
         {/* Eliminated overlay */}
-        {variant === "eliminated" && (
+        {variant === 'eliminated' && (
           <Box
             position="absolute"
             top="0"

@@ -1,18 +1,14 @@
-import { useState, useEffect, useRef } from "react";
-import { Box, HStack, VStack, Button, Text, Heading } from "@chakra-ui/react";
-import { PodiumDisplay } from "../PodiumDisplay";
-import { ProductInsetCard } from "../ProductInsetCard";
-import { GameControlStrip } from "../GameControlStrip";
-import { ShowcaseModal } from "../ShowcaseModal";
-import { PhaseBackground } from "../PhaseBackground";
-import { useGameStore } from "../../store/gameStore";
-import { useAuthStore } from "../../store/authStore";
-import { showToast } from "../../utils/toast";
-import type {
-  GameState,
-  ContestantWithPlayer,
-  BidWithPlayer,
-} from "../../store/gameStore";
+import { useState, useEffect, useRef } from 'react';
+import { Box, HStack, VStack, Button, Text, Heading } from '@chakra-ui/react';
+import { PodiumDisplay } from '../PodiumDisplay';
+import { ProductInsetCard } from '../ProductInsetCard';
+import { GameControlStrip } from '../GameControlStrip';
+import { ShowcaseModal } from '../ShowcaseModal';
+import { PhaseBackground } from '../PhaseBackground';
+import { useGameStore } from '../../store/gameStore';
+import { useAuthStore } from '../../store/authStore';
+import { showToast } from '../../utils/toast';
+import type { GameState, ContestantWithPlayer, BidWithPlayer } from '../../store/gameStore';
 
 interface ShowcasePhaseViewProps {
   gameState: GameState;
@@ -41,7 +37,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   const [showPassBidButtons, setShowPassBidButtons] = useState(false);
   const initializeAttemptedRef = useRef(false);
 
-  const role = currentPlayer?.role || "audience";
+  const role = currentPlayer?.role || 'audience';
   const currentPlayerId = currentPlayer?.id;
 
   // Parse showcase state
@@ -62,23 +58,16 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   // Initialize showcase if not already initialized - only once on mount
   useEffect(() => {
     const initialize = async () => {
-      if (
-        !showcaseState &&
-        !initializeAttemptedRef.current &&
-        role === "host"
-      ) {
+      if (!showcaseState && !initializeAttemptedRef.current && role === 'host') {
         initializeAttemptedRef.current = true;
         try {
           await initializeShowcase();
           // Silent initialization - no toast needed
         } catch (error) {
           showToast({
-            title: "Error",
-            description:
-              error instanceof Error
-                ? error.message
-                : "Failed to initialize showcase",
-            type: "error",
+            title: 'Error',
+            description: error instanceof Error ? error.message : 'Failed to initialize showcase',
+            type: 'error',
           });
           initializeAttemptedRef.current = false; // Allow retry on error
         }
@@ -96,33 +85,32 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       <VStack gap={4} p={8}>
         <Heading>Package Playoff</Heading>
         <Text>
-          {role === "host"
-            ? "Initializing showcase..."
-            : "Waiting for host to initialize showcase..."}
+          {role === 'host'
+            ? 'Initializing showcase...'
+            : 'Waiting for host to initialize showcase...'}
         </Text>
       </VStack>
     );
   }
 
-  const { state, showcase1, showcase2, showcase1Value, showcase2Value } =
-    showcaseState;
+  const { state, showcase1, showcase2, showcase1Value, showcase2Value } = showcaseState;
 
   // Get finalist players
   const player1 = state.finale_player1_id
     ? {
         id: state.finale_player1_id,
-        first_name: state.finale_player1_first_name || "",
-        last_name: state.finale_player1_last_name || "",
-        photo_filename: state.finale_player1_photo || "",
+        first_name: state.finale_player1_first_name || '',
+        last_name: state.finale_player1_last_name || '',
+        photo_filename: state.finale_player1_photo || '',
       }
     : null;
 
   const player2 = state.finale_player2_id
     ? {
         id: state.finale_player2_id,
-        first_name: state.finale_player2_first_name || "",
-        last_name: state.finale_player2_last_name || "",
-        photo_filename: state.finale_player2_photo || "",
+        first_name: state.finale_player2_first_name || '',
+        last_name: state.finale_player2_last_name || '',
+        photo_filename: state.finale_player2_photo || '',
       }
     : null;
 
@@ -150,16 +138,16 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
         id: 0, // Fake contestant row ID
         player_id: player1.id,
         position: 1,
-        game_segment: "finale",
-        status: "active" as const,
-        added_at: "",
-        revealed_at: "",
-        created_at: "",
-        updated_at: "",
+        game_segment: 'finale',
+        status: 'active' as const,
+        added_at: '',
+        revealed_at: '',
+        created_at: '',
+        updated_at: '',
         first_name: player1.first_name,
         last_name: player1.last_name,
         photo_filename: player1.photo_filename,
-        role: "player" as const,
+        role: 'player' as const,
         weight: 1,
       }
     : null;
@@ -169,16 +157,16 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
         id: 0, // Fake contestant row ID
         player_id: player2.id,
         position: 2,
-        game_segment: "finale",
-        status: "active" as const,
-        added_at: "",
-        revealed_at: "",
-        created_at: "",
-        updated_at: "",
+        game_segment: 'finale',
+        status: 'active' as const,
+        added_at: '',
+        revealed_at: '',
+        created_at: '',
+        updated_at: '',
         first_name: player2.first_name,
         last_name: player2.last_name,
         photo_filename: player2.photo_filename,
-        role: "player" as const,
+        role: 'player' as const,
         weight: 1,
       }
     : null;
@@ -189,18 +177,18 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
         ...player1Bid,
         id: player1Bid.id,
         player_id: player1Bid.player_id,
-        product_id: "", // Not applicable for showcase
+        product_id: '', // Not applicable for showcase
         round_number: 0,
-        game_segment: "finale",
+        game_segment: 'finale',
         bid_amount: player1Bid.bid_amount,
         is_locked: 1,
         is_winner: winnerId === player1?.id ? 1 : 0,
         retry_number: player1Bid.retry_number,
         created_at: player1Bid.created_at,
-        first_name: player1?.first_name || "",
-        last_name: player1?.last_name || "",
-        photo_filename: player1?.photo_filename || "",
-        role: "player" as const,
+        first_name: player1?.first_name || '',
+        last_name: player1?.last_name || '',
+        photo_filename: player1?.photo_filename || '',
+        role: 'player' as const,
         weight: 1,
       }
     : null;
@@ -210,18 +198,18 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
         ...player2Bid,
         id: player2Bid.id,
         player_id: player2Bid.player_id,
-        product_id: "", // Not applicable for showcase
+        product_id: '', // Not applicable for showcase
         round_number: 0,
-        game_segment: "finale",
+        game_segment: 'finale',
         bid_amount: player2Bid.bid_amount,
         is_locked: 1,
         is_winner: winnerId === player2?.id ? 1 : 0,
         retry_number: player2Bid.retry_number,
         created_at: player2Bid.created_at,
-        first_name: player2?.first_name || "",
-        last_name: player2?.last_name || "",
-        photo_filename: player2?.photo_filename || "",
-        role: "player" as const,
+        first_name: player2?.first_name || '',
+        last_name: player2?.last_name || '',
+        photo_filename: player2?.photo_filename || '',
+        role: 'player' as const,
         weight: 1,
       }
     : null;
@@ -235,7 +223,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
     try {
       await setShowcaseModalOpen(1);
     } catch (error) {
-      console.error("Failed to open showcase 1 modal:", error);
+      console.error('Failed to open showcase 1 modal:', error);
     }
   };
 
@@ -245,7 +233,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       await setShowcaseModalOpen(0);
       await setShowcaseRevealed(1, true);
     } catch (error) {
-      console.error("Failed to close showcase 1 modal:", error);
+      console.error('Failed to close showcase 1 modal:', error);
     }
     // Show pass/bid buttons after revealing showcase 1
     // If showcases not yet assigned, player1 makes the decision
@@ -258,7 +246,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
     try {
       await setShowcaseModalOpen(2);
     } catch (error) {
-      console.error("Failed to open showcase 2 modal:", error);
+      console.error('Failed to open showcase 2 modal:', error);
     }
   };
 
@@ -268,7 +256,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       await setShowcaseModalOpen(0);
       await setShowcaseRevealed(2, true);
     } catch (error) {
-      console.error("Failed to close showcase 2 modal:", error);
+      console.error('Failed to close showcase 2 modal:', error);
     }
   };
 
@@ -281,9 +269,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       await fetchGameState();
     } catch (error) {
       showToast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to pass",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to pass',
+        type: 'error',
       });
     }
   };
@@ -294,10 +282,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       setShowPassBidButtons(false);
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to record decision",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to record decision',
+        type: 'error',
       });
     }
   };
@@ -308,16 +295,15 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       // Position 1 = player1, Position 2 = player2
       const playerId = position === 1 ? player1?.id : player2?.id;
       if (!playerId) {
-        throw new Error("Player not found");
+        throw new Error('Player not found');
       }
 
-      await submitShowcaseBid(amount, role === "host" ? playerId : undefined);
+      await submitShowcaseBid(amount, role === 'host' ? playerId : undefined);
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to submit bid",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to submit bid',
+        type: 'error',
       });
     }
   };
@@ -328,16 +314,15 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       // Get player ID from the bid
       const bid = showcaseBids.find((b) => b.id === bidId);
       if (!bid) {
-        throw new Error("Bid not found");
+        throw new Error('Bid not found');
       }
 
       await updateShowcaseBid(bid.player_id, newAmount);
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to update bid",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update bid',
+        type: 'error',
       });
     }
   };
@@ -348,16 +333,15 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       // Get player ID from the bid
       const bid = showcaseBids.find((b) => b.id === bidId);
       if (!bid) {
-        throw new Error("Bid not found");
+        throw new Error('Bid not found');
       }
 
       await unlockShowcaseBid(bid.player_id);
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to unlock bid",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to unlock bid',
+        type: 'error',
       });
     }
   };
@@ -367,10 +351,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       await revealShowcaseWinner();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to reveal winner",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to reveal winner',
+        type: 'error',
       });
     }
   };
@@ -380,10 +363,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       await retryShowcase();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to start retry",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to start retry',
+        type: 'error',
       });
     }
   };
@@ -393,10 +375,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       await advancePhase();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to advance phase",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to advance phase',
+        type: 'error',
       });
     }
   };
@@ -406,26 +387,24 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       await startNewGame();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to start game",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to start game',
+        type: 'error',
       });
     }
   };
 
   const handleRestartGame = async () => {
-    if (!confirm("Are you sure you want to restart the game?")) {
+    if (!confirm('Are you sure you want to restart the game?')) {
       return;
     }
     try {
       await startNewGame();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to restart game",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to restart game',
+        type: 'error',
       });
     }
   };
@@ -435,12 +414,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       await fetchGameState();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error
-            ? error.message
-            : "Failed to refresh game state",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to refresh game state',
+        type: 'error',
       });
     }
   };
@@ -448,7 +424,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   const handleRestartShowcase = async () => {
     if (
       !confirm(
-        "Are you sure you want to restart the showcase phase? This will reset all bids and decisions.",
+        'Are you sure you want to restart the showcase phase? This will reset all bids and decisions.',
       )
     ) {
       return;
@@ -464,10 +440,9 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
       await fetchGameState();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to restart showcase",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to restart showcase',
+        type: 'error',
       });
     }
   };
@@ -476,14 +451,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
     <>
       <PhaseBackground phase="showcase">
         {/* Black bar behind podiums - full width, 10.5em tall, at bottom of PhaseBackground */}
-        <Box
-          position="absolute"
-          left={0}
-          right={0}
-          bottom={0}
-          height="10.5em"
-          bg="black"
-        />
+        <Box position="absolute" left={0} right={0} bottom={0} height="10.5em" bg="black" />
         <VStack
           gap={8}
           width="100%"
@@ -592,7 +560,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
           </HStack>
 
           {/* Pass/Bid Decision UI */}
-          {role === "host" && showPassBidButtons && player1 && (
+          {role === 'host' && showPassBidButtons && player1 && (
             <VStack gap={4} width="100%">
               <Text fontSize="xl" fontWeight="bold">
                 {player1.first_name} {player1.last_name} Decision:

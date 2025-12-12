@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Box, VStack, Image, Text, IconButton } from "@chakra-ui/react";
-import { IoChevronBack, IoChevronForward } from "react-icons/io5";
-import { getProductImageUrl } from "../utils/imageUrls";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Box, VStack, Image, Text, IconButton } from '@chakra-ui/react';
+import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
+import { getProductImageUrl } from '../utils/imageUrls';
 
 export interface Product {
   name: string;
@@ -24,7 +24,7 @@ interface ProductInsetCardProps {
   isVisible: boolean;
   showPrice?: boolean;
   price?: number; // For single product or total showcase value
-  position?: "left" | "right";
+  position?: 'left' | 'right';
 }
 
 export function ProductInsetCard({
@@ -34,7 +34,7 @@ export function ProductInsetCard({
   isVisible,
   showPrice = false,
   price,
-  position = "right",
+  position = 'right',
 }: ProductInsetCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,12 +44,8 @@ export function ProductInsetCard({
   const hasMultipleProducts = isShowcaseMode && products.length > 1;
 
   // Get current product to display
-  const currentProduct = isShowcaseMode
-    ? products[currentIndex]?.product
-    : product;
-  const currentProductId = isShowcaseMode
-    ? products[currentIndex]?.id
-    : productId;
+  const currentProduct = isShowcaseMode ? products[currentIndex]?.product : product;
+  const currentProductId = isShowcaseMode ? products[currentIndex]?.id : productId;
 
   // Auto-advance logic for showcase mode
   const startAutoAdvance = useCallback(() => {
@@ -98,18 +94,20 @@ export function ProductInsetCard({
   // Use first image from product, with fallback for missing images
   const firstImageUrl = currentProduct.images?.[0]
     ? getProductImageUrl(currentProduct.images[0])
-    : "";
+    : '';
 
   return (
     <Box
       position="fixed"
-      top={{ base: "10px", lg: "20px" }}
-      {...(position === "left" ? { left: { base: "10px", lg: "20px" } } : { right: { base: "10px", lg: "20px" } })}
-      width={{ base: "125px", lg: "250px" }}
+      top={{ base: '10px', lg: '20px' }}
+      {...(position === 'left'
+        ? { left: { base: '10px', lg: '20px' } }
+        : { right: { base: '10px', lg: '20px' } })}
+      width={{ base: '125px', lg: '250px' }}
       bg="white"
       borderRadius="lg"
       boxShadow="2xl"
-      border={{ base: "2px solid", lg: "3px solid" }}
+      border={{ base: '2px solid', lg: '3px solid' }}
       borderColor="blue.500"
       overflow="hidden"
       zIndex={100}
@@ -119,10 +117,10 @@ export function ProductInsetCard({
         {/* Product Image with Navigation Arrows */}
         <Box
           width="100%"
-          height={{ base: "100px", lg: "200px" }}
+          height={{ base: '100px', lg: '200px' }}
           bg="gray.100"
           overflow="hidden"
-          borderBottom={{ base: "2px solid", lg: "3px solid" }}
+          borderBottom={{ base: '2px solid', lg: '3px solid' }}
           borderColor="blue.500"
           position="relative"
         >
@@ -177,7 +175,7 @@ export function ProductInsetCard({
         {/* Product Name */}
         <Box bg="blue.500" p={{ base: 1, lg: 3 }}>
           <Text
-            fontSize={{ base: "xs", lg: "lg" }}
+            fontSize={{ base: 'xs', lg: 'lg' }}
             fontWeight="bold"
             textAlign="center"
             color="white"
@@ -205,38 +203,35 @@ export function ProductInsetCard({
         </Box>
 
         {/* Product Price or Total Showcase Value - shown when winner is revealed */}
-        {showPrice &&
-          price != null &&
-          typeof price === "number" &&
-          isFinite(price) && (
-            <Box bg="green.500" p={{ base: 2, lg: 4 }}>
+        {showPrice && price != null && typeof price === 'number' && isFinite(price) && (
+          <Box bg="green.500" p={{ base: 2, lg: 4 }}>
+            <Text
+              fontSize={{ base: 'md', lg: '2xl' }}
+              fontWeight="bold"
+              textAlign="center"
+              color="white"
+              data-testid="product-inset-price"
+            >
+              {price < 0 ? '-' : ''}$
+              {Math.abs(price).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </Text>
+            {isShowcaseMode && (
               <Text
-                fontSize={{ base: "md", lg: "2xl" }}
-                fontWeight="bold"
+                fontSize={{ base: 'xs', lg: 'sm' }}
                 textAlign="center"
                 color="white"
-                data-testid="product-inset-price"
+                mt={1}
+                opacity={0.9}
+                data-testid="showcase-total-label"
               >
-                {price < 0 ? "-" : ""}$
-                {Math.abs(price).toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
+                TOTAL VALUE
               </Text>
-              {isShowcaseMode && (
-                <Text
-                  fontSize={{ base: "xs", lg: "sm" }}
-                  textAlign="center"
-                  color="white"
-                  mt={1}
-                  opacity={0.9}
-                  data-testid="showcase-total-label"
-                >
-                  TOTAL VALUE
-                </Text>
-              )}
-            </Box>
-          )}
+            )}
+          </Box>
+        )}
       </VStack>
     </Box>
   );

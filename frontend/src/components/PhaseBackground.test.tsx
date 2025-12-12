@@ -1,21 +1,21 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "../test/test-utils";
-import { PhaseBackground } from "./PhaseBackground";
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '../test/test-utils';
+import { PhaseBackground } from './PhaseBackground';
 
-describe("PhaseBackground", () => {
-  describe("Rendering", () => {
-    it("should render children", () => {
+describe('PhaseBackground', () => {
+  describe('Rendering', () => {
+    it('should render children', () => {
       render(
         <PhaseBackground phase="bidding">
           <div data-testid="child-content">Test Content</div>
         </PhaseBackground>,
       );
 
-      expect(screen.getByTestId("child-content")).toBeInTheDocument();
-      expect(screen.getByText("Test Content")).toBeInTheDocument();
+      expect(screen.getByTestId('child-content')).toBeInTheDocument();
+      expect(screen.getByText('Test Content')).toBeInTheDocument();
     });
 
-    it("should render multiple children", () => {
+    it('should render multiple children', () => {
       render(
         <PhaseBackground phase="wheel">
           <div data-testid="child-1">First</div>
@@ -23,13 +23,13 @@ describe("PhaseBackground", () => {
         </PhaseBackground>,
       );
 
-      expect(screen.getByTestId("child-1")).toBeInTheDocument();
-      expect(screen.getByTestId("child-2")).toBeInTheDocument();
+      expect(screen.getByTestId('child-1')).toBeInTheDocument();
+      expect(screen.getByTestId('child-2')).toBeInTheDocument();
     });
   });
 
-  describe("Background Images", () => {
-    it("should use bidding background for bidding phase", () => {
+  describe('Background Images', () => {
+    it('should use bidding background for bidding phase', () => {
       const { container } = render(
         <PhaseBackground phase="bidding">
           <div>Content</div>
@@ -41,10 +41,10 @@ describe("PhaseBackground", () => {
       const backgroundLayer = outerBox.children[0] as HTMLElement;
       const style = window.getComputedStyle(backgroundLayer);
 
-      expect(style.backgroundImage).toContain("bidding-background.png");
+      expect(style.backgroundImage).toContain('bidding-background.png');
     });
 
-    it("should use wheel background for wheel phase", () => {
+    it('should use wheel background for wheel phase', () => {
       const { container } = render(
         <PhaseBackground phase="wheel">
           <div>Content</div>
@@ -55,10 +55,10 @@ describe("PhaseBackground", () => {
       const backgroundLayer = outerBox.children[0] as HTMLElement;
       const style = window.getComputedStyle(backgroundLayer);
 
-      expect(style.backgroundImage).toContain("spin-the-wheel.png");
+      expect(style.backgroundImage).toContain('spin-the-wheel.png');
     });
 
-    it("should use showcase background for showcase phase", () => {
+    it('should use showcase background for showcase phase', () => {
       const { container } = render(
         <PhaseBackground phase="showcase">
           <div>Content</div>
@@ -69,12 +69,12 @@ describe("PhaseBackground", () => {
       const backgroundLayer = outerBox.children[0] as HTMLElement;
       const style = window.getComputedStyle(backgroundLayer);
 
-      expect(style.backgroundImage).toContain("showcase-showdown.png");
+      expect(style.backgroundImage).toContain('showcase-showdown.png');
     });
   });
 
-  describe("Layout", () => {
-    it("should be positioned fixed", () => {
+  describe('Layout', () => {
+    it('should be positioned fixed', () => {
       const { container } = render(
         <PhaseBackground phase="bidding">
           <div>Content</div>
@@ -84,10 +84,10 @@ describe("PhaseBackground", () => {
       const outerBox = container.firstChild as HTMLElement;
       const style = window.getComputedStyle(outerBox);
 
-      expect(style.position).toBe("fixed");
+      expect(style.position).toBe('fixed');
     });
 
-    it("should cover top, left, and right edges", () => {
+    it('should cover top, left, and right edges', () => {
       const { container } = render(
         <PhaseBackground phase="bidding">
           <div>Content</div>
@@ -97,12 +97,12 @@ describe("PhaseBackground", () => {
       const outerBox = container.firstChild as HTMLElement;
       const style = window.getComputedStyle(outerBox);
 
-      expect(style.top).toBe("0px");
-      expect(style.left).toBe("0px");
-      expect(style.right).toBe("0px");
+      expect(style.top).toBe('0px');
+      expect(style.left).toBe('0px');
+      expect(style.right).toBe('0px');
     });
 
-    it("should leave 80px at bottom for control strip", () => {
+    it('should leave 80px at bottom for control strip', () => {
       const { container } = render(
         <PhaseBackground phase="bidding">
           <div>Content</div>
@@ -112,10 +112,10 @@ describe("PhaseBackground", () => {
       const outerBox = container.firstChild as HTMLElement;
       const style = window.getComputedStyle(outerBox);
 
-      expect(style.bottom).toBe("80px");
+      expect(style.bottom).toBe('80px');
     });
 
-    it("should allow overflow scrolling", () => {
+    it('should allow overflow scrolling', () => {
       const { container } = render(
         <PhaseBackground phase="bidding">
           <div>Content</div>
@@ -125,12 +125,12 @@ describe("PhaseBackground", () => {
       const outerBox = container.firstChild as HTMLElement;
       const style = window.getComputedStyle(outerBox);
 
-      expect(style.overflow).toBe("auto");
+      expect(style.overflow).toBe('auto');
     });
   });
 
-  describe("Background Styling", () => {
-    it("should cover the entire area", () => {
+  describe('Background Styling', () => {
+    it('should cover the entire area', () => {
       const { container } = render(
         <PhaseBackground phase="bidding">
           <div>Content</div>
@@ -142,10 +142,10 @@ describe("PhaseBackground", () => {
       const backgroundLayer = outerBox.children[0] as HTMLElement;
       const style = window.getComputedStyle(backgroundLayer);
 
-      expect(style.backgroundSize).toBe("cover");
+      expect(style.backgroundSize).toBe('cover');
     });
 
-    it("should center the background", () => {
+    it('should center the background', () => {
       const { container } = render(
         <PhaseBackground phase="bidding">
           <div>Content</div>
@@ -157,10 +157,10 @@ describe("PhaseBackground", () => {
       const style = window.getComputedStyle(backgroundLayer);
 
       // CSS "center" often resolves to "center center" for background-position
-      expect(style.backgroundPosition).toContain("center");
+      expect(style.backgroundPosition).toContain('center');
     });
 
-    it("should not repeat the background", () => {
+    it('should not repeat the background', () => {
       const { container } = render(
         <PhaseBackground phase="bidding">
           <div>Content</div>
@@ -171,7 +171,7 @@ describe("PhaseBackground", () => {
       const backgroundLayer = outerBox.children[0] as HTMLElement;
       const style = window.getComputedStyle(backgroundLayer);
 
-      expect(style.backgroundRepeat).toBe("no-repeat");
+      expect(style.backgroundRepeat).toBe('no-repeat');
     });
   });
 });

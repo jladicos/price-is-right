@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { Box, Text, Image, Link, VStack } from "@chakra-ui/react";
-import { useAuthStore } from "../../store/authStore";
-import { useGameStore } from "../../store/gameStore";
-import { GameControlStrip } from "../GameControlStrip";
-import { showToast } from "../../utils/toast";
-import { getProductImageUrl } from "../../utils/imageUrls";
-import type { GameState } from "../../store/gameStore";
+import { useState, useEffect } from 'react';
+import { Box, Text, Image, Link, VStack } from '@chakra-ui/react';
+import { useAuthStore } from '../../store/authStore';
+import { useGameStore } from '../../store/gameStore';
+import { GameControlStrip } from '../GameControlStrip';
+import { showToast } from '../../utils/toast';
+import { getProductImageUrl } from '../../utils/imageUrls';
+import type { GameState } from '../../store/gameStore';
 
 interface AudienceBidPhaseViewProps {
   gameState: GameState;
@@ -30,7 +30,7 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
-  const role = currentPlayer?.role || "audience";
+  const role = currentPlayer?.role || 'audience';
   const audienceBidProduct = gameState.audienceBidProduct;
 
   // Parse phase metadata for modal visibility
@@ -51,10 +51,9 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
     } catch (error) {
       setIsProductModalOpen(false);
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to show product",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to show product',
+        type: 'error',
       });
     }
   };
@@ -66,10 +65,9 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
     } catch (error) {
       setIsProductModalOpen(true);
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to hide product",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to hide product',
+        type: 'error',
       });
     }
   };
@@ -79,20 +77,15 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
       await advancePhase();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to advance phase",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to advance phase',
+        type: 'error',
       });
     }
   };
 
   const handleRestartGame = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to restart the game? This will reset everything."
-      )
-    ) {
+    if (!confirm('Are you sure you want to restart the game? This will reset everything.')) {
       return;
     }
 
@@ -100,10 +93,9 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
       await startNewGame();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to restart game",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to restart game',
+        type: 'error',
       });
     }
   };
@@ -113,10 +105,9 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
       await startNewGame();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to start new game",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to start new game',
+        type: 'error',
       });
     }
   };
@@ -126,10 +117,9 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
       await fetchGameState();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to refresh game state",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to refresh game state',
+        type: 'error',
       });
     }
   };
@@ -151,7 +141,7 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
         {/* WaitingScreen text in background */}
         <Text
           fontFamily="'Pricedown', sans-serif"
-          fontSize={{ base: "4xl", md: "6xl", lg: "8xl" }}
+          fontSize={{ base: '4xl', md: '6xl', lg: '8xl' }}
           color="white"
           textAlign="center"
           px={4}
@@ -174,31 +164,20 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
           >
             <VStack gap={6}>
               {/* Product Image */}
-              <Box
-                width="100%"
-                borderRadius="lg"
-                bg="white"
-                p={4}
-              >
+              <Box width="100%" borderRadius="lg" bg="white" p={4}>
                 <Image
                   src={getProductImageUrl(audienceBidProduct.images[0])}
                   alt={audienceBidProduct.name}
                   width="100%"
                   objectFit="contain"
-                  fallbackSrc={getProductImageUrl("default.png")}
+                  fallbackSrc={getProductImageUrl('default.png')}
                 />
               </Box>
 
               {/* Product Name */}
-              <Text
-                fontSize="2xl"
-                fontWeight="bold"
-                color="white"
-                textAlign="center"
-              >
+              <Text fontSize="2xl" fontWeight="bold" color="white" textAlign="center">
                 {audienceBidProduct.name}
               </Text>
-
             </VStack>
           </Box>
         )}
@@ -216,7 +195,7 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
             color="white"
             fontSize="xl"
             textDecoration="underline"
-            _hover={{ color: "gray.300" }}
+            _hover={{ color: 'gray.300' }}
             zIndex={1001}
           >
             {audienceBidProduct.url}

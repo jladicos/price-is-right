@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   DialogRoot,
   DialogContent,
@@ -6,15 +6,14 @@ import {
   DialogBody,
   DialogFooter,
   DialogCloseTrigger,
-} from "./ui/dialog";
-import { Button, Text, VStack } from "@chakra-ui/react";
-import { Alert } from "./ui/alert";
-import { Checkbox } from "./ui/checkbox";
-import { useAuthStore } from "../store/authStore";
-import { showToast } from "../utils/toast";
+} from './ui/dialog';
+import { Button, Text, VStack } from '@chakra-ui/react';
+import { Alert } from './ui/alert';
+import { Checkbox } from './ui/checkbox';
+import { useAuthStore } from '../store/authStore';
+import { showToast } from '../utils/toast';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 interface ResetAllCodesModalProps {
   isOpen: boolean;
@@ -22,11 +21,7 @@ interface ResetAllCodesModalProps {
   onSuccess?: () => void;
 }
 
-export function ResetAllCodesModal({
-  isOpen,
-  onClose,
-  onSuccess,
-}: ResetAllCodesModalProps) {
+export function ResetAllCodesModal({ isOpen, onClose, onSuccess }: ResetAllCodesModalProps) {
   const sessionToken = useAuthStore((state) => state.sessionToken);
   const [isResetting, setIsResetting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -36,27 +31,24 @@ export function ResetAllCodesModal({
 
     setIsResetting(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/players/bulk/reset-codes`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${sessionToken}`,
-          },
+      const response = await fetch(`${API_BASE_URL}/players/bulk/reset-codes`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
         },
-      );
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to reset access codes");
+        throw new Error(error.error || 'Failed to reset access codes');
       }
 
       const data = await response.json();
 
       showToast({
-        title: "Access codes reset",
+        title: 'Access codes reset',
         description: data.message,
-        type: "success",
+        type: 'success',
       });
 
       if (onSuccess) {
@@ -66,10 +58,9 @@ export function ResetAllCodesModal({
       handleClose();
     } catch (error) {
       showToast({
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Failed to reset codes",
-        type: "error",
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to reset codes',
+        type: 'error',
       });
     } finally {
       setIsResetting(false);
@@ -82,11 +73,7 @@ export function ResetAllCodesModal({
   };
 
   return (
-    <DialogRoot
-      open={isOpen}
-      onOpenChange={(e) => !e.open && handleClose()}
-      size="lg"
-    >
+    <DialogRoot open={isOpen} onOpenChange={(e) => !e.open && handleClose()} size="lg">
       <DialogContent>
         <DialogHeader>Reset All Access Codes</DialogHeader>
         <DialogCloseTrigger />
@@ -105,8 +92,8 @@ export function ResetAllCodesModal({
             </VStack>
 
             <Text color="gray.600" fontSize="sm">
-              You will need to share the new access codes with all players
-              before they can log in again.
+              You will need to share the new access codes with all players before they can log in
+              again.
             </Text>
 
             <Checkbox
