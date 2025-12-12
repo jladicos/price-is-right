@@ -17,6 +17,8 @@ interface PodiumDisplayProps {
   allContestantsRevealed?: boolean; // All contestants have been revealed
   productHasBeenShown?: boolean; // Product has been shown at least once
   canReplaceContestants?: boolean; // Whether replacement is allowed (disabled after winner revealed)
+  bidDifference?: number; // Difference between bid and actual value (shown after reveal)
+  showBidDifference?: boolean; // Whether to show the bid difference
   onBidSubmit?: (position: number, amount: number) => void;
   onUpdateBid?: (bidId: number, newAmount: number) => void;
   onUnlockBid?: (bidId: number) => void;
@@ -49,6 +51,8 @@ export function PodiumDisplay({
   allContestantsRevealed = false,
   productHasBeenShown = false,
   canReplaceContestants = true,
+  bidDifference,
+  showBidDifference = false,
   onBidSubmit,
   onUpdateBid,
   onUnlockBid: _onUnlockBid,
@@ -466,16 +470,29 @@ export function PodiumDisplay({
               )}
             </HStack>
           ) : bid ? (
-            <Text
-              fontSize="3xl"
-              fontWeight="bold"
-              color={isWinner ? "green.400" : colors.light}
-              fontFamily="monospace"
-              animation={isWinner ? "flash 1.5s ease-in-out infinite" : "none"}
-              data-testid={`bid-amount-${position}`}
-            >
-              {bid.bid_amount}
-            </Text>
+            <VStack gap={0}>
+              <Text
+                fontSize="3xl"
+                fontWeight="bold"
+                color={isWinner ? "green.400" : colors.light}
+                fontFamily="monospace"
+                animation={isWinner ? "flash 1.5s ease-in-out infinite" : "none"}
+                data-testid={`bid-amount-${position}`}
+              >
+                {bid.bid_amount}
+              </Text>
+              {showBidDifference && bidDifference !== undefined && (
+                <Text
+                  fontSize="lg"
+                  fontWeight="bold"
+                  color={bidDifference > 0 ? "red.400" : "cyan.400"}
+                  fontFamily="monospace"
+                  data-testid={`bid-difference-${position}`}
+                >
+                  {bidDifference > 0 ? "+" : ""}{bidDifference}
+                </Text>
+              )}
+            </VStack>
           ) : (
             <Text fontSize="2xl" color="gray.700" fontFamily="monospace">
               ---

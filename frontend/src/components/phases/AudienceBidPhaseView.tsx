@@ -212,14 +212,14 @@ export function AudienceBidPhaseView({ gameState }: AudienceBidPhaseViewProps) {
           </Box>
         )}
 
-        {/* Fixed URL Link - just above control strip */}
+        {/* Fixed URL Link - near top of screen */}
         {audienceBidProduct?.url && (
           <Link
             href={audienceBidProduct.url}
             target="_blank"
             rel="noopener noreferrer"
             position="fixed"
-            bottom="100px"
+            top="1em"
             left="50%"
             transform="translateX(-50%)"
             color="white"

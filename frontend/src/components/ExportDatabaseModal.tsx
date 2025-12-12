@@ -15,7 +15,7 @@
  * - Export metadata (version, timestamp)
  *
  * File Format:
- * - JSON file named: price-is-right-backup-YYYY-MM-DD.json
+ * - JSON file named: cost-is-accurate-backup-YYYY-MM-DD.json
  * - Versioned format (currently v1.0) for import validation
  * - Content-Disposition header triggers automatic download
  *
@@ -82,7 +82,7 @@ export function ExportDatabaseModal({
       const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
       const filename =
         filenameMatch?.[1] ||
-        `price-is-right-backup-${new Date().toISOString().split("T")[0]}.json`;
+        `cost-is-accurate-backup-${new Date().toISOString().split("T")[0]}.json`;
 
       // Download the file
       const blob = await response.blob();

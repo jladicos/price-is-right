@@ -367,7 +367,7 @@ export default function HostControlPage() {
               </Text>
               {workflow?.current_segment === "finale" && (
                 <Text fontSize="sm" color="green.600" mt={2} fontWeight="bold">
-                  ✓ Game Complete - You are at the finale (showcase showdown)
+                  ✓ Game Complete - You are at the finale (package playoff)
                 </Text>
               )}
             </Card.Body>

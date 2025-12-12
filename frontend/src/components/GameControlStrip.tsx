@@ -431,7 +431,7 @@ export function GameControlStrip({
                 textTransform="uppercase"
                 letterSpacing="wide"
               >
-                Showcase Showdown
+                Package Playoff
               </Text>
             </Box>
 
@@ -443,7 +443,7 @@ export function GameControlStrip({
                 size="lg"
                 disabled={isLoading}
               >
-                Reveal Showcase 1
+                Reveal Package 1
               </Button>
             )}
 
@@ -455,7 +455,7 @@ export function GameControlStrip({
                 size="lg"
                 disabled={isLoading}
               >
-                Reveal Showcase 2
+                Reveal Package 2
               </Button>
             )}
 

@@ -93,7 +93,7 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
   if (!showcaseState) {
     return (
       <VStack gap={4} p={8}>
-        <Heading>Showcase Showdown</Heading>
+        <Heading>Package Playoff</Heading>
         <Text>
           {role === "host"
             ? "Initializing showcase..."
@@ -136,6 +136,12 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
 
   // Winner info
   const winnerId = state.finale_winner_id;
+
+  // Calculate bid differences for display after reveal
+  const player1PackageValue = player1Showcase === 1 ? showcase1Value : showcase2Value;
+  const player2PackageValue = player2Showcase === 1 ? showcase1Value : showcase2Value;
+  const player1BidDifference = player1Bid ? player1Bid.bid_amount - player1PackageValue : undefined;
+  const player2BidDifference = player2Bid ? player2Bid.bid_amount - player2PackageValue : undefined;
 
   // Adapt player data to ContestantWithPlayer format for PodiumDisplay
   const player1Contestant: ContestantWithPlayer | null = player1
@@ -529,6 +535,8 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
                 allContestantsRevealed={true}
                 productHasBeenShown={true}
                 canReplaceContestants={false}
+                bidDifference={player1BidDifference}
+                showBidDifference={showResults}
                 onBidSubmit={handleShowcaseBidSubmit}
                 onUpdateBid={handleShowcaseBidUpdate}
                 onUnlockBid={handleShowcaseBidUnlock}
@@ -554,6 +562,8 @@ export function ShowcasePhaseView({ gameState }: ShowcasePhaseViewProps) {
                 allContestantsRevealed={true}
                 productHasBeenShown={true}
                 canReplaceContestants={false}
+                bidDifference={player2BidDifference}
+                showBidDifference={showResults}
                 onBidSubmit={handleShowcaseBidSubmit}
                 onUpdateBid={handleShowcaseBidUpdate}
                 onUnlockBid={handleShowcaseBidUnlock}

@@ -71,7 +71,7 @@ export default function RootPage() {
   return (
     <Container maxW="md" centerContent py={10}>
       <VStack gap="8" w="100%">
-        <Heading size="xl">Price Is Right Game</Heading>
+        <Heading size="xl">The Cost is Accurate</Heading>
 
         {error && <Alert status="error">{error}</Alert>}
 

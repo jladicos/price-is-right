@@ -6,7 +6,7 @@ function HomePage() {
       <VStack gap="8" align="center">
         <Box textAlign="center">
           <Heading as="h1" size="2xl" mb={4}>
-            Welcome to The Price is Right!
+            Welcome to The Cost is Accurate!
           </Heading>
           <Text fontSize="xl" color="gray.600">
             A real-time multiplayer game experience

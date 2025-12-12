@@ -48,7 +48,7 @@ describe("RootPage", () => {
         </BrowserRouter>,
       );
 
-      expect(screen.getByText("Price Is Right Game")).toBeInTheDocument();
+      expect(screen.getByText("The Cost is Accurate")).toBeInTheDocument();
       expect(screen.getByLabelText(/access code/i)).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /log in/i }),

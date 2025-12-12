@@ -95,7 +95,7 @@ export function ShowcaseModal({
               letterSpacing="wide"
               lineHeight="1.2"
             >
-              Showcase {showcaseNumber}
+              Package {showcaseNumber}
             </Text>
 
             {/* Product Counter */}
